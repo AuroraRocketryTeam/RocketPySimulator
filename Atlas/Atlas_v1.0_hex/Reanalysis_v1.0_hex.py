@@ -9,7 +9,7 @@ import datetime
 import json
 
 # set path
-BASE_DIR = Path.cwd()
+BASE_DIR = Path(__file__).resolve().parent
 
 
 # Definition of global variables, to be used inside and outside parachute functions
@@ -175,7 +175,7 @@ Pro75_9977M2245 = SolidMotor(
     grains_center_of_mass_position=0.5125,
     center_of_dry_mass_position=0,
     nozzle_position=0,
-    burn_time=4.3,
+    burn_time=(0.136, 4.3),
     throat_radius=20/ 1000,
     coordinate_system_orientation="nozzle_to_combustion_chamber",
 )
