@@ -312,78 +312,60 @@ Env = Environment(
     max_expected_height = 4500
 )
 
-# Import the .json file with the mean environment values
+# There are 3 possible choices of weather data: [uncomment the choosen one and comment the others]
+
+# 1. A custom atmosphere defined with the mean environment values calculated in the week on EuRoC from 2005 to 2024 between the 10th and the 15th october. 
+# In order to define the mean environment features, we used the built-in function "Environment Analysis" from RocketPy. 
+# This generates a .json file with the mean environment values based on  a sample of 19 years, from 2005 to 2024, between the 10th and 15th of October, 
+# by feeding the NetCDF4 data from Copernicus. 
+# The .json file contains a series of .csv profiles based on the altitude that define pressure, temperature and wind vectors on an hourly basis. 
+# For more information consult the "mean_environment_values.json" file inside the directory.
+
+# import the .json with the mean environment values oustide the defition of the atmospheric model
 with open(BASE_DIR /"""environment_data/mean_environment_values.json""", "r") as f:
     data = json.load(f)
 
-# Set the environment model with either of the 3 options below
 Env.set_atmospheric_model(
-      
-    # =================================================================== OPTION 1: average metheorological conditions ===================================================================
 
-    # In order to define the mean environment features, we used the built-in function "Environment Analysis" from RocketPy. This generates a .json file with the mean environment values based on 
-    # a sample of 19 years, from 2005 to 2024, between the 10th and 15th of October, by feeding the NetCDF4 data from Copernicus. The .json file contains a series of .csv profiles based on the altitude 
-    # that define pressure, temperature and wind vectors on an hourly basis. For more information consult the "mean_environment_values.json" file inside the directory.
+    # set the atmosphere model
+    type="custom_atmosphere",
 
-    # REMOVE COMMENT FROM THE FOLLOWING SECTION TO RUN SIMULATION USING THESE SETTINGS ---------------------------------#
-                                                                                                                      #
-    type="custom_atmosphere",                                                                                         #
-                                                                                                                      #
-    pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],                                          #
-    temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],                                     #
-    wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],                                      #
-    wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]                                       #
-                                                                                                                      #
-    #-------------------------------------------------------------------------------------------------------------------#
-      
-    # =================================================================== OPTION 2: worst successful launch day recorded from past EuRoC editions ===================================================================
+    # define the values (pressure, temperature and wind [E,N]) from the .json
+    pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
+    temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
+    wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
+    wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
 
-    # We researched the worst weather conditions in which launches at EuRoC have still taken place, and found that 11/10/2024 qualified for being one of the most windy in which launches were still conducted. We used
-    # ensemble-type weather models to simulate flight operations using data from that day and evaluate predicted flight performance, finding that the apogee would be severely lowered, but would still be satisfactory.
-
-    # REMOVE COMMENT FROM THE FOLLOWING SECTION TO RUN SIMULATION USING THESE SETTINGS ---------------------------------#
-    #                                                                                                                   #
-    # type="Ensemble",                                                                                                  #
-    # file=str(BASE_DIR / """environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"""),                                        #
-    # # This section creates an updated dictionary to read the NetCDF4 files,                                           #
-    # # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     #
-    # dictionary= {                                                                                                     #
-    #     "ensemble": "number",                                                                                         #
-    #     "time": "valid_time",                                                                                         #
-    #     "latitude": "latitude",                                                                                       #
-    #     "longitude": "longitude",                                                                                     #
-    #     "level": "pressure_level",                                                                                    #
-    #     "temperature": "t",                                                                                           #
-    #     "surface_geopotential_height": None,                                                                          #
-    #     "geopotential_height": None,                                                                                  #
-    #     "geopotential": "z",                                                                                          #
-    #     "u_wind": "u",                                                                                                #
-    #     "v_wind": "v",                                                                                                #
-    # },                                                                                                                #
-    #                                                                                                                   #
-    #-------------------------------------------------------------------------------------------------------------------#
-
-    # =================================================================== OPTION 3: worst plausible case scenario ===================================================================
-
-    # To evaluate the worst case for bending stresses on the structure, we decided to run a simulation assuming constant winds as strong as the peak values in the worst day (11/10/2024) and aligned with the launch
-    # heading, causing the rocket to steer violently into the wind and generate high bending moment on the structure in this maneouvre. The apogee would be reduced to just under 2700 m, but the airframe
-    # of the rocket would resist the stress. Ailerons, however, would have to sustain a high load factor (presumably around 4Gs, by the look of the acceleration profiles)
-
-    # REMOVE COMMENT FROM THE FOLLOWING SECTION TO RUN SIMULATION USING THESE SETTINGS ---------------------------------#
-    #                                                                                                                   #
-    # type="custom_atmosphere",                                                                                         #
-    # wind_u=[                                                                                                          #
-    #     (0, 10.60), # 10.60 m/s at 0 m                                                                                #
-    #     (5000, 10.60), # 10.60 m/s at 3000 m                                                                          #
-    # ],                                                                                                                #
-    # wind_v=[                                                                                                          #
-    #     (0, -16.96), # -16.96 m/s at 0 m                                                                              #
-    #     (5000, -16.96), # -16.96 m/s at 3000 m                                                                        #
-    # ],                                                                                                                #
-    #                                                                                                                   #
-    #-------------------------------------------------------------------------------------------------------------------#
-    
 )
+
+# 2. Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the environment definition), in this case the weather data will match the date chosen by the user.
+
+# Env.set_atmospheric_model(    
+#     type="Ensemble",                                                                                                  
+#     file=str(BASE_DIR / """environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"""),                                        
+#     # This section creates an updated dictionary to read the NetCDF4 files,                                           
+#     # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     
+#     dictionary= {                                                                                                     
+#         "ensemble": "number",                                                                                         
+#         "time": "valid_time",                                                                                         
+#         "latitude": "latitude",                                                                                       
+#         "longitude": "longitude",                                                                                     
+#         "level": "pressure_level",                                                                                    
+#         "temperature": "t",                                                                                           
+#         "surface_geopotential_height": None,                                                                          
+#         "geopotential_height": None,                                                                                  
+#         "geopotential": "z",                                                                                          
+#         "u_wind": "u",                                                                                                
+#         "v_wind": "v",                                                                                                
+#     },
+# )
+
+# 3. The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) weather data, (change the date in the environment definition).
+
+# Env.set_atmospheric_model(
+#     type="Forecast",
+#     file="GFS"
+# )
 
 # Set up parachute trigger for the drogue chute
 def simulator_check_drogue_opening(p, h, y):
