@@ -1,6 +1,6 @@
 # RocketPy Preliminary Simulation of the Atlas rocket, Aurora Rocketry Team, EuRoC 2025
 # Authors: Daniele Bandini, Giovanni Bacchini, Caio Scattolini, Leonardo Francesco Neri, Alex Petrani, Federico Pedicini, Lorenzo Pintauro, Alessio Mrass, Andrea Di Maio
-
+# ciao
 # Importing libraries 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
