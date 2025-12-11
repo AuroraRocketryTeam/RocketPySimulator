@@ -99,7 +99,7 @@ def simulator_check_main_opening(p, h, y):
 ##DATA
 
 env.set_date(
-    (2025, 10, 12, 15)
+    (2025, 12, 12, 15)
 )  # Hour given in UTC time
 env.set_atmospheric_model(type="Forecast", file="GFS")
 env.max_expected_height = 4500 # adjust the plots to this height
