@@ -12,7 +12,7 @@ from rocketpy.tools import (
 quaternions_to_spin,
 quaternions_to_nutation,
 quaternions_to_precession,
-) 
+)
 
 # ----------------------------------------------------------------------
 # BASE PATH
