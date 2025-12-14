@@ -294,7 +294,7 @@ def main_parachute_opening(apogee_detected:bool, altitude:float) -> bool:
 filename = BASE_DIR / "Nemesis"
 print("Filename is:")
 print(filename)
-number_of_simulations = 100
+number_of_simulations = 10
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -345,23 +345,23 @@ Env.set_atmospheric_model(
 
     # REMOVE COMMENT FROM THE FOLLOWING SECTION TO RUN SIMULATION USING THESE SETTINGS ---------------------------------#
     #                                                                                                                   #
-     type="Ensemble",                                                                                                  #
-     file=str(BASE_DIR / """SantaMargarida_Ensemble_LaunchDayWeatherData.nc"""),                                        #
-     # This section creates an updated dictionary to read the NetCDF4 files,                                           #
-     # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     #
-     dictionary= {                                                                                                     #
-         "ensemble": "number",                                                                                         #
-         "time": "valid_time",                                                                                         #
-         "latitude": "latitude",                                                                                       #
-         "longitude": "longitude",                                                                                     #
-         "level": "pressure_level",                                                                                    #
-         "temperature": "t",                                                                                           #
-        "surface_geopotential_height": None,                                                                          #
-         "geopotential_height": None,                                                                                  #
-         "geopotential": "z",                                                                                          #
-         "u_wind": "u",                                                                                                #
-         "v_wind": "v",                                                                                                #
-     },                                                                                                                #
+    #  type="Ensemble",                                                                                                  #
+    #  file=str(BASE_DIR / """SantaMargarida_Ensemble_LaunchDayWeatherData.nc"""),                                        #
+    #  # This section creates an updated dictionary to read the NetCDF4 files,                                           #
+    #  # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     #
+    #  dictionary= {                                                                                                     #
+    #      "ensemble": "number",                                                                                         #
+    #      "time": "valid_time",                                                                                         #
+    #      "latitude": "latitude",                                                                                       #
+    #      "longitude": "longitude",                                                                                     #
+    #      "level": "pressure_level",                                                                                    #
+    #      "temperature": "t",                                                                                           #
+    #     "surface_geopotential_height": None,                                                                          #
+    #      "geopotential_height": None,                                                                                  #
+    #      "geopotential": "z",                                                                                          #
+    #      "u_wind": "u",                                                                                                #
+    #      "v_wind": "v",                                                                                                #
+    #  },                                                                                                                #
     #                                                                                                                   #
     #-------------------------------------------------------------------------------------------------------------------#
 
@@ -393,6 +393,17 @@ Env.set_atmospheric_model(
     # file = "GFS"                                                                                                            #
                                                                                                                       #
     #-------------------------------------------------------------------------------------------------------------------#
+
+    # =================================================================== OPTION 5: no wind ===================================================================
+    type = "custom_atmosphere",
+    wind_u = [
+        (0,0),
+        (4500,0),
+    ],
+    wind_v = [
+        (0,0),
+        (4500,0),
+    ]
 )
 
 # Set up parachute trigger for the drogue chute
@@ -1374,4 +1385,3 @@ model.fit(parameters_matrix, target_variables_matrix)
 
 model.plots.bar_plot()
 
-rocket_flight.prints.vertical_velocity()
