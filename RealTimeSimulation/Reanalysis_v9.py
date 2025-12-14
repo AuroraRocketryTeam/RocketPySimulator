@@ -18,7 +18,7 @@ quaternions_to_precession,
 # BASE PATH
 # ----------------------------------------------------------------------
 try:
-    BASE_DIR = Path(__file__).resolve().parent
+    BASE_DIR = Path(__file__).resolve().parent 
 except NameError:
     # If running in an environment where __file__ does not exist
     BASE_DIR = Path(".").resolve()
@@ -26,28 +26,26 @@ except NameError:
 # ----------------------------------------------------------------------
 # ENVIRONMENT
 # ----------------------------------------------------------------------
+
+# Real weather data from given date
 env = Environment(latitude=39.3901806, longitude=-8.289189, elevation=160)
-env.set_date((2023, 10, 13, 16))  # UTC time
-#env.set_atmospheric_model(type="Forecast", file="GFS")
-env.set_atmospheric_model(    
-    type="Ensemble",                                                                                                  
-    file=str(BASE_DIR / """SantaMargarida_Ensemble_09to16oct2010to2024.nc"""),                                        
-    # This section creates an updated dictionary to read the NetCDF4 files,                                           
-    # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     
-    dictionary= {                                                                                                     
-        "ensemble": "number",                                                                                         
-        "time": "valid_time",                                                                                         
-        "latitude": "latitude",                                                                                       
-        "longitude": "longitude",                                                                                     
-        "level": "pressure_level",                                                                                    
-        "temperature": "t",                                                                                           
-        "surface_geopotential_height": None,                                                                          
-        "geopotential_height": None,                                                                                  
-        "geopotential": "z",                                                                                          
-        "u_wind": "u",                                                                                                
-        "v_wind": "v",                                                                                                
-    },
-)
+env.set_date((2025, 10, 13, 16))  # Hour given in UTC time (yyyy/mm/dd/hh)
+
+# Real environment: De-comment the following lines to use real atmosphere data
+# env.set_atmospheric_model(type="Forecast", file="GFS")
+
+# Custom environment:De-comment the following lines to use custom atmosphere
+env.set_atmospheric_model(type="custom_atmosphere",                                                                                         
+     wind_u=[                                                                                                          
+         (0, 0), # 10.60 m/s at 0 m                                                                                
+         (4500, 0), # 10.60 m/s at 3000 m                                                                          
+     ],                                                                                                                
+     wind_v=[                                                                                                          
+         (0, 0), # -16.96 m/s at 3000 m   
+         (4500, 0)                                                                     
+     ],)
+
+
 env.max_expected_height = 4500
 
 # Environment information
@@ -440,8 +438,10 @@ class RealTimeController:
                 "orientation_x", "orientation_y", "orientation_z",
                 #Angular velocities
                 "angular_velocity_x", "angular_velocity_y", "angular_velocity_z",
-                # Linear accelerations
+                # Linear accelerations (Body Frame)
                 "linear_acceleration_x", "linear_acceleration_y", "linear_acceleration_z",
+                # Inertial accelerations (NEW)
+                "inertial_acceleration_x", "inertial_acceleration_y", "inertial_acceleration_z",
                 # Total Accelerations (Gravity + linear)
                 "acceleration_x", "acceleration_y", "acceleration_z",
                 # Gravity components
@@ -461,11 +461,13 @@ class RealTimeController:
                 # Calibrations
                 "Calibration (sys)", "Calibration (gyro)", "Calibration (accel)", "Calibration (mag)",
                 # Orientations
-                "Roll [deg]", "Pitch [deg]", "Yaw [deg]",
+                "Spin (psi) [deg]", "Nutation (theta) [deg]", "Precession (phi) [deg]",
                 #Angular velocities
                 "Angular velocity (x)", "Angular velocity (y)", "Angular velocity (z)",
-                # Linear accelerations
+                # Linear accelerations (Body Frame)
                 "Linear acceleration (x)", "Linear acceleration (y)", "Linear acceleration (z)",
+                # Inertial accelerations (NEW)
+                "Inertial acceleration (x)", "Inertial acceleration (y)", "Inertial acceleration (z)",
                 # Accelerations (Gravity + linear)
                 "Acceleration (x)", "Acceleration (y)", "Acceleration (z)",
                 # Gravity components
@@ -626,10 +628,10 @@ class RealTimeController:
     @staticmethod 
     def quat_to_euler(e0, e1, e2, e3):
         """
-        Gives roll, pitch and yaw angles (in degrees) recalling Rocketpy functions
-          roll  = φ (Spin Angle)
-          pitch = θ (Nutation Angle)
-          yaw   = ψ (Precession Angle)
+        Gives:
+          φ (Spin Angle)
+          θ (Nutation Angle)
+          ψ (Precession Angle)
         """
 
         # I guarantee they are 1D arrays of length 1
@@ -641,21 +643,21 @@ class RealTimeController:
         # Vector [e1,e2,e3] for nutation (like RocketPy does in theta())
         e_vec_arr = np.column_stack([e1_arr, e2_arr, e3_arr])  # shape (1, 3)
 
-        # 1) Spin angle φ (Roll) - 4 arguments
-        roll_arr = quaternions_to_spin(e0_arr, e1_arr, e2_arr, e3_arr)
+        # 1) Spin angle φ - 4 arguments
+        spin_arr = quaternions_to_spin(e0_arr, e1_arr, e2_arr, e3_arr)
 
-        # 2) Nutation angle θ (Pitch) - 2 arguments: e0, [e1,e2,e3]
-        pitch_arr = quaternions_to_nutation(e1_arr, e2_arr)
+        # 2) Nutation angle θ - 2 arguments: e0, [e1,e2,e3]
+        nut_arr = quaternions_to_nutation(e1_arr, e2_arr)
 
-        # 3) Precession angle ψ (Yaw) - 4 arguments
-        yaw_arr = quaternions_to_precession(e0_arr, e1_arr, e2_arr, e3_arr)
+        # 3) Precession angle ψ - 4 arguments
+        prec_arr = quaternions_to_precession(e0_arr, e1_arr, e2_arr, e3_arr)
 
         # I extract the first element and convert it to float (no ndarray)
-        roll  = float(np.asarray(roll_arr).reshape(-1)[0])
-        pitch = float(np.asarray(pitch_arr).reshape(-1)[0])
-        yaw   = float(np.asarray(yaw_arr).reshape(-1)[0])
+        spin  = float(np.asarray(spin_arr).reshape(-1)[0])
+        nut = float(np.asarray(nut_arr).reshape(-1)[0])
+        prec   = float(np.asarray(prec_arr).reshape(-1)[0])
 
-        return roll, pitch, yaw # degrees
+        return spin, nut, prec # degrees
 
     # ------------------------------------------------------------------
     # REAL-TIME CONTROL (CALLED BY ROCKETPY)
@@ -733,7 +735,7 @@ class RealTimeController:
             cal_mag = 3
 
             # --- ORIENTATIONS (EULAR ANGLES) ---
-            roll, pitch, yaw = self.quat_to_euler(e0, e1, e2, e3)
+            spin, nut, prec = self.quat_to_euler(e0, e1, e2, e3)
             
             # --- ENVIRONMENT / ATMOSPHERE (geodetic altitude) ---
             lat_base = self.environment.latitude
@@ -773,7 +775,7 @@ class RealTimeController:
             airspeed = np.sqrt(vrx**2 + vry**2 + vrz**2)
             speed = airspeed  # not currently logged, but kept if needed later
 
-            # --- INERTIAL ACCELERATIONS (finite differences) ---
+            # --- INERTIAL ACCELERATIONS (obtained via finite differences) ---
             if dt > 0.0 and self.prev_vx is not None:
                 ax_I = (vx - self.prev_vx) / dt
                 ay_I = (vy - self.prev_vy) / dt
@@ -807,7 +809,7 @@ class RealTimeController:
             a_body = R.T @ np.array([ax_I, ay_I, az_I])
             ax_b, ay_b, az_b = a_body
 
-            # --- TOTAL ACCELERATIONS (gravity + linear) ---
+            # --- TOTAL ACCELERATIONS (gravity + linear) BODY FRAME ---
             atot_x = ax_b + gx_b
             atot_y = ay_b + gy_b
             atot_z = az_b + gz_b
@@ -838,9 +840,10 @@ class RealTimeController:
             # --- BUILD CSV ROW (MATCHES HEADER ABOVE) ---
             row = [
                 cal_sys, cal_gyro, cal_accel, cal_mag,
-                f"{roll:.4f}", f"{pitch:.4f}", f"{yaw:.4f}", # Orientations
+                f"{spin:.4f}", f"{nut:.4f}", f"{prec:.4f}", # Orientations
                 f"{omega1:.4f}", f"{omega2:.4f}", f"{omega3:.4f}", # Ang. Vel.
-                f"{ax_b:.4f}", f"{ay_b:.4f}", f"{az_b:.4f}", # Lin. Acc.
+                f"{ax_b:.4f}", f"{ay_b:.4f}", f"{az_b:.4f}", # Lin. Acc. (Body Frame)
+                f"{ax_I:.4f}", f"{ay_I:.4f}", f"{az_I:.4f}", # Inertial Acc.
                 f"{atot_x:.4f}", f"{atot_y:.4f}", f"{atot_z:.4f}", # Total Acc.
                 f"{gx_b:.4f}", f"{gy_b:.4f}", f"{gz_b:.4f}", # Gravity Vector
                 f"{mag_x:.4f}", f"{mag_y:.4f}", f"{mag_z:.4f}", # Magnetometer
@@ -921,13 +924,13 @@ class RealTimeController:
 # ----------------------------------------------------------------------
 # LINKING CONTROLLER TO AIRBRAKES
 # ----------------------------------------------------------------------
-csv_path = BASE_DIR / "flight_telemetry_50Hz_v8.csv"
+csv_path = BASE_DIR / "flight_telemetry_50Hz_v9.csv"
 
 controller = RealTimeController(
     rocket=Nemesis,
     environment=env,  # pass environment for atmospheric data
     motor=Pro75M8187,
-    target_speed=8.0,
+    target_speed=1.0,
     refresh_rate=10,
     extra_cd=1.5,
     csv_target_rate=50.0,
@@ -984,7 +987,7 @@ plt.ioff()
 plt.show()
 
 test_flight.export_kml(
-    file_name=str(BASE_DIR / "trajectory_reanalysis_v8.kml"),
+    file_name=str(BASE_DIR / "trajectory_reanalysis_v9.kml"),
     extrude=True,
     altitude_mode="relative_to_ground",
 )
@@ -992,171 +995,191 @@ test_flight.export_kml(
 print("\n>>> SIMULATION COMPLETED <<<")
 print("Generated files:")
 print(f"  1. {csv_path} (real-time data at 50 Hz)")
-print(f"  2. {BASE_DIR / 'trajectory_reanalysis_v8.kml'} (KML trajectory)")
+print(f"  2. {BASE_DIR / 'trajectory_reanalysis_v9.kml'} (KML trajectory)")
 
 # # # ----------------------------------------------------------------------
 # # # DATA COMPARISON: RELATIVE ERRORS (%)
 # # # ----------------------------------------------------------------------
 
-# def get_rocketpy_gravity_body_frame(flight_obj, t_array):
-#     """
-#     Calculate the gravity vector projected onto the rocket axes (Body Frame)
-#     using RocketPy's exact environment model.
-#     """
-#     z = flight_obj.z(t_array)
-#     e0 = flight_obj.e0(t_array)
-#     e1 = flight_obj.e1(t_array)
-#     e2 = flight_obj.e2(t_array)
-#     e3 = flight_obj.e3(t_array)
-#     g_magnitude = flight_obj.env.gravity(z)
+def get_rocketpy_gravity_body_frame(flight_obj, t_array):
+    """
+    Calculate the gravity vector projected onto the rocket axes (Body Frame)
+    using RocketPy's exact environment model.
+    """
+    z = flight_obj.z(t_array)
+    e0 = flight_obj.e0(t_array)
+    e1 = flight_obj.e1(t_array)
+    e2 = flight_obj.e2(t_array)
+    e3 = flight_obj.e3(t_array)
+    g_magnitude = flight_obj.env.gravity(z)
     
-#     # Inertial vector rotation [0, 0, -g] in the body frame
-#     gx_body = 2 * (e1 * e3 - e0 * e2) * (-g_magnitude)
-#     gy_body = 2 * (e2 * e3 + e0 * e1) * (-g_magnitude)
-#     gz_body = (1 - 2 * (e1**2 + e2**2)) * (-g_magnitude)
-#     return gx_body, gy_body, gz_body
+    # Inertial vector rotation [0, 0, -g] in the body frame
+    gx_body = 2 * (e1 * e3 - e0 * e2) * (-g_magnitude)
+    gy_body = 2 * (e2 * e3 + e0 * e1) * (-g_magnitude)
+    gz_body = (1 - 2 * (e1**2 + e2**2)) * (-g_magnitude)
+    return gx_body, gy_body, gz_body
 
 
-# def get_rocketpy_accel_body_frame(flight_obj, t_array):
-#     """
-#     Calculate the linear acceleration vector projected onto the rocket axes (Body Frame)
-#     using RocketPy's inertial accelerations and quaternions.
+def get_rocketpy_accel_body_frame(flight_obj, t_array):
+    """
+    Calculate the linear acceleration vector projected onto the rocket axes (Body Frame)
+    using RocketPy's inertial accelerations and quaternions.
     
-#     Returns the body-frame accelerations (ax_body, ay_body, az_body).
-#     """
-#     # Get inertial frame accelerations from RocketPy
-#     ax_I = flight_obj.ax(t_array)
-#     ay_I = flight_obj.ay(t_array)
-#     az_I = flight_obj.az(t_array)
+    Returns the body-frame accelerations (ax_body, ay_body, az_body).
+    """
+    # Get inertial frame accelerations from RocketPy
+    ax_I = flight_obj.ax(t_array)
+    ay_I = flight_obj.ay(t_array)
+    az_I = flight_obj.az(t_array)
     
-#     # Get quaternions
-#     e0 = flight_obj.e0(t_array)
-#     e1 = flight_obj.e1(t_array)
-#     e2 = flight_obj.e2(t_array)
-#     e3 = flight_obj.e3(t_array)
+    # Get quaternions
+    e0 = flight_obj.e0(t_array)
+    e1 = flight_obj.e1(t_array)
+    e2 = flight_obj.e2(t_array)
+    e3 = flight_obj.e3(t_array)
     
-#     # Transform from inertial to body frame using R^T (transpose of rotation matrix)
-#     # R^T row 1: [1-2(e2²+e3²), 2(e1e2+e0e3), 2(e1e3-e0e2)]
-#     # R^T row 2: [2(e1e2-e0e3), 1-2(e1²+e3²), 2(e2e3+e0e1)]
-#     # R^T row 3: [2(e1e3+e0e2), 2(e2e3-e0e1), 1-2(e1²+e2²)]
+    # Transform from inertial to body frame using R^T (transpose of rotation matrix)
+    # R^T row 1: [1-2(e2²+e3²), 2(e1e2+e0e3), 2(e1e3-e0e2)]
+    # R^T row 2: [2(e1e2-e0e3), 1-2(e1²+e3²), 2(e2e3+e0e1)]
+    # R^T row 3: [2(e1e3+e0e2), 2(e2e3-e0e1), 1-2(e1²+e2²)]
     
-#     ax_body = (1 - 2*(e2**2 + e3**2)) * ax_I + 2*(e1*e2 + e0*e3) * ay_I + 2*(e1*e3 - e0*e2) * az_I
-#     ay_body = 2*(e1*e2 - e0*e3) * ax_I + (1 - 2*(e1**2 + e3**2)) * ay_I + 2*(e2*e3 + e0*e1) * az_I
-#     az_body = 2*(e1*e3 + e0*e2) * ax_I + 2*(e2*e3 - e0*e1) * ay_I + (1 - 2*(e1**2 + e2**2)) * az_I
+    ax_body = (1 - 2*(e2**2 + e3**2)) * ax_I + 2*(e1*e2 + e0*e3) * ay_I + 2*(e1*e3 - e0*e2) * az_I
+    ay_body = 2*(e1*e2 - e0*e3) * ax_I + (1 - 2*(e1**2 + e3**2)) * ay_I + 2*(e2*e3 + e0*e1) * az_I
+    az_body = 2*(e1*e3 + e0*e2) * ax_I + 2*(e2*e3 - e0*e1) * ay_I + (1 - 2*(e1**2 + e2**2)) * az_I
     
-#     return ax_body, ay_body, az_body
+    return ax_body, ay_body, az_body
 
 
-# def compare_telemetry(flight_obj, csv_path):
-#     print("\n>>> STARTING ANALYSIS: RELATIVE ERRORS (DYNAMICS + ATMOSPHERE + GRAVITY + ACCELERATIONS) <<<")
-#     try:
-#         df = pd.read_csv(csv_path, header=1, skipinitialspace=True)
-#     except FileNotFoundError:
-#         print(f"Error: {csv_path} not found."); return
+def compare_telemetry(flight_obj, csv_path):
+    print("\n>>> STARTING ANALYSIS: RELATIVE ERRORS (DYNAMICS + ATMOSPHERE + GRAVITY + ACCELERATIONS) <<<")
+    try:
+        df = pd.read_csv(csv_path, header=1, skipinitialspace=True)
+    except FileNotFoundError:
+        print(f"Error: {csv_path} not found."); return
 
-#     # Columns needed (including gravity and accelerations)
-#     cols_needed = [
-#         'orientation_x', 'orientation_y', 'orientation_z', 
-#         'altitude', 'pressure', 'temperature', 'timestamp', 
-#         'gravity_x', 'gravity_y', 'gravity_z',
-#         'linear_acceleration_x', 'linear_acceleration_y', 'linear_acceleration_z',
-#         'acceleration_x', 'acceleration_y', 'acceleration_z'
-#     ]
-#     for col in cols_needed:
-#         if col in df.columns: 
-#             df[col] = pd.to_numeric(df[col], errors='coerce')
-#     df.dropna(subset=['timestamp'], inplace=True)
-#     if len(df) == 0: 
-#         print("Error: No valid data found."); return
+    # Columns needed (including gravity, accelerations, and inertial accelerations)
+    cols_needed = [
+        'orientation_x', 'orientation_y', 'orientation_z', 
+        'altitude', 'pressure', 'temperature', 'timestamp', 
+        'gravity_x', 'gravity_y', 'gravity_z',
+        'linear_acceleration_x', 'linear_acceleration_y', 'linear_acceleration_z',
+        'inertial_acceleration_x', 'inertial_acceleration_y', 'inertial_acceleration_z',
+        'acceleration_x', 'acceleration_y', 'acceleration_z'
+    ]
+    for col in cols_needed:
+        if col in df.columns: 
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    df.dropna(subset=['timestamp'], inplace=True)
+    if len(df) == 0: 
+        print("Error: No valid data found."); return
     
-#     t_log = df['timestamp'].values
+    t_log = df['timestamp'].values
     
-#     # Data from RocketPy (angles, altitude, pressure and temperature)
-#     rpy_roll = flight_obj.phi(t_log)
-#     rpy_pitch = flight_obj.theta(t_log)
-#     rpy_yaw = flight_obj.psi(t_log)
-#     rpy_z = flight_obj.z(t_log) + env.elevation
-#     rpy_p = flight_obj.pressure(t_log)
-#     rpy_T = flight_obj.env.temperature(flight_obj.z(t_log))
+    # Data from RocketPy (angles, altitude, pressure and temperature)
+    rpy_spin = flight_obj.phi(t_log)
+    rpy_nut = flight_obj.theta(t_log)
+    rpy_prec = flight_obj.psi(t_log)
+    rpy_z = flight_obj.z(t_log) + env.elevation
+    rpy_p = flight_obj.pressure(t_log)
+    rpy_T = flight_obj.env.temperature(flight_obj.z(t_log))
     
-#     # Gravity (body frame)
-#     rpy_gx, rpy_gy, rpy_gz = get_rocketpy_gravity_body_frame(flight_obj, t_log)
+    # Gravity (body frame)
+    rpy_gx, rpy_gy, rpy_gz = get_rocketpy_gravity_body_frame(flight_obj, t_log)
     
-#     # Linear accelerations (body frame)
-#     rpy_ax_lin, rpy_ay_lin, rpy_az_lin = get_rocketpy_accel_body_frame(flight_obj, t_log)
+    # Linear accelerations (body frame)
+    rpy_ax_lin, rpy_ay_lin, rpy_az_lin = get_rocketpy_accel_body_frame(flight_obj, t_log)
 
-#     # Comparison groups
-#     group_orientation = {
-#         "Roll":  {"csv_data": df['orientation_x'].values, "rpy_func": rpy_roll,  "units": "deg"},
-#         "Pitch": {"csv_data": df['orientation_y'].values, "rpy_func": rpy_pitch, "units": "deg"},
-#         "Yaw":   {"csv_data": df['orientation_z'].values, "rpy_func": rpy_yaw,   "units": "deg"},
-#     }
-    
-#     group_atm = {
-#         "Altitude":    {"csv_data": df['altitude'].values,    "rpy_func": rpy_z, "units": "m"},
-#         "Pressure":    {"csv_data": df['pressure'].values,    "rpy_func": rpy_p, "units": "Pa"},
-#         "Temperature": {"csv_data": df['temperature'].values, "rpy_func": rpy_T, "units": "K"} 
-#     }
-    
-#     group_gravity = {
-#         "Gravity X (Body)": {"csv_data": df['gravity_x'].values, "rpy_func": rpy_gx, "units": "m/s²"},
-#         "Gravity Y (Body)": {"csv_data": df['gravity_y'].values, "rpy_func": rpy_gy, "units": "m/s²"},
-#         "Gravity Z (Body)": {"csv_data": df['gravity_z'].values, "rpy_func": rpy_gz, "units": "m/s²"}
-#     }
-    
-#     group_linear_accel = {
-#         "Linear Accel X (Body)": {"csv_data": df['linear_acceleration_x'].values, "rpy_func": rpy_ax_lin, "units": "m/s²"},
-#         "Linear Accel Y (Body)": {"csv_data": df['linear_acceleration_y'].values, "rpy_func": rpy_ay_lin, "units": "m/s²"},
-#         "Linear Accel Z (Body)": {"csv_data": df['linear_acceleration_z'].values, "rpy_func": rpy_az_lin, "units": "m/s²"}
-#     }
+    # Inertial accelerations from RocketPy
+    rpy_ax_I = flight_obj.ax(t_log)
+    rpy_ay_I = flight_obj.ay(t_log)
+    rpy_az_I = flight_obj.az(t_log)
 
-#     def plot_group(comparison_dict, title_text, fig_id):
-#         n_rows = len(comparison_dict)
-#         fig, axes = plt.subplots(n_rows, 2, figsize=(14, 4 * n_rows), sharex=True)
-#         fig.suptitle(title_text, fontsize=16)
-#         if n_rows == 1: 
-#             axes = np.array([axes])
-#         idx = 0
-#         for key, data in comparison_dict.items():
-#             val_manual = data["csv_data"]
-#             val_rpy = data["rpy_func"]
-#             with np.errstate(divide='ignore', invalid='ignore'):
-#                 rel_error_pct = np.abs((val_manual - val_rpy) / val_rpy) * 100.0
-#             rel_error_pct[np.abs(val_rpy) < 1e-4] = 0.0
+    # Comparison groups
+    group_orientation = {
+        "Spin ψ":  {"csv_data": df['orientation_x'].values, "rpy_func": rpy_spin,  "units": "deg"},
+        "Nutation θ": {"csv_data": df['orientation_y'].values, "rpy_func": rpy_nut, "units": "deg"},
+        "Precession φ":   {"csv_data": df['orientation_z'].values, "rpy_func": rpy_prec,   "units": "deg"},
+    }
+    
+    group_atm = {
+        "Altitude":    {"csv_data": df['altitude'].values,    "rpy_func": rpy_z, "units": "m"},
+        "Pressure":    {"csv_data": df['pressure'].values,    "rpy_func": rpy_p, "units": "Pa"},
+        "Temperature": {"csv_data": df['temperature'].values, "rpy_func": rpy_T, "units": "K"} 
+    }
+    
+    group_gravity = {
+        "Gravity X (Body)": {"csv_data": df['gravity_x'].values, "rpy_func": rpy_gx, "units": "m/s²"},
+        "Gravity Y (Body)": {"csv_data": df['gravity_y'].values, "rpy_func": rpy_gy, "units": "m/s²"},
+        "Gravity Z (Body)": {"csv_data": df['gravity_z'].values, "rpy_func": rpy_gz, "units": "m/s²"}
+    }
+    
+    group_linear_accel = {
+        "Linear Accel X (Body)": {"csv_data": df['linear_acceleration_x'].values, "rpy_func": rpy_ax_lin, "units": "m/s²"},  
+        "Linear Accel Y (Body)": {"csv_data": df['linear_acceleration_y'].values, "rpy_func": rpy_ay_lin, "units": "m/s²"},
+        "Linear Accel Z (Body)": {"csv_data": df['linear_acceleration_z'].values, "rpy_func": rpy_az_lin, "units": "m/s²"}
+    }
+
+    group_total_accel = {
+        "Total Accel X (Body)": {"csv_data": df['acceleration_x'].values, "rpy_func": rpy_ax_lin+rpy_gx, "units": "m/s²"},  
+        "Total Accel Y (Body)": {"csv_data": df['acceleration_y'].values, "rpy_func": rpy_ay_lin+rpy_gy, "units": "m/s²"},
+        "Total Accel Z (Body)": {"csv_data": df['acceleration_z'].values, "rpy_func": rpy_az_lin+rpy_gz, "units": "m/s²"}
+    }
+
+    group_inertial_accel = {
+        "Inertial Accel X": {"csv_data": df['inertial_acceleration_x'].values, "rpy_func": rpy_ax_I, "units": "m/s²"},  
+        "Inertial Accel Y": {"csv_data": df['inertial_acceleration_y'].values, "rpy_func": rpy_ay_I, "units": "m/s²"},
+        "Inertial Accel Z": {"csv_data": df['inertial_acceleration_z'].values, "rpy_func": rpy_az_I, "units": "m/s²"}
+    }
+
+
+    def plot_group(comparison_dict, title_text, fig_id):
+        n_rows = len(comparison_dict)
+        fig, axes = plt.subplots(n_rows, 2, figsize=(14, 4 * n_rows), sharex=True)
+        fig.suptitle(title_text, fontsize=16)
+        if n_rows == 1: 
+            axes = np.array([axes])
+        idx = 0
+        for key, data in comparison_dict.items():
+            val_manual = data["csv_data"]
+            val_rpy = data["rpy_func"]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                rel_error_pct = np.abs((val_manual - val_rpy) / val_rpy) * 100.0
+            rel_error_pct[np.abs(val_rpy) < 1e-4] = 0.0
             
-#             axes[idx, 0].plot(t_log, val_manual, 'r--', label='Telemetry', lw=2)
-#             axes[idx, 0].plot(t_log, val_rpy, 'k-', label='RocketPy', alpha=0.6, lw=2)
-#             axes[idx, 0].set_ylabel(f"{key}\n[{data['units']}]")
-#             axes[idx, 0].grid(True, linestyle='--', alpha=0.6)
-#             if idx == 0: 
-#                 axes[idx, 0].legend(loc='upper right')
+            axes[idx, 0].plot(t_log, val_manual, 'r-', label='Telemetry', lw=2)
+            axes[idx, 0].plot(t_log, val_rpy, 'k--', label='RocketPy', lw=2)
+            axes[idx, 0].set_ylabel(f"{key}\n[{data['units']}]")
+            axes[idx, 0].grid(True, linestyle='--', alpha=0.6)
+            if idx == 0: 
+                axes[idx, 0].legend(loc='upper right')
             
-#             axes[idx, 1].plot(t_log, rel_error_pct, 'b-', lw=1)
-#             axes[idx, 1].set_ylabel("Rel. Error [%]")
-#             axes[idx, 1].grid(True, linestyle='--', alpha=0.6)
-#             axes[idx, 1].set_ylim(0, 50)
-#             idx += 1
-#         axes[-1, 0].set_xlabel("Time [s]")
-#         axes[-1, 1].set_xlabel("Time [s]")
-#         plt.tight_layout(rect=[0, 0.03, 1, 0.97])
+            axes[idx, 1].plot(t_log, rel_error_pct, 'b-', lw=1)
+            axes[idx, 1].set_ylabel("Rel. Error [%]")
+            axes[idx, 1].grid(True, linestyle='--', alpha=0.6)
+            axes[idx, 1].set_ylim(0, 50)
+            idx += 1
+        axes[-1, 0].set_xlabel("Time [s]")
+        axes[-1, 1].set_xlabel("Time [s]")
+        plt.tight_layout(rect=[0, 0.03, 1, 0.97])
 
-#     # Plot all comparison groups
-#     plot_group(group_orientation, "Dynamic Comparison (Orientation)", 1)
-#     plot_group(group_atm, "Atmosphere Comparison", 2)
-#     plot_group(group_gravity, "Gravity Vector Comparison (Body Frame)", 3)
-#     plot_group(group_linear_accel, "Linear Acceleration Comparison (Body Frame)", 4)
+    # Plot all comparison groups
+    plot_group(group_orientation, "Dynamic Comparison (Orientation)", 1)
+    plot_group(group_atm, "Atmosphere Comparison", 2)
+    plot_group(group_gravity, "Gravity Vector Comparison (Body Frame)", 3)
+    plot_group(group_linear_accel, "Linear Acceleration Comparison (Body Frame)", 4)
+    plot_group(group_total_accel, "Total Acceleration Comparison (Body Frame)", 5)
+    plot_group(group_inertial_accel, "Inertial Acceleration Comparison", 6) 
     
-#     plt.show()
+    plt.show()
 
-
-# compare_telemetry(test_flight, csv_path)
+compare_telemetry(test_flight, csv_path)
 
 # ----------------------------------------------------------------------
 # COMPARISON COMMENT
 # ----------------------------------------------------------------------
 
 # The comparison was limited to five groups of parameters:
-# 1. ORIENTATION (Roll, Pitch, Yaw)
+# 1. ORIENTATION (Spin, Nutation, Precession)
 # 2. ATMOSPHERIC CONDITIONS (Altitude, Pressure, Temperature)
 # 3. GRAVITY VECTOR (Body Frame: Gx, Gy, Gz)
 # 4. LINEAR ACCELERATIONS (Body Frame: ax, ay, az)
