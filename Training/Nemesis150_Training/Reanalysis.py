@@ -8,6 +8,7 @@ from time import process_time
 from rocketpy import Environment, Flight, Rocket, SolidMotor
 env = Environment(latitude=39.3901806, longitude=-8.289189, elevation=160)
 import datetime
+import pandas as pd
 BASE_DIR = Path(__file__).resolve().parent
 
 #parachute functions ect.
@@ -99,7 +100,7 @@ def simulator_check_main_opening(p, h, y):
 ##DATA
 
 env.set_date(
-    (2025, 10, 12, 15)
+    (2025, 12, 12, 15)
 )  # Hour given in UTC time
 env.set_atmospheric_model(type="Forecast", file="GFS")
 env.max_expected_height = 4500 # adjust the plots to this height
@@ -180,11 +181,11 @@ Drogue = Nemesis.add_parachute(
 test_flight = Flight(
     rocket=Nemesis, environment=env, rail_length=12, inclination=84, heading=144
 )
-test_flight.all_info()
-test_flight.speed()
-test_flight.acceleration
-print(test_flight.aerodynamic_drag.max)
-print(test_flight.aerodynamic_lift.max)
+#test_flight.all_info()
+#test_flight.speed()
+#test_flight.acceleration
+#print(test_flight.aerodynamic_drag.max)
+#print(test_flight.aerodynamic_lift.max)
 
 
 test_flight.export_kml(
