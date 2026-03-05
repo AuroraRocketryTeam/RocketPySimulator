@@ -1,4 +1,4 @@
-# import python library
+# Importing libraries
 from rocketpy import Environment, Flight, Rocket, SolidMotor
 from pathlib import Path
 import json
@@ -45,8 +45,7 @@ Env = Environment(
     max_expected_height = 4500
 )
 
-# There are 3 possible choices of weather data:
-
+# There are 4 possible choices of weather data:
 if weather_data=='c':
     # A custom atmosphere defined with the mean environment values calculated in the week on EuRoC 
     # from 2005 to 2024 between the 10th and the 15th october. 
@@ -58,7 +57,7 @@ if weather_data=='c':
     # For more information consult the "mean_environment_values.json" file inside the directory.
 
     # import the .json with the mean environment values oustide the defition of the atmospheric model
-    with open(BASE_DIR/"environment_data/mean_environment_values.json", "r") as f:
+    with open(BASE_DIR/"simulation_inputs/environment_data/mean_environment_values.json", "r") as f:
         data = json.load(f)
 
     Env.set_atmospheric_model(
@@ -78,7 +77,7 @@ elif weather_data=='e':
     # environment definition), in this case the weather data will match the date chosen by the user.
     Env.set_atmospheric_model(
         type="Ensemble",                                                                                                  
-        file=str(BASE_DIR/"environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"),                                        
+        file=str(BASE_DIR/"simulation_inputs/environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"),                                        
         # This section creates an updated dictionary to read the NetCDF4 files,                                           
         # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 
         # files in the new format     
@@ -119,8 +118,8 @@ Atlas = Rocket(
     radius = 75 / 1000,
     mass = rocket_mass,
     inertia = rocket_inertia,
-    power_off_drag=str(BASE_DIR/"Hexagonal_blunt_base_power_off.csv"),
-    power_on_drag=str(BASE_DIR/"Hexagonal_blunt_base_power_on.csv"),
+    power_off_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv"),
+    power_on_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv"),
     center_of_mass_without_motor=rocket_center_of_mass,
     coordinate_system_orientation="nose_to_tail",
 )
@@ -133,7 +132,7 @@ print("- Rocket module initialized successfully.")
 
 #-------------------------------------------------------------------------------------------------------- MOTOR
 Pro75_9977M2245 = SolidMotor(
-    thrust_source=str(BASE_DIR/"Cesaroni_9977_M2245.csv"),
+    thrust_source=str(BASE_DIR/"simulation_inputs/propulsion_data/Cesaroni_9977_M2245.csv"),
     dry_mass=0,
     dry_inertia=(0, 0, 0),
     nozzle_radius=29 / 1000,
@@ -356,6 +355,7 @@ def controller_function(time, sampling_rate, state, state_history, observed_vari
     # print(f'{round(time,1)}\t{air_brakes.deployment_level}\t{air_brakes.reference_area}\t
     # {air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number)}\t
     # {round(free_stream_speed,0)}\t{altitude_ASL}\t{vz}\t{mach_number}')
+    #print(f'{round(time,1)}\t{Atlas.drag_coefficient()}')
 
     return (
         time,
@@ -364,10 +364,10 @@ def controller_function(time, sampling_rate, state, state_history, observed_vari
     )
 
 air_brakes = Atlas.add_air_brakes(
-    drag_coefficient_curve = str(BASE_DIR/"air_brakes_cd.csv"),
+    drag_coefficient_curve = str(BASE_DIR/"simulation_inputs/aerodynamic_data/air_brakes_cd.csv"),
     controller_function = controller_function,
     sampling_rate = 10,
-    reference_area = 0.0150,
+    reference_area = 0,#.0125,
     clamp = False,
     initial_observed_variables = [0, 0, 0],
     override_rocket_drag = False,
@@ -392,7 +392,7 @@ rocket_flight = Flight(
     verbose = True,
 )
 #--------------------------------------------------------------------------------------------------------
-
+print()
 
 
 
