@@ -373,7 +373,6 @@ def save_acceleration_plots(accel_noisy, accel_clean, outdir=BASE_DIR/"plots", s
     plt.xlabel("Time (s)")
     plt.ylabel("Acceleration (m/s^2)")
     plt.legend()
-    plt.xlim(0, 20)
     plt.grid()
     plt.title("Acceleration")
     path = outdir / "acceleration_total.png"
@@ -413,4 +412,5 @@ def save_all_plots(accel_noisy, accel_clean, barom_noisy, barom_clean, test_flig
     save_barometer_plot(barom_noisy, barom_clean, test_flight, outdir=outdir, show=show)
 
 # Genera e salva tutti i grafici nella cartella 'plots'
+
 save_all_plots(accel_noisy, accel_clean, barom_noisy, barom_clean, rocket_flight, outdir=BASE_DIR/"plots", show=False)
