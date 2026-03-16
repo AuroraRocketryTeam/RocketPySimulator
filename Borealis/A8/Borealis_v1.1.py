@@ -427,6 +427,7 @@ print(f"- Output directory: {colored(output_dir_name)}\n")
 # with less than 50 simulations sensitivity analysis returns errors
 if number_of_simulations<50:
     print(f"<!> Less than 50 simulations: {colored('sensitivity analysis deactivated')}")
+    sensitivity_analysis = False
 
 # Create or overwrite folders for outputs
 if output_path.is_dir():
@@ -1049,62 +1050,63 @@ plt.close('all')
 
 
 #-------------------------------------------------------------------------------------------------------- SENSITIVITY ANALYSIS
-print(colored('\n\nSensitivity analysis graphs:'))
+if sensitivity_analysis:
+    print(colored('\n\nSensitivity analysis graphs:'))
 
 
-target_variables = ["apogee_altitude","max_acceleration"]
-parameters = list(analysis_parameters.keys())
+    target_variables = ["apogee_altitude","max_acceleration"]
+    parameters = list(analysis_parameters.keys())
 
-parameters_matrix, target_variables_matrix = load_monte_carlo_data(
-    input_filename=str(filename)+".disp_inputs.json",
-    output_filename=str(filename)+".disp_outputs.json",
-    parameters_list=parameters,
-    target_variables_list=target_variables,
-)
-
-
+    parameters_matrix, target_variables_matrix = load_monte_carlo_data(
+        input_filename=str(filename)+".disp_inputs.json",
+        output_filename=str(filename)+".disp_outputs.json",
+        parameters_list=parameters,
+        target_variables_list=target_variables,
+    )
 
 
-model = SensitivityModel(parameters, target_variables)
 
 
-parameters_nominal_mean = [
-    analysis_parameters[parameter_name][0]
-    for parameter_name in analysis_parameters.keys()
-]
-parameters_nominal_sd = [
-    analysis_parameters[parameter_name][1]
-    for parameter_name in analysis_parameters.keys()
-]
-model.set_parameters_nominal(parameters_nominal_mean, parameters_nominal_sd)
-target_variables_mean=[
-np.mean(dispersion_results["apogee_altitude"]),
-np.mean(dispersion_results["max_acceleration"])
-]
-
-#plot the result of the sensitviy analisys
-model.set_target_variables_nominal(target_variables_mean)
-
-model.fit(parameters_matrix, target_variables_matrix)
+    model = SensitivityModel(parameters, target_variables)
 
 
-# Workaround (RocketPy doesn't provide a save option):
-# plt.ion() lets the code continue while bar_plot is displayed.
-# Figures are saved and remain open for viewing if desired.
-plt.ion() 
-model.plots.bar_plot()
+    parameters_nominal_mean = [
+        analysis_parameters[parameter_name][0]
+        for parameter_name in analysis_parameters.keys()
+    ]
+    parameters_nominal_sd = [
+        analysis_parameters[parameter_name][1]
+        for parameter_name in analysis_parameters.keys()
+    ]
+    model.set_parameters_nominal(parameters_nominal_mean, parameters_nominal_sd)
+    target_variables_mean=[
+    np.mean(dispersion_results["apogee_altitude"]),
+    np.mean(dispersion_results["max_acceleration"])
+    ]
 
-for target in range(len(target_variables)):
-    sens_fig = plt.figure(target+1)
+    #plot the result of the sensitviy analisys
+    model.set_target_variables_nominal(target_variables_mean)
 
-    svg_file = f"{str(output_sensitivity)}/sensitivity_{target_variables[target]}.svg"
-    sens_fig.savefig(svg_file, dpi=300)
+    model.fit(parameters_matrix, target_variables_matrix)
 
-if show_graph:
-    plt.pause(99999) # that's a lot of damag...time.
 
-plt.close("all")
-plt.ioff()
+    # Workaround (RocketPy doesn't provide a save option):
+    # plt.ion() lets the code continue while bar_plot is displayed.
+    # Figures are saved and remain open for viewing if desired.
+    plt.ion() 
+    model.plots.bar_plot()
 
-print("- Sensitivity analysis graphs saved successfully")
+    for target in range(len(target_variables)):
+        sens_fig = plt.figure(target+1)
+
+        svg_file = f"{str(output_sensitivity)}/sensitivity_{target_variables[target]}.svg"
+        sens_fig.savefig(svg_file, dpi=300)
+
+    if show_graph:
+        plt.pause(99999) # that's a lot of damag...time.
+
+    plt.close("all")
+    plt.ioff()
+
+    print("- Sensitivity analysis graphs saved successfully")
 #-------------------------------------------------------------------------------------------------------
