@@ -44,6 +44,7 @@ output_dir_name = 'prova'
 number_of_simulations = 3
 
 show_graph = False
+sensitivity_analysis = True
 
 latitude = 39.389700
 longitude = -8.288964
@@ -415,6 +416,7 @@ output_dispersion = Path(output_path/"dispersion")
 output_dispersion_pickle = Path(output_dispersion/"pickle")
 output_dispersion_svg = Path(output_dispersion/"svg")
 
+output_launch_site = Path(output_path/"launch_site")
 
 # First information print
 print("Montecarlo Rocket flight simulator\n")
@@ -438,10 +440,12 @@ if output_path.is_dir():
 
 print("\nStarting...", end='\r')
 
+#create folders
 output_sensitivity.mkdir(parents=True, exist_ok=True)
 output_comparison.mkdir(parents=True, exist_ok=True)
 output_dispersion_pickle.mkdir(parents=True, exist_ok=True)
 output_dispersion_svg.mkdir(parents=True, exist_ok=True)
+output_launch_site.mkdir(parents=True, exist_ok=True)
 
 
 # Create data files for inputs, outputs and error logging
@@ -1032,9 +1036,9 @@ plt.xlim(-2000, 2000)
 plt.ylim(-1500, 1500)
 
 # Save plot and show result
-plt.savefig(str(output_dispersion_svg) + "/Santa_Margarida_launch_site.svg", format='svg', bbox_inches="tight")
+plt.savefig(str(output_launch_site) + "/Santa_Margarida_launch_site.svg", format='svg', bbox_inches="tight")
 # as pickle
-pickle_file = str(output_dispersion_pickle) + "/Santa_Margarida_launch_site.pickle"
+pickle_file = str(output_launch_site) + "/Santa_Margarida_launch_site.pickle"
 with open(pickle_file, "wb") as f:
     pickle.dump(s, f)
 
