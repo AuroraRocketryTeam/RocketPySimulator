@@ -123,7 +123,7 @@ analysis_parameters = {
    # Fin tip chord (m)
    "fin_tip_chord": (0.12, 0.0005),
    # Axial distance between rocket's center of dry mass and nearest point in its fin (m)
-   "fin_position": (172, 0.0005),
+   "fin_position": (1.72, 0.0005),
    "fin_sweep_angle": (28.6, 0.005),
    # Tail
    "tail_length": (0.10, 0.001),
@@ -616,8 +616,8 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Define and add the Nosecone section
     NoseCone = Borealis.add_nose(
         length=setting["nose_length"],
-        kind="lvhaack",
-        power= "nose_pwr",
+        kind="powerseries",
+        power= setting["nose_pwr"],
         position=setting["nose_position"],
     )
 
@@ -785,7 +785,7 @@ if show_graph:
     comparison.aerodynamic_moments()
     comparison.angular_velocities()
     comparison.trajectories_3d()
-    comparison.rail_buttons_forces()
+    #comparison.rail_buttons_forces()
     #comparison.stability_margin()
 
 comparison.velocities(filename=str(output_comparison/"velocities.svg"),legend=False)
@@ -797,7 +797,7 @@ comparison.aerodynamic_forces(filename=str(output_comparison/"aerodynamic_forces
 comparison.aerodynamic_moments(filename=str(output_comparison/"aerodynamic_moments.svg"),legend=False)
 comparison.angular_velocities(filename=str(output_comparison/"angular_velocities.svg"),legend=False)
 comparison.trajectories_3d(filename=str(output_comparison/"trajectories_3d.svg"))
-comparison.rail_buttons_forces(filename=str(output_comparison/"rail_buttons_forces.svg"),legend=False)
+# comparison.rail_buttons_forces(filename=str(output_comparison/"rail_buttons_forces.svg"),legend=False)
 #comparison.stability_margin(filename=str(output_comparison/"stability_margin.svg"), legend=False)
 plt.close('all')
 #--------------------------------------------------------------------------------------------------------
