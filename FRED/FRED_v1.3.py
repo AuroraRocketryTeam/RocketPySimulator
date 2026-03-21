@@ -1,7 +1,7 @@
 # RocketPy Preliminary Simulation of the Flight Research Experimental Device (F.R.E.D.) rocket,by Aurora Rocketry Team
 # Authors: Daniele Bandini, Giovanni Bacchini, Caio Scattolini, Leonardo Francesco Neri, Alex Petrani, Federico Pedicini, Lorenzo Pintauro, Alessio Mrass, Andrea Di Maio
 
-#TODO: Add the thrustcurve csv
+#TODO: 
 #      Add Power on and off drag csv
 #      Upgrade environment and launch parameters
 #      Update the map on the landing section
@@ -31,7 +31,7 @@ analysis_parameters = {
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (2162, 0.3),
+    "rocket_dry_mass": (2331 / 1000, 0.3),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
     "rocket_dry_inertia_11": (0.115, 0.187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
@@ -50,32 +50,32 @@ analysis_parameters = {
     # NOTE: These data are based on the Pro-38 247H143-13A motor, similar to our SRAD counterpart the Propulsion team is developing
 
     # Motor total impulse (N*s)
-    "impulse": (247, 5),
+    "impulse": (247, 10),
     # Motor burn out time (s)
     "burn_time": (1.7, 0.1),
     # Motor's nozzle radius (m)                                                 # both nozzle dimesions are taken from Borealis
-   "nozzle_radius": (13.71 / 1000, 0.5 / 1000),
+   "nozzle_radius": (13.71 / 1000, 1 / 1000),
    # Motor's nozzle throat radius (m)
-   "throat_radius": (9.50 / 1000, 0.5 / 1000),
+   "throat_radius": (9.50 / 1000, 1 / 1000),
     # Motor's grain separation (axial distance between two grains) (m)
-    "grain_separation": (3 / 1000, 0.01 / 1000),
+    "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (1820, 1),                                             # conservative average value found online, double check with Propulsion
+    "grain_density": (1820, 10),                                             # conservative average value found online, double check with Propulsion
     # Motor's grain outer radius (m)
     "grain_outer_radius": (17.95 / 1000, 0.0001),
     # Motor's grain inner radius (m)
-    "grain_initial_inner_radius": (9.05 / 1000, 0.0001),
+    "grain_initial_inner_radius": (9.05 / 1000, 0.01),
     # Motor's grain height (m)
-    "grain_initial_height": (90.5 / 1000, 0.0001),
+    "grain_initial_height": (90.5 / 1000, 0.01),
 
     # === Aerodynamic Details ===
     
     # Rocket's radius (m)
-    "radius": (42.5 / 1000, 0.001),
+    "radius": (42.5 / 1000, 0.01),
     # Origin of the motor coordinate system
-    "nozzle_position": (0, 0.0001),
+    "nozzle_position": (0, 0.001),
     # Distance between the origin of the referential system and center of propellant mass (m) 
-    "grains_center_of_mass_position": (0.905, 0.01),                                                       ##!!!
+    "grains_center_of_mass_position": (0.105, 0.1),                                                       ##!!!
     # Multiplier for rocket's power off drag curve to introduce uncertainty
     "power_off_drag_corr": (1.0, 0.001),                                                                    ##!!
     # Multiplier for rocket's power on drag curve to introduce uncertainty
@@ -114,14 +114,12 @@ analysis_parameters = {
     # Launch rail heading relative to north (degrees)
     "heading": (145, 1),
     # Launch rail length (m)
-    "rail_length": (11, 0.005),
+    "rail_length": (2, 0.005),
     # Members of the ensemble forecast to be used
     "ensemble_member": list(range(10)),
 
     # === Parachute Details ===
 
-    # Drag coefficient times reference area for the rocket drogue chute (m^2)
-    "cd_s_drogue": (0.97 * 0.9144,0.006),         #rocketman 3ft without spillout
     # Drag coefficient times reference area for the rocket main chute (m^2)
     "cd_s_main": (0.97 * 14.3013, 0.277),          #rocketman 16ft without spillout
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
@@ -283,21 +281,15 @@ def check_apogee(vertical_velocity, current_time, threshold=0.1):
     # if a descent is no longer being (or has never been) detected, return False and exit the function
     else:
         return False, None
-    
 
-# The following function is a Python representation of the C code that will be used on the rocket to detect the main parachute opening condition. In the code, the height is determined by filtering barometer readings with a Kalman filter
- 
-
-def main_parachute_opening(apogee_detected:bool, altitude:float) -> bool:
-    return apogee_detected and altitude <= 450.0 # meters 
 
 BASE_DIR = Path(__file__).resolve().parent
 
 # Basic analysis info
-filename = BASE_DIR / "Atlas"
+filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 3
+number_of_simulations = 150
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -372,8 +364,8 @@ Env.set_atmospheric_model(
 #     file="GFS"
 # )
 
-# Set up parachute trigger for the drogue chute
-def simulator_check_drogue_opening(p, h, y):
+# Set up parachute trigger for the chute
+def simulator_check_parachute_opening(p, h, y):
     global last_negative_time, apogee_detected, parachute_stopwatch, sampling_rate
     altitude = h
     vertical_velocity = y[5]
@@ -391,14 +383,6 @@ def simulator_check_drogue_opening(p, h, y):
         now,  
     )
     return apogee_detected
-
-# Set up parachute trigger for the main chute
-def simulator_check_main_opening(p, h, y):
-    global last_negative_time, apogee_detected
-    altitude = h
-
-    # Call parachute activation algorythm and return its output value
-    return main_parachute_opening(apogee_detected, altitude)
 
 
 # Initiate collection of flight data. This allows to compare different flight from the Montecarlo analysis and visualize data dispersion and overall characteristics of the flight and the simulation itself
@@ -451,7 +435,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Create rocket
-    Atlas = Rocket(
+    FRED = Rocket(
         radius=setting["radius"],
         mass=setting["rocket_dry_mass"],
         inertia=(
@@ -468,21 +452,21 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define rail buttons
-    Atlas.set_rail_buttons(
+    FRED.set_rail_buttons(
         upper_button_position= setting["upper_button_y"], 
         lower_button_position= setting["lower_button_y"], 
         angular_position= setting["angular_button"],
     )
 
     # Add the motor to the rocket assembly
-    Atlas.add_motor(Pro38_247H143_13A, position=0.762)   # sets the motor's CDM on the rocket's CDM. The "grain center of mass position" parameter will handle the position of the actual motor
+    FRED.add_motor(Pro38_247H143_13A, position=0.762)   # sets the motor's CDM on the rocket's CDM. The "grain center of mass position" parameter will handle the position of the actual motor
 
     # Add uncertainty to the drag curves, by multiplying them by a small, random corrective factor
-    Atlas.power_off_drag *= setting["power_off_drag_corr"]
-    Atlas.power_on_drag *= setting["power_on_drag_corr"]
+    FRED.power_off_drag *= setting["power_off_drag_corr"]
+    FRED.power_on_drag *= setting["power_on_drag_corr"]
 
     # Define and add the Nosecone section
-    NoseCone = Atlas.add_nose(
+    NoseCone = FRED.add_nose(
         length=setting["nose_length"],
         kind="ogive",
         power= "nose_pwr",
@@ -490,7 +474,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define and add the Fins
-    FinSet = Atlas.add_trapezoidal_fins(
+    FinSet = FRED.add_trapezoidal_fins(
         n=3,
         span=setting["fin_span"],
         root_chord=setting["fin_root_chord"],
@@ -502,32 +486,18 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define and add the Boat-tail
-    Tail = Atlas.add_tail(
+    Tail = FRED.add_tail(
         top_radius=setting["tail_top_radius"],
         bottom_radius=setting["tail_bottom_radius"], 
         length=setting["tail_length"], 
         position = setting["tail_position"],
     )
 
-    # Define and add the Drogue parachute
-    Drogue = Atlas.add_parachute(
-        "Drogue",
-        cd_s=setting["cd_s_drogue"],
-        trigger=simulator_check_drogue_opening,
-        sampling_rate= sampling_rate,
-        lag=setting["lag_rec"] + setting["lag_se"],
-        noise=(
-            setting["noise_mean"],
-            setting["noise_p_stdev"],
-            setting["noise_p_tc"],
-        ),
-    )
-
     # Define and add the Main parachute
-    Main = Atlas.add_parachute(
+    Main = FRED.add_parachute(
         "Main",
         cd_s=setting["cd_s_main"],
-        trigger=simulator_check_main_opening,
+        trigger=simulator_check_parachute_opening,
         sampling_rate= sampling_rate,
         lag=setting["lag_rec"] + setting["lag_se"],
         noise=(
@@ -541,7 +511,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     try:
         
         rocket_flight = Flight(
-            rocket=Atlas,
+            rocket=FRED,
             environment=Env,
             rail_length=setting["rail_length"],
             inclination=setting["inclination"],
@@ -558,7 +528,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     flights.append(rocket_flight)
 
 # Print comparison graphs to visualize data dispersion during flight
-Atlas.all_info()
+FRED.all_info()
 Pro38_247H143_13A.all_info()
 Env.all_info()
 comparison = CompareFlights(flights)
@@ -585,7 +555,7 @@ dispersion_input_file.close()
 dispersion_output_file.close()
 dispersion_error_file.close()
 
-filename = BASE_DIR / "Atlas"
+filename = BASE_DIR / "FRED"
 
 # Initialize variable to store all results
 dispersion_general_results = []
@@ -1309,10 +1279,8 @@ plt.savefig(str(filename) + ".svg", bbox_inches="tight", pad_inches=0)
 plt.show()
 
 
-Atlas.draw()
-Atlas.info()
-Pro75_9977M2245.draw()
-Pro75_9977M2245.info()
+FRED.draw()
+FRED.info()
 
 # Sensitivity Analysis
 from rocketpy.tools import load_monte_carlo_data
