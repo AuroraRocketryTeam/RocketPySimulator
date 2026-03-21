@@ -423,7 +423,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Define COTS motor
     Pro38_247H143_13A = SolidMotor(
         # Thrust data
-        thrust_source=str(BASE_DIR /"""Cesaroni_9977_M2245.csv"""),
+        thrust_source=str(BASE_DIR /"""Cesaroni_247H143-13A.csv"""),
         burn_time=setting["burn_time"],
         reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
         interpolation_method="linear",
