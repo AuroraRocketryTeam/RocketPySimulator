@@ -443,8 +443,8 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             setting["rocket_dry_inertia_11"],
             setting["rocket_dry_inertia_33"],
         ),
-        power_off_drag=str(BASE_DIR / """square_power_off.CSV"""),
-        power_on_drag=str(BASE_DIR / """square_power_on.CSV"""),
+        power_off_drag=str(BASE_DIR / """FRED_power_off.CSV"""),
+        power_on_drag=str(BASE_DIR / """FRED_power_on.CSV"""),
 
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
         center_of_mass_without_motor=0.37014,
