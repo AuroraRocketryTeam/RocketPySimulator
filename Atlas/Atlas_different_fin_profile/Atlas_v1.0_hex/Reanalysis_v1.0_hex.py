@@ -1,16 +1,23 @@
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import numpy as np
-import time
+
 from pathlib import Path
-from time import process_time
 from rocketpy import Environment, Flight, Rocket, SolidMotor
-import datetime
 import json
 
 # set path
 BASE_DIR = Path(__file__).resolve().parent
 
+#-------------------------------------------------------------------------------------------------------- PARAMETERS
+# The following parameters are centralized here for convenience. 
+# Core internal variables remain defined within their respective modules.
+
+show_graph = True
+use_airbrake = True
+
+latitude = 39.389700
+longitude = -8.288964
+elevation = 160.0
+date_of_launch = (2024, 10, 11, 12)          #(Year, Month, Day, Hour UTC)
+weather_data: ['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
 
 # Definition of global variables, to be used inside and outside parachute functions
 global last_negative_time, apogee_detected, sampling_rate, parachute_timer
@@ -94,75 +101,132 @@ def simulator_check_main_opening(p, h, y):
     # Call parachute activation algorythm and return its output value
     return main_parachute_opening(apogee_detected, altitude)
 
+#Airbrake
+def controller_function(time, sampling_rate, state, state_history, observed_variables, air_brakes):
+    # state = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
+    altitude_ASL = state[2]
+    altitude_AGL = altitude_ASL - Env.elevation
+    vx, vy, vz = state[3], state[4], state[5]
 
-## SET ENVIRONMENT
+    # Get winds in x and y directions
+    wind_x, wind_y = Env.wind_velocity_x(altitude_ASL), Env.wind_velocity_y(altitude_ASL)
+
+    # Calculate Mach number
+    free_stream_speed = (
+        (wind_x - vx) ** 2 + (wind_y - vy) ** 2 + (vz) ** 2
+        ) ** 0.5
+    mach_number = free_stream_speed / Env.speed_of_sound(altitude_ASL)
+
+    # Get previous state from state_history
+    previous_state = state_history[-1]
+    previous_vz = previous_state[5]
+
+    # If we wanted to we could get the returned values from observed_variables:
+    # returned_time, deployment_level, drag_coefficient = observed_variables[-1]
+
+    # Check if the rocket has reached burnout
+    if time < Pro75_9977M2245.burn_out_time:
+        return None
+
+    # If below 1500 meters above ground level, air_brakes are not deployed
+    if altitude_ASL < 1500:  # or vz<0:
+        air_brakes.deployment_level = 0
+
+    # Else calculate the deployment level
+    else:
+        air_brakes.deployment_level = 0.7
+
+    # Return variables of interest to be saved in the observed_variables list
+    
+    # print(f'{round(time,1)}\t{air_brakes.deployment_level}\t{air_brakes.reference_area}\t
+    # {air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number)}\t
+    # {round(free_stream_speed,0)}\t{altitude_ASL}\t{vz}\t{mach_number}')
+    #print(f'{round(time,1)}\t{vz}')
+
+    return (
+        time,
+        air_brakes.deployment_level,
+        air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number),
+    )
+#--------------------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------------------- ENVIRONMENT
 Env = Environment(
-    date = (2024, 10, 13, 16),#(Year, Month, Day, Hour UTC)
-    longitude=-8.288963, latitude=39.3897,
-    elevation = 160,
+    date = date_of_launch,
+    longitude = longitude,
+    latitude = latitude,
+    elevation = elevation,
     max_expected_height = 4500
 )
 
+# There are 4 possible choices of weather data:
+if weather_data=='c':
+    # A custom atmosphere defined with the mean environment values calculated in the week on EuRoC 
+    # from 2005 to 2024 between the 10th and the 15th october. 
+    # In order to define the mean environment features, we used the built-in function "Environment Analysis"  
+    # from RocketPy. This generates a .json file with the mean environment values based on a sample 
+    # of 19 years, from 2005 to 2024, between the 10th and 15th of October, by feeding the NetCDF4 data  
+    # from Copernicus. The .json file contains a series of .csv profiles based on the altitude that   
+    # define pressure, temperature and wind vectors on an hourly basis.
+    # For more information consult the "mean_environment_values.json" file inside the directory.
 
-# There are 3 possible choices of weather data: [uncomment the choosen one and comment the others]
+    # import the .json with the mean environment values oustide the defition of the atmospheric model
+    with open(BASE_DIR/"simulation_inputs/environment_data/mean_environment_values.json", "r") as f:
+        data = json.load(f)
 
-# 1. A custom atmosphere defined with the mean environment values calculated in the week on EuRoC from 2005 to 2024 between the 10th and the 15th october. 
-# In order to define the mean environment features, we used the built-in function "Environment Analysis" from RocketPy. 
-# This generates a .json file with the mean environment values based on  a sample of 19 years, from 2005 to 2024, between the 10th and 15th of October, 
-# by feeding the NetCDF4 data from Copernicus. 
-# The .json file contains a series of .csv profiles based on the altitude that define pressure, temperature and wind vectors on an hourly basis. 
-# For more information consult the "mean_environment_values.json" file inside the directory.
+    Env.set_atmospheric_model(
 
-# import the .json with the mean environment values oustide the defition of the atmospheric model
-with open(BASE_DIR /"""environment_data/mean_environment_values.json""", "r") as f:
-    data = json.load(f)
+        # set the atmosphere model
+        type="custom_atmosphere",
 
-Env.set_atmospheric_model(
+        # define the values (pressure, temperature and wind [E,N]) from the .json
+        pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
+        temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
+        wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
+        wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
 
-    # set the atmosphere model
-    type="custom_atmosphere",
+    )
+elif weather_data=='e':
+    # Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the 
+    # environment definition), in this case the weather data will match the date chosen by the user.
+    Env.set_atmospheric_model(
+        type="Ensemble",                                                                                                  
+        file=str(BASE_DIR/"simulation_inputs/environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"),                                        
+        # This section creates an updated dictionary to read the NetCDF4 files,                                           
+        # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 
+        # files in the new format     
+        dictionary= {                                                                                                     
+            "ensemble": "number",                                                                                         
+            "time": "valid_time",                                                                                         
+            "latitude": "latitude",                                                                                       
+            "longitude": "longitude",                                                                                     
+            "level": "pressure_level",                                                                                    
+            "temperature": "t",                                                                                           
+            "surface_geopotential_height": None,                                                                          
+            "geopotential_height": None,                                                                                  
+            "geopotential": "z",                                                                                          
+            "u_wind": "u",                                                                                                
+            "v_wind": "v",                                                                                                
+        },
+    )
+elif weather_data=='f':
+    # The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) 
+    # weather data, (change the date in the environment definition).
+    Env.set_atmospheric_model(
+        type="Forecast",
+        file="GFS"
+    )
+elif weather_data!='i':
+    # The default weather data type is the International Standard Atmosphere (ISA).
+    # If none of the previously listed options is selected, this model will be applied automatically.
+    print('<!> International Standard Atmosphere (ISA) as defined by ISO 2533 is initialized as weather data <!>')
+#---------------------------------------------------------------------------------------------------------
 
-    # define the values (pressure, temperature and wind [E,N]) from the .json
-    pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
-    temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
-    wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
-    wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
-
-)
-
-# 2. Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the environment definition), in this case the weather data will match the date chosen by the user.
-
-# Env.set_atmospheric_model(    
-#     type="Ensemble",                                                                                                  
-#     file=str(BASE_DIR / """environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"""),                                        
-#     # This section creates an updated dictionary to read the NetCDF4 files,                                           
-#     # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     
-#     dictionary= {                                                                                                     
-#         "ensemble": "number",                                                                                         
-#         "time": "valid_time",                                                                                         
-#         "latitude": "latitude",                                                                                       
-#         "longitude": "longitude",                                                                                     
-#         "level": "pressure_level",                                                                                    
-#         "temperature": "t",                                                                                           
-#         "surface_geopotential_height": None,                                                                          
-#         "geopotential_height": None,                                                                                  
-#         "geopotential": "z",                                                                                          
-#         "u_wind": "u",                                                                                                
-#         "v_wind": "v",                                                                                                
-#     },
-# )
-
-# 3. The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) weather data, (change the date in the environment definition).
-
-# Env.set_atmospheric_model(
-#     type="Forecast",
-#     file="GFS"
-# )
-
+#---------------------------------------------------------------------------------------------------------
 ## DEFINE THE ROCKET PARTS
 
 Pro75_9977M2245 = SolidMotor(
-    thrust_source=str(BASE_DIR/"""Cesaroni_9977_M2245.csv"""),
+    thrust_source=str(BASE_DIR/"simulation_inputs/propulsion_data/Cesaroni_9977_M2245.csv"),
     dry_mass=0,
     dry_inertia=(0, 0, 0),
     nozzle_radius=29 / 1000,
@@ -182,10 +246,10 @@ Pro75_9977M2245 = SolidMotor(
 
 Atlas = Rocket(
     radius=75 / 1000,
-    mass=22.740,
+    mass=25.590,
     inertia=(14.631,14.631,0.075),
-    power_off_drag=str(BASE_DIR/"""Hexagonal_power_off.csv"""),
-    power_on_drag=str(BASE_DIR/"""Hexagonal_power_on.csv"""),
+    power_off_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv"),
+    power_on_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv"),
     center_of_mass_without_motor=1.61919,
     coordinate_system_orientation="nose_to_tail",
 )
@@ -235,23 +299,53 @@ Drogue = Atlas.add_parachute(
     noise=(0, 6.5, 0.3),
 )
 
-Atlas.draw()
-#Atlas.all_info()
+# If activated, define airbrake
+if use_airbrake:
+    air_brakes = Atlas.add_air_brakes(
+        drag_coefficient_curve = str(BASE_DIR/"simulation_inputs/aerodynamic_data/air_brakes_cd.csv"),
+        controller_function = controller_function,
+        sampling_rate = 10,
+        reference_area = 0.0125,
+        clamp = False,
+        initial_observed_variables = [0, 0, 0],
+        override_rocket_drag = False,
+        name = "Air Brakes",
+    )
+
 
 # Simulate the flight
 rocket_flight = Flight(
-    rocket=Atlas, environment=Env, rail_length=12, inclination=84, heading=144
+    rocket=Atlas,
+    environment=Env,
+    rail_length=12,
+    inclination=84,
+    heading=144,
+    time_overshoot = not use_airbrake
 )
 
-#rocket_flight.all_info()
+# if activated, shows graphs 
+if show_graph:
+    Atlas.draw()
+    Atlas.plots.total_mass()
+    rocket_flight.plots.linear_kinematics_data()
+    rocket_flight.plots.attitude_data()
+    rocket_flight.plots.angular_kinematics_data()
+    rocket_flight.plots.flight_path_angle_data()
+    rocket_flight.plots.trajectory_3d()
+    rocket_flight.plots.stability_and_control_data()
+    rocket_flight.plots.aerodynamic_forces()
+    rocket_flight.plots.rail_buttons_forces()
+
+# print rocket flight info
+rocket_flight.info()
 
 # plot speed and acceleration
-rocket_flight.speed()
-rocket_flight.acceleration()
+# rocket_flight.speed()
+# rocket_flight.acceleration()
 
 # save trajectory, .kml can be open in google earth
 rocket_flight.export_kml(
-    file_name=str(BASE_DIR/"trajectory.kml"),
+    file_name=str(BASE_DIR/"reanalysis_output/trajectory.kml"),
     extrude=True,
     altitude_mode="relative_to_ground",
 )
