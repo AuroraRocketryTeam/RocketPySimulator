@@ -4,7 +4,6 @@
 #TODO: 
 #      Add Power on and off drag csv
 #      Upgrade environment and launch parameters
-#      Update the map on the landing section
 #      Update to new coordinate system of reference
 
 
@@ -14,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from time import process_time
+from datetime import datetime, timedelta
 
 from rocketpy import Environment, SolidMotor, Rocket, Flight, CompareFlights
 import imageio.v2 as imageio
@@ -31,7 +31,7 @@ analysis_parameters = {
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (2331 / 1000, 0.3),
+    "rocket_dry_mass": (2331 / 1000, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
     "rocket_dry_inertia_11": (0.115, 0.187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
@@ -112,7 +112,7 @@ analysis_parameters = {
     # Launch rail inclination angle relative to the horizontal plane (degrees)
     "inclination": (84, 0.5),
     # Launch rail heading relative to north (degrees)
-    "heading": (145, 1),
+    "heading": (200, 1),
     # Launch rail length (m)
     "rail_length": (2, 0.005),
     # Members of the ensemble forecast to be used
@@ -303,8 +303,9 @@ initial_cpu_time = process_time()
 
 # Define basic Environment object
 Env = Environment(
-    date = (2024, 10, 11, 12),                          #(Year, Month, Day, Hour)
-    longitude=-8.288963, latitude=39.3897,
+    date = datetime.now() + timedelta(days=1),
+    #date = (2024, 10, 11, 12),                          #(Year, Month, Day, Hour)
+    longitude=44.290583, latitude=12.027111,
     elevation = 160,
     max_expected_height = 4500
 )
@@ -321,7 +322,7 @@ Env = Environment(
 # import the .json with the mean environment values oustide the defition of the atmospheric model
 with open(BASE_DIR /"""environment_data/mean_environment_values.json""", "r") as f:
     data = json.load(f)
-
+"""
 Env.set_atmospheric_model(
 
     # set the atmosphere model
@@ -334,7 +335,7 @@ Env.set_atmospheric_model(
     wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
 
 )
-
+"""
 # 2. Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the environment definition), in this case the weather data will match the date chosen by the user.
 
 # Env.set_atmospheric_model(    
@@ -359,10 +360,10 @@ Env.set_atmospheric_model(
 
 # 3. The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) weather data, (change the date in the environment definition).
 
-# Env.set_atmospheric_model(
-#     type="Forecast",
-#     file="GFS"
-# )
+Env.set_atmospheric_model(
+     type="Forecast",
+     file="GFS"
+)
 
 # Set up parachute trigger for the chute
 def simulator_check_parachute_opening(p, h, y):
@@ -528,9 +529,9 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     flights.append(rocket_flight)
 
 # Print comparison graphs to visualize data dispersion during flight
-FRED.all_info()
-Pro38_247H143_13A.all_info()
-Env.all_info()
+FRED.draw()
+Pro38_247H143_13A.draw()
+"""
 comparison = CompareFlights(flights)
 comparison.velocities()
 comparison.accelerations()
@@ -543,6 +544,7 @@ comparison.angular_velocities()
 comparison.trajectories_3d()
 comparison.rail_buttons_forces()
 comparison.stability_margin()
+"""
 
 # Done
 
