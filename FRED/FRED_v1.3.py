@@ -50,9 +50,9 @@ analysis_parameters = {
     # NOTE: These data are based on the Pro-38 247H143-13A motor, similar to our SRAD counterpart the Propulsion team is developing
 
     # Motor total impulse (N*s)
-    "impulse": (247, 10),
+    "impulse": (247, 1),
     # Motor burn out time (s)
-    "burn_time": (1.7, 0.1),
+    "burn_time": (1.7, 0.01),
     # Motor's nozzle radius (m)                                                 # both nozzle dimesions are taken from Borealis
    "nozzle_radius": (13.71 / 1000, 1 / 1000),
    # Motor's nozzle throat radius (m)
@@ -60,22 +60,22 @@ analysis_parameters = {
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (1820, 10),                                             # conservative average value found online, double check with Propulsion
+    "grain_density": (1820, 5),                                             # conservative average value found online, double check with Propulsion
     # Motor's grain outer radius (m)
     "grain_outer_radius": (17.95 / 1000, 0.0001),
     # Motor's grain inner radius (m)
-    "grain_initial_inner_radius": (9.05 / 1000, 0.01),
+    "grain_initial_inner_radius": (9.05 / 1000, 0.001),
     # Motor's grain height (m)
-    "grain_initial_height": (90.5 / 1000, 0.01),
+    "grain_initial_height": (90.5 / 1000, 0.001),
 
     # === Aerodynamic Details ===
     
     # Rocket's radius (m)
-    "radius": (42.5 / 1000, 0.01),
+    "radius": (42.5 / 1000, 0.001),
     # Origin of the motor coordinate system
     "nozzle_position": (0, 0.001),
     # Distance between the origin of the referential system and center of propellant mass (m) 
-    "grains_center_of_mass_position": (0.105, 0.1),                                                       ##!!!
+    "grains_center_of_mass_position": (0.105, 0.001),                                                       ##!!!
     # Multiplier for rocket's power off drag curve to introduce uncertainty
     "power_off_drag_corr": (1.0, 0.001),                                                                    ##!!
     # Multiplier for rocket's power on drag curve to introduce uncertainty
@@ -289,7 +289,7 @@ BASE_DIR = Path(__file__).resolve().parent
 filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 150
+number_of_simulations = 10
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -1186,7 +1186,7 @@ from imageio import imread
 from matplotlib.patches import Ellipse
 
 # Import background map
-img = imread(str(BASE_DIR / """environment_data/santa_margarida_military_shooting_range_launch_site.png"""))
+img = imread(str(BASE_DIR / """environment_data/Villafranca_airfield_launch_site.JPG"""))
 
 # Retrieve dispersion data por apogee and impact XY position
 apogee_x = np.array(dispersion_results["apogee_x"])
@@ -1270,8 +1270,8 @@ dy = 0
 plt.imshow(img, zorder=0, extent=[-2000-dx, 2000-dx, -2000-dy, 2000-dy])
 plt.axhline(0, color="black", linewidth=0.5)
 plt.axvline(0, color="black", linewidth=0.5)
-plt.xlim(-2000, 2000)
-plt.ylim(-1500, 1500)
+plt.xlim(-850, 850)
+plt.ylim(-500, 500)
 
 # Save plot and show result
 plt.savefig(str(filename) + ".pdf", bbox_inches="tight", pad_inches=0)
