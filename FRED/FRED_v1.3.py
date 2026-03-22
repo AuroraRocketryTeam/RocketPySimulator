@@ -60,7 +60,7 @@ analysis_parameters = {
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (1820, 5),                                             # conservative average value found online, double check with Propulsion
+    "grain_density": (1820, 1),                                             # conservative average value found online, double check with Propulsion
     # Motor's grain outer radius (m)
     "grain_outer_radius": (17.95 / 1000, 0.0001),
     # Motor's grain inner radius (m)
@@ -289,7 +289,7 @@ BASE_DIR = Path(__file__).resolve().parent
 filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 10
+number_of_simulations = 30
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -1267,7 +1267,7 @@ ax.set_xlabel("East (m)")
 # You can translate the basemap by changing dx and dy (in meters)
 dx = 0
 dy = 0
-plt.imshow(img, zorder=0, extent=[-2000-dx, 2000-dx, -2000-dy, 2000-dy])
+plt.imshow(img, zorder=0, extent=[-850-dx, 850-dx, -500-dy, 500-dy])
 plt.axhline(0, color="black", linewidth=0.5)
 plt.axvline(0, color="black", linewidth=0.5)
 plt.xlim(-850, 850)
