@@ -1,24 +1,54 @@
-# RocketPy Preliminary Simulation of the Atlas rocket, Aurora Rocketry Team, EuRoC 2025
-# Authors: Daniele Bandini, Giovanni Bacchini, Caio Scattolini, Leonardo Francesco Neri, Alex Petrani, Federico Pedicini, Lorenzo Pintauro, Alessio Mrass, Andrea Di Maio
-
-# Importing libraries 
-import matplotlib as mpl
+print("importing libraries...", end='\r')
+# Plotting and visualization
 import matplotlib.pyplot as plt
-import numpy as np
-import time
-from time import process_time
+from matplotlib.patches import Ellipse
 
+# RocketPy core classes
 from rocketpy import Environment, SolidMotor, Rocket, Flight, CompareFlights
-import imageio.v2 as imageio
+from rocketpy.tools import load_monte_carlo_data
+from rocketpy.sensitivity import SensitivityModel
+
+# Time measurement utilities
+from datetime import datetime
+from time import process_time
+import time
+
+# Numerical computations and random sampling
+import numpy as np
 from numpy.random import normal, choice
 from scipy.stats import norm
-from IPython.display import display
+
+# File and directory management
 from pathlib import Path
+
+# Data serialization and storage
 import json
-import os
 import pickle
 
-   
+# Image loading
+from imageio.v2 import imread
+
+# set path
+BASE_DIR = Path(__file__).resolve().parent
+
+#-------------------------------------------------------------------------------------------------------- PARAMETERS
+# The following parameters are centralized here for convenience. 
+# Core internal variables remain defined within their respective modules.
+
+# Name of the output folder (can be a new folder or an existing one to overwrite)
+output_dir_name = 'prova'
+number_of_simulations = 15
+
+show_graph = False
+use_airbrake = False
+sensitivity_analysis = True
+
+latitude = 39.389700
+longitude = -8.288964
+elevation = 160.0
+date_of_launch = (2024, 10, 11, 12)          #(Year, Month, Day, Hour UTC)
+weather_data: ['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
+
 analysis_parameters = {
     
     # === Mass Details ===
@@ -143,13 +173,27 @@ analysis_parameters = {
     "noise_p_tc": (0.3 , 0.01),
 }
 
-# Definition of global variables, to be used inside and outside parachute functions
+#-------------------------------------------------------------------------------------------------------- START TIMER
+# Initialize counter and timer
+i = 0
 
+initial_wall_time = time.time()
+initial_cpu_time = process_time()
+#--------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#-------------------------------------------------------------------------------------------------------- FUNCTIONS
+# Definition of global variables, to be used inside and outside parachute functions
 global last_negative_time, apogee_detected, sampling_rate, parachute_timer
 
 # This variable marks the first instant in which a negative velocity is detected
 last_negative_time = None
-# This variable indicates whether the algorythm has acknowledged the rocket has reached apogee. A "False" value may mean that negative velocity has not yet been detected, or that it has been detected but has not yet been consistent for enough seconds (the threshold)
+# This variable indicates whether the algorythm has acknowledged the rocket has reached apogee.
+# A "False" value may mean that negative velocity has not yet been detected, 
+# or that it has been detected but has not yet been consistent for enough seconds (the threshold)
 apogee_detected = False
 # This variable indicates the sampling rate of the recovery activation algorythm
 sampling_rate = 105
@@ -189,7 +233,6 @@ def flight_settings(analysis_parameters, total_number):
         i += 1
         # Yield a flight setting
         yield flight_setting
-
 
 def export_flight_data(flight_setting, flight_data, exec_time):
     # Generate flight results
@@ -244,9 +287,10 @@ def export_flight_error(flight_setting):
     dispersion_error_file.write(str(flight_setting) + "\n")
 
 
-# The following function is a Python representation of the C code that will be used on the rocket to detect the apogee condition. In the actual code, detection of negative velocity is achieved thanks to the readings from the IMU sensor
-
-
+# The following function is a Python representation of the C code that 
+# will be used on the rocket to detect the apogee condition. 
+# In the actual code, detection of negative velocity is achieved
+# thanks to the readings from the IMU sensor
 def check_apogee(vertical_velocity, current_time, threshold=0.1):
 
     global last_negative_time, apogee_detected, parachute_stopwatch
@@ -280,92 +324,12 @@ def check_apogee(vertical_velocity, current_time, threshold=0.1):
         return False, None
     
 
-# The following function is a Python representation of the C code that will be used on the rocket to detect the main parachute opening condition. In the code, the height is determined by filtering barometer readings with a Kalman filter
- 
-
+# The following function is a Python representation of the C code that
+# will be used on the rocket to detect the main parachute opening condition.
+# In the code, the height is determined by filtering barometer readings with a Kalman filter
 def main_parachute_opening(apogee_detected:bool, altitude:float) -> bool:
     return apogee_detected and altitude <= 450.0 # meters 
 
-BASE_DIR = Path(__file__).resolve().parent
-
-# Basic analysis info
-filename = BASE_DIR / "Atlas"
-print("Filename is:")
-print(filename)
-number_of_simulations = 3
-# Create data files for inputs, outputs and error logging
-dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
-dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
-dispersion_output_file = open(str(filename) + ".disp_outputs.json", "w")
-
-# Initialize counter and timer
-i = 0
-
-initial_wall_time = time.time()
-initial_cpu_time = process_time()
-
-# Define basic Environment object
-Env = Environment(
-    date = (2024, 10, 11, 12),                          #(Year, Month, Day, Hour)
-    longitude=-8.288963, latitude=39.3897,
-    elevation = 160,
-    max_expected_height = 4500
-)
-
-# There are 3 possible choices of weather data: [uncomment the choosen one and comment the others]
-
-# 1. A custom atmosphere defined with the mean environment values calculated in the week on EuRoC from 2005 to 2024 between the 10th and the 15th october. 
-# In order to define the mean environment features, we used the built-in function "Environment Analysis" from RocketPy. 
-# This generates a .json file with the mean environment values based on  a sample of 19 years, from 2005 to 2024, between the 10th and 15th of October, 
-# by feeding the NetCDF4 data from Copernicus. 
-# The .json file contains a series of .csv profiles based on the altitude that define pressure, temperature and wind vectors on an hourly basis. 
-# For more information consult the "mean_environment_values.json" file inside the directory.
-
-# import the .json with the mean environment values oustide the defition of the atmospheric model
-with open(BASE_DIR /"""environment_data/mean_environment_values.json""", "r") as f:
-    data = json.load(f)
-
-Env.set_atmospheric_model(
-
-    # set the atmosphere model
-    type="custom_atmosphere",
-
-    # define the values (pressure, temperature and wind [E,N]) from the .json
-    pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
-    temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
-    wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
-    wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
-
-)
-
-# 2. Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the environment definition), in this case the weather data will match the date chosen by the user.
-
-# Env.set_atmospheric_model(    
-#     type="Ensemble",                                                                                                  
-#     file=str(BASE_DIR / """environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"""),                                        
-#     # This section creates an updated dictionary to read the NetCDF4 files,                                           
-#     # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     
-#     dictionary= {                                                                                                     
-#         "ensemble": "number",                                                                                         
-#         "time": "valid_time",                                                                                         
-#         "latitude": "latitude",                                                                                       
-#         "longitude": "longitude",                                                                                     
-#         "level": "pressure_level",                                                                                    
-#         "temperature": "t",                                                                                           
-#         "surface_geopotential_height": None,                                                                          
-#         "geopotential_height": None,                                                                                  
-#         "geopotential": "z",                                                                                          
-#         "u_wind": "u",                                                                                                
-#         "v_wind": "v",                                                                                                
-#     },
-# )
-
-# 3. The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) weather data, (change the date in the environment definition).
-
-# Env.set_atmospheric_model(
-#     type="Forecast",
-#     file="GFS"
-# )
 
 # Set up parachute trigger for the drogue chute
 def simulator_check_drogue_opening(p, h, y):
@@ -373,7 +337,9 @@ def simulator_check_drogue_opening(p, h, y):
     altitude = h
     vertical_velocity = y[5]
 
-    # Update counter for flight time to apogee: each time this function is called, the timer advances of 1 over the frequency at which the function is called. This is a workaround to get a measure of in-flight time
+    # Update counter for flight time to apogee:
+    # each time this function is called, the timer advances of 1 over the frequency at which the function is called.
+    # This is a workaround to get a measure of in-flight time
     # into the apogee detection algorythm and successfully implement its "consistent descent signal" principle.
     parachute_stopwatch += 1/sampling_rate
 
@@ -395,12 +361,238 @@ def simulator_check_main_opening(p, h, y):
     # Call parachute activation algorythm and return its output value
     return main_parachute_opening(apogee_detected, altitude)
 
+#Airbrake
+def controller_function(time, sampling_rate, state, state_history, observed_variables, air_brakes):
+    # state = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
+    altitude_ASL = state[2]
+    altitude_AGL = altitude_ASL - Env.elevation
+    vx, vy, vz = state[3], state[4], state[5]
 
-# Initiate collection of flight data. This allows to compare different flight from the Montecarlo analysis and visualize data dispersion and overall characteristics of the flight and the simulation itself
+    # Get winds in x and y directions
+    wind_x, wind_y = Env.wind_velocity_x(altitude_ASL), Env.wind_velocity_y(altitude_ASL)
+
+    # Calculate Mach number
+    free_stream_speed = (
+        (wind_x - vx) ** 2 + (wind_y - vy) ** 2 + (vz) ** 2
+        ) ** 0.5
+    mach_number = free_stream_speed / Env.speed_of_sound(altitude_ASL)
+
+    # Get previous state from state_history
+    previous_state = state_history[-1]
+    previous_vz = previous_state[5]
+
+    # If we wanted to we could get the returned values from observed_variables:
+    # returned_time, deployment_level, drag_coefficient = observed_variables[-1]
+
+    # Check if the rocket has reached burnout
+    if time < Pro75_9977M2245.burn_out_time:
+        return None
+
+    # If below 1500 meters above ground level, air_brakes are not deployed
+    if altitude_ASL < 1500:  # or vz<0:
+        air_brakes.deployment_level = 0
+
+    # Else calculate the deployment level
+    else:
+        air_brakes.deployment_level = 0.7
+
+    # Return variables of interest to be saved in the observed_variables list
+    
+    # print(f'{round(time,1)}\t{air_brakes.deployment_level}\t{air_brakes.reference_area}\t
+    # {air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number)}\t
+    # {round(free_stream_speed,0)}\t{altitude_ASL}\t{vz}\t{mach_number}')
+    #print(f'{round(time,1)}\t{vz}')
+
+    return (
+        time,
+        air_brakes.deployment_level,
+        air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number),
+    )
+#--------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#-------------------------------------------------------------------------------------------------------- STYLE
+# Matplotlib graph General style
+plt.rcParams.update({"axes.titlesize": 12})
+plt.rcParams.update({'xtick.labelsize': 8, 'ytick.labelsize': 8})
+plt.rcParams['axes.labelsize'] = 11
+plt.rcParams['legend.fontsize'] = 8
+graph_color = 'red'
+plt.rcParams['axes.titlepad'] = 15
+plt.rcParams['xtick.minor.visible'] = True
+plt.rcParams['ytick.minor.visible'] = True
+plt.rcParams['savefig.bbox'] = 'tight'
+plt.rcParams['savefig.pad_inches'] = 0.2
+plt.rcParams['figure.dpi'] = 150
+plt.rcParams['savefig.dpi'] = 150
+
+# function that takes a text and add code for green color (ANSI Escape Codes)
+colored = lambda text: '\033[32m'+str(text)+'\033[0m'   # 32 green
+
+def loading_bar(initial_time: datetime, number_of_iterations:int, iteration:int, bar_lenght:int=24):
+    time_for_iteration = (process_time() - initial_time) / iteration
+    seconds_remaining = round(time_for_iteration*(number_of_iterations-iteration))
+
+    current_iteration = f"{iteration:0{len(str(number_of_iterations))}d}"
+    average_time = f"{time_for_iteration:2.2f}s"
+    time_remaining = f"{seconds_remaining//3600:02d}:{(seconds_remaining%3600)//60:02d}:{seconds_remaining%60:02d}"
+    bar = f"{'\u2588'*(bar_lenght*iteration//number_of_iterations):\u2591<{bar_lenght}}"
+    percentage = f"{100*iteration/number_of_iterations:.1f}%"
+
+    print(f"Current iteration: {colored(current_iteration)}",end=' ')
+    print(f"Average time per iteration: {colored(average_time)}",end=' ')
+    print(f"Time remaining: {colored(time_remaining)}",end=" ")
+    print(f"|{colored(bar)}|[{colored(percentage):<7}]",end="\r")
+#--------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#-------------------------------------------------------------------------------------------------------- PATH, FOLDER & FILE
+# Paths
+output_path = Path(str(BASE_DIR/"montecarlo_output"/output_dir_name))
+filename = str(output_path/"Atlas")
+
+output_sensitivity = Path(output_path/"sensitivity")
+
+output_comparison = Path(output_path/"comparison")
+
+output_dispersion = Path(output_path/"dispersion")
+output_dispersion_pickle = Path(output_dispersion/"pickle")
+output_dispersion_svg = Path(output_dispersion/"svg")
+
+output_launch_site = Path(output_path/"launch_site")
+
+# First information print
+print("Montecarlo Rocket flight simulator\n")
+print(f"- Filename is: {colored(filename)}")
+print(f"- Number of simulations: {colored(number_of_simulations)}")
+print(f"- Output directory: {colored(output_dir_name)}\n")
+
+#WARNINGS
+# print if the airbrakes are deactivated 
+if not use_airbrake:
+    print(f"<!> Airbrake: {colored('deactivated')}")
+
+# with less than 50 simulations sensitivity analysis returns errors
+if number_of_simulations<50:
+    print(f"<!> Less than 50 simulations: {colored('sensitivity analysis deactivated')}")
+    sensitivity_analysis = False
+
+# Create or overwrite folders for outputs
+if output_path.is_dir():
+    overwrite_folder = input(f'<!> The "{output_dir_name}" folder already exists. Do you want to overwrite it? [{colored('y/n')}] - ')
+    if not overwrite_folder.lower() in ['y','yes']:
+        print("You chose not to overwrite the folder. Stopping the program.")
+        raise SystemExit(0)
+
+print("\nStarting...", end='\r')
+
+#create folders
+output_sensitivity.mkdir(parents=True, exist_ok=True)
+output_comparison.mkdir(parents=True, exist_ok=True)
+output_dispersion_pickle.mkdir(parents=True, exist_ok=True)
+output_dispersion_svg.mkdir(parents=True, exist_ok=True)
+output_launch_site.mkdir(parents=True, exist_ok=True)
+
+
+# Create data files for inputs, outputs and error logging
+dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
+dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
+dispersion_output_file = open(str(filename) + ".disp_outputs.json", "w")
+#--------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#-------------------------------------------------------------------------------------------------------- ENVIRONMENT
+Env = Environment(
+    date = date_of_launch,
+    longitude = longitude,
+    latitude = latitude,
+    elevation = elevation,
+    max_expected_height = 4500
+)
+
+# There are 4 possible choices of weather data:
+if weather_data=='c':
+    # A custom atmosphere defined with the mean environment values calculated in the week on EuRoC 
+    # from 2005 to 2024 between the 10th and the 15th october. 
+    # In order to define the mean environment features, we used the built-in function "Environment Analysis"  
+    # from RocketPy. This generates a .json file with the mean environment values based on a sample 
+    # of 19 years, from 2005 to 2024, between the 10th and 15th of October, by feeding the NetCDF4 data  
+    # from Copernicus. The .json file contains a series of .csv profiles based on the altitude that   
+    # define pressure, temperature and wind vectors on an hourly basis.
+    # For more information consult the "mean_environment_values.json" file inside the directory.
+
+    # import the .json with the mean environment values oustide the defition of the atmospheric model
+    with open(BASE_DIR/"simulation_inputs/environment_data/mean_environment_values.json", "r") as f:
+        data = json.load(f)
+
+    Env.set_atmospheric_model(
+
+        # set the atmosphere model
+        type="custom_atmosphere",
+
+        # define the values (pressure, temperature and wind [E,N]) from the .json
+        pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
+        temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
+        wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
+        wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
+
+    )
+elif weather_data=='e':
+    # Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the 
+    # environment definition), in this case the weather data will match the date chosen by the user.
+    Env.set_atmospheric_model(
+        type="Ensemble",                                                                                                  
+        file=str(BASE_DIR/"simulation_inputs/environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"),                                        
+        # This section creates an updated dictionary to read the NetCDF4 files,                                           
+        # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 
+        # files in the new format     
+        dictionary= {                                                                                                     
+            "ensemble": "number",                                                                                         
+            "time": "valid_time",                                                                                         
+            "latitude": "latitude",                                                                                       
+            "longitude": "longitude",                                                                                     
+            "level": "pressure_level",                                                                                    
+            "temperature": "t",                                                                                           
+            "surface_geopotential_height": None,                                                                          
+            "geopotential_height": None,                                                                                  
+            "geopotential": "z",                                                                                          
+            "u_wind": "u",                                                                                                
+            "v_wind": "v",                                                                                                
+        },
+    )
+elif weather_data=='f':
+    # The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) 
+    # weather data, (change the date in the environment definition).
+    Env.set_atmospheric_model(
+        type="Forecast",
+        file="GFS"
+    )
+elif weather_data!='i':
+    # The default weather data type is the International Standard Atmosphere (ISA).
+    # If none of the previously listed options is selected, this model will be applied automatically.
+    print('<!> International Standard Atmosphere (ISA) as defined by ISO 2533 is initialized as weather data <!>')
+#---------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#-------------------------------------------------------------------------------------------------------- MONTECARLO
+# Initiate collection of flight data.
+# This allows to compare different flight from the Montecarlo analysis and visualize
+# data dispersion and overall characteristics of the flight and the simulation itself
 flights=[]
 
 # Iterate over flight settings
-out = display("Starting", display_id=True)
 for setting in flight_settings(analysis_parameters, number_of_simulations):
 
     last_negative_time = None
@@ -409,7 +601,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
 
     start_time = process_time()
     i += 1
-    print(f"\rCurrent iteration: {i}", end="")
+    #print(f"\rCurrent iteration: {i}", end="")
 
     if Env.atmospheric_model_type == "Ensemble":
         # Update environment object
@@ -418,7 +610,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Define COTS motor
     Pro75_9977M2245 = SolidMotor(
         # Thrust data
-        thrust_source=str(BASE_DIR /"""Cesaroni_9977_M2245.csv"""),
+        thrust_source=str(BASE_DIR/"simulation_inputs/propulsion_data/Cesaroni_9977_M2245.csv"),
         burn_time=setting["burn_time"],
         reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
         interpolation_method="linear",
@@ -454,8 +646,8 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             setting["rocket_dry_inertia_11"],
             setting["rocket_dry_inertia_33"],
         ),
-        power_off_drag=str(BASE_DIR / """Hexagonal_power_off.CSV"""),
-        power_on_drag=str(BASE_DIR / """Hexagonal_power_on.CSV"""),
+        power_off_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv"),
+        power_on_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv"),
 
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
         center_of_mass_without_motor=1.61919,
@@ -470,7 +662,9 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Add the motor to the rocket assembly
-    Atlas.add_motor(Pro75_9977M2245, position=3.08)   # sets the motor's CDM on the rocket's CDM. The "grain center of mass position" parameter will handle the position of the actual motor
+    # sets the motor's CDM on the rocket's CDM.
+    # The "grain center of mass position" parameter will handle the position of the actual motor
+    Atlas.add_motor(Pro75_9977M2245, position=3.08)   
 
     # Add uncertainty to the drag curves, by multiplying them by a small, random corrective factor
     Atlas.power_off_drag *= setting["power_off_drag_corr"]
@@ -531,56 +725,68 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             setting["noise_p_tc"],
         ),
     )
+    
+    # If activated, define airbrake
+    if use_airbrake:
+        air_brakes = Atlas.add_air_brakes(
+            drag_coefficient_curve = str(BASE_DIR/"simulation_inputs/aerodynamic_data/air_brakes_cd.csv"),
+            controller_function = controller_function,
+            sampling_rate = 10,
+            reference_area = 0.0125,
+            clamp = False,
+            initial_observed_variables = [0, 0, 0],
+            override_rocket_drag = False,
+            name = "Air Brakes",
+        )
 
     # Run trajectory simulation
-    try:
-        
+    try: 
         rocket_flight = Flight(
             rocket=Atlas,
             environment=Env,
             rail_length=setting["rail_length"],
             inclination=setting["inclination"],
             heading=setting["heading"],
-            max_time=600,
+            time_overshoot = not use_airbrake,
+            max_time=1200,
         )
 
         export_flight_data(setting, rocket_flight, process_time() - start_time)
-
     except Exception as E:
         print(E)
         export_flight_error(setting)
 
     flights.append(rocket_flight)
 
-# Print comparison graphs to visualize data dispersion during flight
-Atlas.draw()
-Env.all_info()
-comparison = CompareFlights(flights)
-comparison.velocities()
-comparison.accelerations()
-comparison.attitude_angles()
-comparison.euler_angles()
-comparison.attitude_frequency()
-comparison.aerodynamic_forces()
-comparison.aerodynamic_moments()
-comparison.angular_velocities()
-comparison.trajectories_3d()
-comparison.rail_buttons_forces()
-comparison.stability_margin()
+    # Update loading bar
+    loading_bar(
+        initial_time=initial_cpu_time,
+        number_of_iterations=number_of_simulations,
+        iteration=i,
+        )
 
-# Done
+# jump a row to not overwrite loading bar
+print('\n')
 
-## Print and save total time
-final_string = f"Completed {i} iterations successfully. Total CPU time: {process_time() - initial_cpu_time} s. Total wall time: {time.time() - initial_wall_time} s"
+
+# Print total time
+cpu_time = round(process_time() - initial_cpu_time, 2)
+wall_time = round(time.time() - initial_wall_time, 2)
+final_string = f"Completed {i} iterations successfully. Total CPU time: {colored(cpu_time)} s. Total wall time: {colored(wall_time)} s"
 print(final_string)
 
-## Close files
+
+# Close files
 dispersion_input_file.close()
 dispersion_output_file.close()
 dispersion_error_file.close()
+#--------------------------------------------------------------------------------------------------------
 
-filename = BASE_DIR / "Atlas"
 
+
+
+
+#-------------------------------------------------------------------------------------------------------- READ OUTPUT FILE
 # Initialize variable to store all results
 dispersion_general_results = []
 
@@ -601,6 +807,8 @@ dispersion_results = {
     "number_of_events": [],
     "max_velocity": [],
     "max_acceleration": [],
+    "max_load_factor": [],
+    "max_parachute_chord_traction_force": [],
     "max_aerodynamic_drag": [],
     "max_aerodynamic_lift": [],
     "max_aerodynamic_spin_moment": [],
@@ -612,7 +820,6 @@ dispersion_results = {
 }
 
 # Get all dispersion results
-# Get file
 dispersion_output_file = open(str(filename) + ".disp_outputs.json", "r+")
 
 # Read each line of the file and convert to dict
@@ -628,24 +835,50 @@ for line in dispersion_output_file:
 
 # Close data file
 dispersion_output_file.close()
+#--------------------------------------------------------------------------------------------------------
 
-# Print number of flights simulated
-N = len(dispersion_general_results)
-print("Number of simulations: ", N)
 
-# Initialize the path in which the graphic results of the simulation will be saved, both in .svg and pickle format. The pickle format was 
-# chosen so that the user can open the images/graphs files (using the design file show_images.py) in a format that allows them to
-# zoom in and out and examine the pictures more accurately
 
-# Create an output folder for .svg files
-output_folder_svg = str(BASE_DIR / "images" / "svg")
-os.makedirs(output_folder_svg, exist_ok=True)
 
-# Create an output folder for pickle files
-output_folder_pickle = str(BASE_DIR / "images" / "pickle")
-os.makedirs(output_folder_pickle, exist_ok=True)
 
-# The following section generates the output distribution plots and automatically saves them on your PC, in the same folder this code is located.
+#-------------------------------------------------------------------------------------------------------- COMPARISON GRAPHS
+# the commented rows are not implemented yet by rocketpy
+print(colored('\n\nComparison graphs:'))
+comparison = CompareFlights(flights)
+
+if show_graph:
+    comparison.velocities()
+    comparison.accelerations()
+    comparison.attitude_angles()
+    comparison.euler_angles()
+    #comparison.attitude_frequency()
+    comparison.aerodynamic_forces()
+    comparison.aerodynamic_moments()
+    comparison.angular_velocities()
+    comparison.trajectories_3d()
+    comparison.rail_buttons_forces()
+    #comparison.stability_margin()
+
+comparison.velocities(filename=str(output_comparison/"velocities.svg"),legend=False)
+comparison.accelerations(filename=str(output_comparison/"accelerations.svg"),legend=False)
+comparison.attitude_angles(filename=str(output_comparison/"attitude_angles.svg"),legend=False)
+comparison.euler_angles(filename=str(output_comparison/"euler_angles.svg"),legend=False)
+#comparison.attitude_frequency(filename=str(output_comparison/"attitude_frequency.svg"),legend=False)
+comparison.aerodynamic_forces(filename=str(output_comparison/"aerodynamic_forces.svg"),legend=False)
+comparison.aerodynamic_moments(filename=str(output_comparison/"aerodynamic_moments.svg"),legend=False)
+comparison.angular_velocities(filename=str(output_comparison/"angular_velocities.svg"),legend=False)
+comparison.trajectories_3d(filename=str(output_comparison/"trajectories_3d.svg"))
+comparison.rail_buttons_forces(filename=str(output_comparison/"rail_buttons_forces.svg"),legend=False)
+#comparison.stability_margin(filename=str(output_comparison/"stability_margin.svg"), legend=False)
+plt.close('all')
+#--------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#-------------------------------------------------------------------------------------------------------- DISPERSION GRAPHS
+# The following section generates the output distribution plots and automatically saves them on your PC
 # To create each picture, the algorythm performs the following actions:
 
 # - Fits a normal distribution to the dataset and compute the average value and standard deviation;
@@ -655,562 +888,132 @@ os.makedirs(output_folder_pickle, exist_ok=True)
 # - Saves the plot as a .svg file for high-quality output (e.g., for reports or web use);
 # - Saves the entire figure as a pickle file for later reuse or resizing;
 
-# An additional step may be included to prevent automatic sequential display while running the simulation:
+# The pickle format was chosen so that the user can open the images/graphs files
+# (using the design file show_images.py) in a format that allows them to zoom in and out
+# and examine the pictures more accurately
+
+def plot_unit_of_measure(unit_of_measure: str):
+    # correct way to print unit of measure inside plot
+    if '*' in unit_of_measure:
+        unit_of_measure = unit_of_measure.replace('*','$\\cdot$')
+    while '^' in unit_of_measure:
+        start = unit_of_measure.find('^')
+        end = start+1
+        e = True
+        while e:
+            if end+1<len(unit_of_measure):
+                if unit_of_measure[end+1].isdigit() or unit_of_measure[end+1] in ['.','-']:
+                    end+=1
+                else:
+                    e = False
+            else:
+                e = False
+        unit_of_measure = unit_of_measure[:start]+'$@{'+unit_of_measure[start+1:end+1]+'}$'+unit_of_measure[end+1:]
+    unit_of_measure = unit_of_measure.replace('@','^')
+    return unit_of_measure
+
+def plot_graph(dispersion_result, x_label ,title, unit_of_measure):
+    
+    s = plt.figure()
+
+    out_data = dispersion_results[dispersion_result]
+    mu_out, std_out = norm.fit(out_data)
+
+    bars = plt.hist(
+        out_data,
+        bins=int(number_of_simulations**0.5),
+        label=title, edgecolor="white",
+        color=graph_color,
+        alpha=0.3,
+        density=True
+        )
+
+    x_out = np.linspace(min(out_data), max(out_data), 1000)
+    pdf_out = norm.pdf(x_out, mu_out, std_out)
+    
+    plt.plot(x_out, pdf_out, '--k', linewidth=1.5)
+    plt.fill_between(x_out, pdf_out, color=graph_color, alpha=0.5)
+
+    plt.figtext(
+        .72, .91,
+        f'μ = {str(mu_out)[:6]} {plot_unit_of_measure(unit_of_measure)}\nσ = {str(std_out)[:6]} {plot_unit_of_measure(unit_of_measure)}',
+        fontsize=10
+        )
+    plt.title(title, loc='left')
+
+    # labels
+    x_label = x_label+(' ('+plot_unit_of_measure(unit_of_measure)+')' if plot_unit_of_measure(unit_of_measure) else '')
+    plt.xlabel(x_label)
+    plt.ylabel("Probability Density")
+    
+    plt.ylim(0)
+    plt.grid(False)
+
+    # Print information
+    print(f'{colored(title)}\n\t- Mean Value: {colored(round(mu_out,3))} {unit_of_measure}')
+    print(f'\t- Standard Deviation: {colored(round(std_out,3))} {unit_of_measure}\n')
+    
+
+    # SAVE GRAPH
+    
+    # as SVG 
+    plt.savefig(str(output_dispersion_svg/title)+".svg", format='svg')
+
+    # as pickle
+    pickle_file = str(output_dispersion_pickle/title)+".pickle"
+    with open(pickle_file, "wb") as f:
+        pickle.dump(s, f)
+
+    if show_graph:
+        plt.show()
+
+    plt.close(s)    # Stop automatic printing of images
+
+all_plots = {
+    "Out of Rail Time" : ["out_of_rail_time", "Time","s"],
+    "Out of Rail Velocity": ["out_of_rail_velocity", "Velocity", "m/s"],
+    "Apogee Time":["apogee_time", "Time", "s"],
+    "Apogee Altitude":["apogee_altitude","Altitude", "m"],
+    "Apogee X Position":["apogee_x","Apogee X Position", "m"],
+    "Apogee Y Position":["apogee_y","Apogee Y Position", "m"],
+    "Impact Time":["impact_time","Time","s"],
+    "Impact X Position":["impact_x","Impact X Position", "m"],
+    "Impact Y Position":["impact_y","Impact Y Position", "m"],
+    "Impact Velocity":["impact_velocity","Velocity", "m/s"],
+    "Initial Static Margin":["initial_static_margin","Static Margin", "c"],
+    "Out of Rail Static Margin":["out_of_rail_static_margin","Static Margin", "c"],
+    "Final Static Margin":["final_static_margin","Static Margin", "c"],
+    "Maximum Velocity":["max_velocity","Velocity", "m/s"],
+    "Maximum Acceleration":["max_acceleration","Acceleration", "m/s^2"],
+    #"Maximum Load Factor":["max_load_factor","Load Factor","G"],
+    "Maximum Aerodynamic Drag":["max_aerodynamic_drag","Drag Force","N"],
+    "Maximum Aerodynamic Lift":["max_aerodynamic_lift","Lift Force", "N"],
+    "Maximum Aerodynamic Spin Moment":["max_aerodynamic_spin_moment","Spin Moment", "N*m"],
+    "Maximum Aerodynamic Bending Moment":["max_aerodynamic_bending_moment","Bending Moment", "N*m"],
+    #"Parachute Events":["number_of_events","Number of Parachute Events"],
+    "Drogue Parachute Trigger Time":["drogue_triggerTime","Time", "s"],
+    "Drogue Parachute Fully Inflated Time":["drogue_inflated_time","Time", "s"],
+    "Drogue Parachute Fully Inflated Velocity":["drogue_inflated_velocity","Velocity", "m/s"],
+}
 
-# - Closes the figure to prevent automatic sequential display. This would be an obstacle for analysts trying to visualize more plots at once, after they have all been generated
+print(colored('\n\nDispersion graphs:\n'))
+for pp in all_plots:
+    plot_graph(
+        title=pp,
+        dispersion_result=all_plots[pp][0],
+        x_label=all_plots[pp][1],
+        unit_of_measure=all_plots[pp][2]
+        )
+#--------------------------------------------------------------------------------------------------------
 
-# All distribution plots are generated, saved and made available using this architecture
 
-# OUT OF RAIL TIME
-out_data = dispersion_results["out_of_rail_time"]
-mu_out, std_out = norm.fit(out_data)
 
-print(f'Out of Rail Time -         Mean Value: {mu_out:0.3f} s')
-print(f'Out of Rail Time - Standard Deviation: {std_out:0.3f} s')
 
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(out_data, bins=int(len(out_data)**0.5), density=True, alpha=0.6,
-        color='lightcoral', edgecolor='black')
-x_out = np.linspace(min(out_data), max(out_data), 1000)
-pdf_out = norm.pdf(x_out, mu_out, std_out)
-ax.plot(x_out, pdf_out, 'k', linewidth=2)
-ax.set_title("Out of Rail Time")
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
 
-# Save figure as SVG 
-fig.savefig(os.path.join(output_folder_svg, "out_of_rail_time.svg"), format='svg')
-
-#Save figure as pickle
-pickle_path = os.path.join(output_folder_pickle, "out_of_rail_time.fig.pickle")
-with open(pickle_path, "wb") as f:
-    pickle.dump(fig, f)
-
-plt.close(fig)    # Stop automatic printing of images
-
-
-# OUT OF RAIL VELOCITY
-vel_data = dispersion_results["out_of_rail_velocity"]
-mu_vel, std_vel = norm.fit(vel_data)
-
-print(f'Out of Rail Velocity -         Mean Value: {mu_vel:0.3f} m/s')
-print(f'Out of Rail Velocity - Standard Deviation: {std_vel:0.3f} m/s')
-
-
-# Create the figure
-fig_1, ax = plt.subplots()
-ax.hist(vel_data, bins=int(N**0.5), density=True, alpha=0.6, color='skyblue', edgecolor='black')
-x_vel = np.linspace(min(vel_data), max(vel_data), 1000)
-pdf_vel = norm.pdf(x_vel, mu_vel, std_vel)
-ax.plot(x_vel, pdf_vel, 'k', linewidth=2)
-ax.set_title("Out of Rail Velocity")
-ax.set_xlabel("Velocity (m/s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# Save figure as SVG
-fig_1.savefig(os.path.join(output_folder_svg, "out_of_rail_velocity.svg"), format='svg')
-
-# Save figure as pickle
-pickle_path = os.path.join(output_folder_pickle, "out_of_rail_velocity.fig.pickle")
-with open(pickle_path, "wb") as f:
-    pickle.dump(fig_1, f)
-
-
-plt.close(fig_1)    # Stop automatic printing of images
-
-
-
-# === APOGEE TIME ===
-apo_data = dispersion_results["apogee_time"]
-mu_apo, std_apo = norm.fit(apo_data)
-
-print(f'Apogee Time -         Mean Value: {mu_apo:0.3f} s')
-print(f'Apogee Time - Standard Deviation: {std_apo:0.3f} s')
-
-
-# Create the figure
-fig_apo, ax = plt.subplots()
-ax.hist(apo_data, bins=int(N**0.5), density=True, alpha=0.6, color='lightgreen', edgecolor='black')
-x_apo = np.linspace(min(apo_data), max(apo_data), 1000)
-pdf_apo = norm.pdf(x_apo, mu_apo, std_apo)
-ax.plot(x_apo, pdf_apo, 'k', linewidth=2)
-ax.set_title("Apogee Time")
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# Save figure as SVG and Pickle
-fig_apo.savefig(os.path.join(output_folder_svg, "apogee_time.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "apogee_time.fig.pickle"), "wb") as f:
-    pickle.dump(fig_apo, f)
-plt.close(fig_apo)  # Stop automatic printing of images
-
-
-# === APOGEE ALTITUDE ===
-alt_data = dispersion_results["apogee_altitude"]
-mu_alt, std_alt = norm.fit(alt_data)
-
-print(f'Apogee Altitude -         Mean Value: {mu_alt:0.3f} m')
-print(f'Apogee Altitude - Standard Deviation: {std_alt:0.3f} m')
-
-
-# Create the figure
-fig_alt, ax = plt.subplots()
-ax.hist(alt_data, bins=int(N**0.5), density=True, alpha=0.6, color='skyblue', edgecolor='black')
-x_alt = np.linspace(min(alt_data), max(alt_data), 1000)
-pdf_alt = norm.pdf(x_alt, mu_alt, std_alt)
-ax.plot(x_alt, pdf_alt, 'k', linewidth=2)
-ax.set_title("Apogee Altitude")
-ax.set_xlabel("Altitude (m)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# # Save figure as SVG and Pickle
-fig_alt.savefig(os.path.join(output_folder_svg, "apogee_altitude.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "apogee_altitude.fig.pickle"), "wb") as f:
-    pickle.dump(fig_alt, f)
-plt.close(fig_alt)   # Stop automatic printing of images
-
-
-# === APOGEE X POSITION ===
-x_data = dispersion_results["apogee_x"]
-mu_x, std_x = norm.fit(x_data)
-
-print(f'Apogee X Position -         Mean Value: {mu_x:0.3f} m')
-print(f'Apogee X Position - Standard Deviation: {std_x:0.3f} m')
-
-
-# Create the figure
-fig_x, ax = plt.subplots()
-ax.hist(x_data, bins=int(N**0.5), density=True, alpha=0.6, color='lightcoral', edgecolor='black')
-x_vals = np.linspace(min(x_data), max(x_data), 1000)
-pdf_vals = norm.pdf(x_vals, mu_x, std_x)
-ax.plot(x_vals, pdf_vals, 'k', linewidth=2)
-ax.set_title("Apogee X Position")
-ax.set_xlabel("Apogee X Position (m)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# Save figure as SVG and Pickle
-fig_x.savefig(os.path.join(output_folder_svg, "apogee_x_position.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "apogee_x_position.fig.pickle"), "wb") as f:
-    pickle.dump(fig_x, f)
-plt.close(fig_x)  # Stop automatic printing of images
-
-
-# === APOGEE Y POSITION ===
-y_data = dispersion_results["apogee_y"]
-mu_y, std_y = norm.fit(y_data)
-
-print(f'Apogee Y Position -         Mean Value: {mu_y:0.3f} m')
-print(f'Apogee Y Position - Standard Deviation: {std_y:0.3f} m')
-
-# Create the figure
-fig_y, ax = plt.subplots()
-ax.hist(y_data, bins=int(N**0.5), density=True, alpha=0.6, color='lightgreen', edgecolor='black')
-x_vals = np.linspace(min(y_data), max(y_data), 1000)
-pdf_vals = norm.pdf(x_vals, mu_y, std_y)
-ax.plot(x_vals, pdf_vals, 'k', linewidth=2)
-ax.set_title("Apogee Y Position")
-ax.set_xlabel("Apogee Y Position (m)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# Save figure as SVG and Pickle
-fig_y.savefig(os.path.join(output_folder_svg, "apogee_y_position.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "apogee_y_position.fig.pickle"), "wb") as f:
-    pickle.dump(fig_y, f)
-plt.close(fig_y)  # Stop automatic printing of images
-
-
-
-# === IMPACT TIME ===
-impact_time = dispersion_results["impact_time"]
-mu_impact_time, std_impact_time = norm.fit(impact_time)
-
-print(f'Impact Time -         Mean Value: {mu_impact_time:0.3f} s')
-print(f'Impact Time - Standard Deviation: {std_impact_time:0.3f} s')
-
-# Create the figure
-fig_imp_time, ax = plt.subplots()
-ax.hist(impact_time, bins=int(N**0.5), density=True, alpha=0.6, color='skyblue', edgecolor='black')
-x_vals = np.linspace(min(impact_time), max(impact_time), 1000)
-pdf = norm.pdf(x_vals, mu_impact_time, std_impact_time)
-ax.plot(x_vals, pdf, 'k', linewidth=2)
-ax.set_title("Impact Time")
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-
-# Save figure as SVG and Pickle
-fig_imp_time.savefig(os.path.join(output_folder_svg, "impact_time.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "impact_time.fig.pickle"), "wb") as f:
-    pickle.dump(fig_imp_time, f)
-plt.close(fig_imp_time)  # Stop automatic printing of images
-
-
-# === IMPACT X POSITION ===
-impact_x = dispersion_results["impact_x"]
-mu_x, std_x = norm.fit(impact_x)
-
-print(f'Impact X Position -         Mean Value: {mu_x:0.3f} m')
-print(f'Impact X Position - Standard Deviation: {std_x:0.3f} m')
-
-# Create the figure
-fig_imp_x, ax = plt.subplots()
-ax.hist(impact_x, bins=int(N**0.5), density=True, alpha=0.6, color='lightcoral', edgecolor='black')
-x_vals = np.linspace(min(impact_x), max(impact_x), 1000)
-pdf = norm.pdf(x_vals, mu_x, std_x)
-ax.plot(x_vals, pdf, 'k', linewidth=2)
-ax.set_title("Impact X Position")
-ax.set_xlabel("Impact X Position (m)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-
-# Save figure as SVG and Pickle
-fig_imp_x.savefig(os.path.join(output_folder_svg, "impact_x_position.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "impact_x_position.fig.pickle"), "wb") as f:
-    pickle.dump(fig_imp_x, f)
-plt.close(fig_imp_x)  # Stop automatic printing of images
-
-
-
-# === IMPACT Y POSITION ===
-impact_y = dispersion_results["impact_y"]
-mu_y, std_y = norm.fit(impact_y)
-
-print(f'Impact Y Position -         Mean Value: {mu_y:0.3f} m')
-print(f'Impact Y Position - Standard Deviation: {std_y:0.3f} m')
-
-# Create the figure
-fig_imp_y, ax = plt.subplots()
-ax.hist(impact_y, bins=int(N**0.5), density=True, alpha=0.6, color='lightgreen', edgecolor='black')
-x_vals = np.linspace(min(impact_y), max(impact_y), 1000)
-pdf = norm.pdf(x_vals, mu_y, std_y)
-ax.plot(x_vals, pdf, 'k', linewidth=2)
-ax.set_title("Impact Y Position")
-ax.set_xlabel("Impact Y Position (m)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-
-# Save figure as SVG and Pickle
-fig_imp_y.savefig(os.path.join(output_folder_svg, "impact_y_position.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "impact_y_position.fig.pickle"), "wb") as f:
-    pickle.dump(fig_imp_y, f)
-plt.close(fig_imp_y)  # Stop automatic printing of images
-
-
-
-# === IMPACT VELOCITY ===
-impact_velocity = dispersion_results["impact_velocity"]
-mu_v, std_v = norm.fit(impact_velocity)
-
-print(f'Impact Velocity -         Mean Value: {mu_v:0.3f} m/s')
-print(f'Impact Velocity - Standard Deviation: {std_v:0.3f} m/s')
-
-# Create the figure
-fig_imp_v, ax = plt.subplots()
-ax.hist(impact_velocity, bins=int(N**0.5), density=True, alpha=0.6, color='skyblue', edgecolor='black')
-x_vals = np.linspace(min(impact_velocity), max(impact_velocity), 1000)
-pdf = norm.pdf(x_vals, mu_v, std_v)
-ax.plot(x_vals, pdf, 'k', linewidth=2)
-ax.set_title("Impact Velocity")
-ax.set_xlabel("Velocity (m/s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-
-# Save figure as SVG and Pickle
-fig_imp_v.savefig(os.path.join(output_folder_svg, "impact_velocity.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "impact_velocity.fig.pickle"), "wb") as f:
-    pickle.dump(fig_imp_v, f)
-plt.close(fig_imp_v)  # Stop automatic printing of images
-
-
-# === STATIC MARGINS ===
-initial_margin = dispersion_results["initial_static_margin"]
-out_of_rail_margin = dispersion_results["out_of_rail_static_margin"]
-final_margin = dispersion_results["final_static_margin"]
-
-# Fit normal distributions
-mu_initial, std_initial = norm.fit(initial_margin)
-mu_out, std_out = norm.fit(out_of_rail_margin)
-mu_final, std_final = norm.fit(final_margin)
-
-print(f'Initial Static Margin -             Mean Value: {mu_initial:0.3f} c')
-print(f'Initial Static Margin -     Standard Deviation: {std_initial:0.3f} c')
-
-print(f'Out of Rail Static Margin -         Mean Value: {mu_out:0.3f} c')
-print(f'Out of Rail Static Margin - Standard Deviation: {std_out:0.3f} c')
-
-print(f'Final Static Margin -               Mean Value: {mu_final:0.3f} c')
-print(f'Final Static Margin -       Standard Deviation: {std_final:0.3f} c')
-
-# Create the figure
-fig_static, ax = plt.subplots()
-
-ax.hist(initial_margin, bins=int(N**0.5), density=True, alpha=0.4,
-        label="Initial", color='skyblue', edgecolor='black')
-ax.hist(out_of_rail_margin, bins=int(N**0.5), density=True, alpha=0.4,
-        label="Out of Rail", color='orange', edgecolor='black')
-ax.hist(final_margin, bins=int(N**0.5), density=True, alpha=0.4,
-        label="Final", color='lightgreen', edgecolor='black')
-
-x_initial = np.linspace(min(initial_margin), max(initial_margin), 1000)
-x_out = np.linspace(min(out_of_rail_margin), max(out_of_rail_margin), 1000)
-x_final = np.linspace(min(final_margin), max(final_margin), 1000)
-
-ax.plot(x_initial, norm.pdf(x_initial, mu_initial, std_initial), 'b-', linewidth=2)
-ax.plot(x_out, norm.pdf(x_out, mu_out, std_out), 'darkorange', linewidth=2)
-ax.plot(x_final, norm.pdf(x_final, mu_final, std_final), 'g-', linewidth=2)
-
-ax.set_title("Static Margin Distribution")
-ax.set_xlabel("Static Margin (c)")
-ax.set_ylabel("Probability Density")
-ax.legend()
-ax.grid(True)
-
-
-# Save figure as SVG and Pickle
-fig_static.savefig(os.path.join(output_folder_svg, "static_margin_distribution.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "static_margin_distribution.fig.pickle"), "wb") as f:
-    pickle.dump(fig_static, f)
-
-plt.close(fig_static)  # Stop automatic printing of images
-
-
-# MAXIMUM VELOCITY
-max_velocity = dispersion_results["max_velocity"]
-mu_max_velocity, std_max_velocity = norm.fit(max_velocity)
-
-print(f'Maximum Velocity -         Mean Value: {mu_max_velocity:0.3f} m/s')
-print(f'Maximum Velocity - Standard Deviation: {std_max_velocity:0.3f} m/s')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(max_velocity, bins=int(N**0.5), density=True, alpha=0.6, color='lightblue', edgecolor='black')
-x_max_velocity = np.linspace(min(max_velocity), max(max_velocity), 1000)
-ax.plot(x_max_velocity, norm.pdf(x_max_velocity, mu_max_velocity, std_max_velocity), 'k', linewidth=2)
-ax.set_title("Maximum Velocity")
-ax.set_xlabel("Velocity (m/s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "maximum_velocity_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "maximum_velocity_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# MAXIMUM ACCELERATION
-max_acc = dispersion_results["max_acceleration"]
-mu_max_acc, std_max_acc = norm.fit(max_acc)
-
-print(f'Maximum Acceleration -         Mean Value: {mu_max_acc:0.3f} m/s²')
-print(f'Maximum Acceleration - Standard Deviation: {std_max_acc:0.3f} m/s²')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(max_acc, bins=int(N**0.5), density=True, alpha=0.6, color='lightcoral', edgecolor='black')
-x_max_acc = np.linspace(min(max_acc), max(max_acc), 1000)
-ax.plot(x_max_acc, norm.pdf(x_max_acc, mu_max_acc, std_max_acc), 'k', linewidth=2)
-ax.set_title("Maximum Acceleration")
-ax.set_xlabel("Acceleration (m/s²)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "maximum_acceleration_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "maximum_acceleration_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# NUMBER OF PARACHUTE EVENTS
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(dispersion_results["number_of_events"], color='orange', edgecolor='black')
-ax.set_title("Parachute Events")
-ax.set_xlabel("Number of Parachute Events")
-ax.set_ylabel("Number of Occurrences")
-ax.grid(True)
-
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "parachute_events_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "parachute_events_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# DROGUE PARACHUTE TRIGGER TIME
-drogue_trigger = dispersion_results["drogue_triggerTime"]
-mu_drogue_trigger, std_drogue_trigger = norm.fit(drogue_trigger)
-
-print(f'Drogue Parachute Trigger Time -         Mean Value: {mu_drogue_trigger:0.3f} s')
-print(f'Drogue Parachute Trigger Time - Standard Deviation: {std_drogue_trigger:0.3f} s')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(drogue_trigger, bins=int(N**0.5), density=True, alpha=0.6, color='gold', edgecolor='black')
-x_drogue_trigger = np.linspace(min(drogue_trigger), max(drogue_trigger), 1000)
-ax.plot(x_drogue_trigger, norm.pdf(x_drogue_trigger, mu_drogue_trigger, std_drogue_trigger), 'k', linewidth=2)
-ax.set_title("Drogue Parachute Trigger Time")
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "drogue_trigger_time_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "drogue_trigger_time_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# DROGUE PARACHUTE FULLY INFLATED TIME
-drogue_inflated_time = dispersion_results["drogue_inflated_time"]
-mu_drogue_time, std_drogue_time = norm.fit(drogue_inflated_time)
-
-print(f'Drogue Parachute Fully Inflated Time -         Mean Value: {mu_drogue_time:0.3f} s')
-print(f'Drogue Parachute Fully Inflated Time - Standard Deviation: {std_drogue_time:0.3f} s')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(drogue_inflated_time, bins=int(N**0.5), density=True, alpha=0.6, color='plum', edgecolor='black')
-x_drogue_inflated_time = np.linspace(min(drogue_inflated_time), max(drogue_inflated_time), 1000)
-ax.plot(x_drogue_inflated_time, norm.pdf(x_drogue_inflated_time, mu_drogue_time, std_drogue_time), 'k', linewidth=2)
-ax.set_title("Drogue Fully Inflated Time")
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "drogue_inflated_time_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "drogue_inflated_time_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# DROGUE PARACHUTE FULLY INFLATED VELOCITY
-drogue_velocity = dispersion_results["drogue_inflated_velocity"]
-mu_drogue_vel, std_drogue_vel = norm.fit(drogue_velocity)
-
-print(f'Drogue Parachute Fully Inflated Velocity -         Mean Value: {mu_drogue_vel:0.3f} m/s')
-print(f'Drogue Parachute Fully Inflated Velocity - Standard Deviation: {std_drogue_vel:0.3f} m/s')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(drogue_velocity, bins=int(N**0.5), density=True, alpha=0.6, color='lightseagreen', edgecolor='black')
-x_drogue_velocity = np.linspace(min(drogue_velocity), max(drogue_velocity), 1000)
-ax.plot(x_drogue_velocity, norm.pdf(x_drogue_velocity, mu_drogue_vel, std_drogue_vel), 'k', linewidth=2)
-ax.set_title("Drogue Inflated Velocity")
-ax.set_xlabel("Velocity (m/s)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "drogue_inflated_velocity_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "drogue_inflated_velocity_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# MAXIMUM AERODYNAMIC DRAG
-drag = dispersion_results["max_aerodynamic_drag"]
-mu_drag, std_drag = norm.fit(drag)
-
-print(f'Maximum Aerodynamic Drag -         Mean Value: {mu_drag:0.3f} N')
-print(f'Maximum Aerodynamic Drag - Standard Deviation: {std_drag:0.3f} N')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(drag, bins=int(N**0.5), density=True, alpha=0.6, color='cornflowerblue', edgecolor='black')
-x_drag = np.linspace(min(drag), max(drag), 1000)
-ax.plot(x_drag, norm.pdf(x_drag, mu_drag, std_drag), 'k', linewidth=2)
-ax.set_title("Maximum Aerodynamic Drag")
-ax.set_xlabel("Drag Force (N)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "max_aero_drag_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "max_aero_drag_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# MAXIMUM AERODYNAMIC LIFT
-lift = dispersion_results["max_aerodynamic_lift"]
-mu_lift, std_lift = norm.fit(lift)
-
-print(f'Maximum Aerodynamic Lift -         Mean Value: {mu_lift:0.3f} N')
-print(f'Maximum Aerodynamic Lift - Standard Deviation: {std_lift:0.3f} N')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(lift, bins=int(N**0.5), density=True, alpha=0.6, color='mediumaquamarine', edgecolor='black')
-x_lift = np.linspace(min(lift), max(lift), 1000)
-ax.plot(x_lift, norm.pdf(x_lift, mu_lift, std_lift), 'k', linewidth=2)
-ax.set_title("Maximum Aerodynamic Lift")
-ax.set_xlabel("Lift Force (N)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "max_aero_lift_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "max_aero_lift_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# MAXIMUM SPIN MOMENT
-spin_moment = dispersion_results["max_aerodynamic_spin_moment"]
-mu_spin, std_spin = norm.fit(spin_moment)
-
-print(f'Maximum Aerodynamic Spin Moment -         Mean Value: {mu_spin:0.3f} N*m')
-print(f'Maximum Aerodynamic Spin Moment - Standard Deviation: {std_spin:0.3f} N*m')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(spin_moment, bins=int(N**0.5), density=True, alpha=0.6, color='lightslategray', edgecolor='black')
-x_spin = np.linspace(min(spin_moment), max(spin_moment), 1000)
-ax.plot(x_spin, norm.pdf(x_spin, mu_spin, std_spin), 'k', linewidth=2)
-ax.set_title("Maximum Aerodynamic Spin Moment")
-ax.set_xlabel("Spin Moment (N*m)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "max_spin_moment_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "max_spin_moment_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-# MAXIMUM BENDING MOMENT
-bending_moment = dispersion_results["max_aerodynamic_bending_moment"]
-mu_bend, std_bend = norm.fit(bending_moment)
-
-print(f'Maximum Aerodynamic Bending Moment -         Mean Value: {mu_bend:0.3f} N*m')
-print(f'Maximum Aerodynamic Bending Moment - Standard Deviation: {std_bend:0.3f} N*m')
-
-# Create the figure
-fig, ax = plt.subplots()
-ax.hist(bending_moment, bins=int(N**0.5), density=True, alpha=0.6, color='steelblue', edgecolor='black')
-x_bend = np.linspace(min(bending_moment), max(bending_moment), 1000)
-ax.plot(x_bend, norm.pdf(x_bend, mu_bend, std_bend), 'k', linewidth=2)
-ax.set_title("Maximum Aerodynamic Bending Moment")
-ax.set_xlabel("Bending Moment (N*m)")
-ax.set_ylabel("Probability Density")
-ax.grid(True)
-# Save figure as SVG and Pickle
-fig.savefig(os.path.join(output_folder_svg, "max_bending_moment_plot.svg"), format='svg')
-with open(os.path.join(output_folder_pickle, "max_bending_moment_plot.fig.pickle"), "wb") as f:
-    pickle.dump(fig, f)
-plt.close(fig)  # Stop automatic printing of images
-
-
-
-# Import libraries
-import imageio.v2 as imageio
-from imageio import imread
-from matplotlib.patches import Ellipse
-
+#-------------------------------------------------------------------------------------------------------- LAUNCH SITE
+print(colored('\n\nLaunch site graph:'))
 # Import background map
-img = imread(str(BASE_DIR / """environment_data/santa_margarida_military_shooting_range_launch_site.png"""))
+img = imread(str(BASE_DIR / "simulation_inputs/environment_data/santa_margarida_military_shooting_range_launch_site.png"))
 
 # Retrieve dispersion data por apogee and impact XY position
 apogee_x = np.array(dispersion_results["apogee_x"])
@@ -1218,17 +1021,26 @@ apogee_y = np.array(dispersion_results["apogee_y"])
 impact_x = np.array(dispersion_results["impact_x"])
 impact_y = np.array(dispersion_results["impact_y"])
 
-
 # Define function to calculate eigen values
 def eigsorted(cov):
     vals, vecs = np.linalg.eigh(cov)
     order = vals.argsort()[::-1]
     return vals[order], vecs[:, order]
 
-
 # Create plot figure
-plt.figure(num=None, dpi = 150, facecolor="w", edgecolor="k")
+s = plt.figure(num=None, dpi = 150, facecolor="w", edgecolor="k")
 ax = plt.subplot(111)
+
+# Draw launch point
+plt.scatter(0, 0, s=30, marker="*", color="red", label="Launch Point")
+# Draw apogee points
+plt.scatter(
+    apogee_x, apogee_y, s=5, marker="^", color="lime", label="Simulated Apogee", alpha=0.7
+)
+# Draw impact points
+plt.scatter(
+    impact_x, impact_y, s=5, marker="v", color="cyan", label="Simulated Landing Point", alpha=0.7
+)
 
 # Calculate error ellipses for impact
 impactCov = np.cov(impact_x, impact_y)
@@ -1268,18 +1080,10 @@ for j in [1, 2, 3]:
     apogeeEll.set_facecolor((0, 1, 0, 0.2))
     ax.add_artist(apogeeEll)
 
-# Draw launch point
-plt.scatter(0, 0, s=30, marker="*", color="black", label="Launch Point")
-# Draw apogee points
-plt.scatter(
-    apogee_x, apogee_y, s=5, marker="^", color="orange", label="Simulated Apogee"
-)
-# Draw impact points
-plt.scatter(
-    impact_x, impact_y, s=5, marker="v", color="yellow", label="Simulated Landing Point"
-)
-
 plt.legend()
+
+plt.grid(visible=True, which='minor', linestyle='--', color='grey', alpha=0.3, linewidth=0.6)
+plt.grid(visible=True, which='major', linestyle='-', color='white', alpha=0.4, linewidth=0.8)
 
 # Add title and labels to plot
 ax.set_title(
@@ -1298,53 +1102,81 @@ plt.xlim(-2000, 2000)
 plt.ylim(-1500, 1500)
 
 # Save plot and show result
-plt.savefig(str(filename) + ".pdf", bbox_inches="tight", pad_inches=0)
-plt.savefig(str(filename) + ".svg", bbox_inches="tight", pad_inches=0)
-plt.show()
+plt.savefig(str(output_launch_site) + "/Santa_Margarida_launch_site.svg", format='svg', bbox_inches="tight")
+# as pickle
+pickle_file = str(output_launch_site) + "/Santa_Margarida_launch_site.pickle"
+with open(pickle_file, "wb") as f:
+    pickle.dump(s, f)
+
+print("- Santa Margarida launch site graph saved successfully")
+
+if show_graph:
+    plt.show()
+plt.close('all')
+#--------------------------------------------------------------------------------------------------------
 
 
-Atlas.draw()
-Atlas.info()
-Pro75_9977M2245.draw()
-Pro75_9977M2245.info()
-
-# Sensitivity Analysis
-from rocketpy.tools import load_monte_carlo_data
-
-target_variables = ["apogee_altitude","max_acceleration"]
-parameters = list(analysis_parameters.keys())
-
-parameters_matrix, target_variables_matrix = load_monte_carlo_data(
-    input_filename=str(filename)+".disp_inputs.json",
-    output_filename=str(filename)+".disp_outputs.json",
-    parameters_list=parameters,
-    target_variables_list=target_variables,
-)
-
-from rocketpy.sensitivity import SensitivityModel
 
 
-model = SensitivityModel(parameters, target_variables)
+
+#-------------------------------------------------------------------------------------------------------- SENSITIVITY ANALYSIS
+if sensitivity_analysis:
+    print(colored('\n\nSensitivity analysis graphs:'))
 
 
-parameters_nominal_mean = [
-    analysis_parameters[parameter_name][0]
-    for parameter_name in analysis_parameters.keys()
-]
-parameters_nominal_sd = [
-    analysis_parameters[parameter_name][1]
-    for parameter_name in analysis_parameters.keys()
-]
-model.set_parameters_nominal(parameters_nominal_mean, parameters_nominal_sd)
-target_variables_mean=[
-np.mean(dispersion_results["apogee_altitude"]),
-np.mean(dispersion_results["max_acceleration"])
-]
-#plot the result of the sensitviy analisys
-model.set_target_variables_nominal(target_variables_mean)
+    target_variables = ["apogee_altitude","max_acceleration"]
+    parameters = list(analysis_parameters.keys())
+
+    parameters_matrix, target_variables_matrix = load_monte_carlo_data(
+        input_filename=str(filename)+".disp_inputs.json",
+        output_filename=str(filename)+".disp_outputs.json",
+        parameters_list=parameters,
+        target_variables_list=target_variables,
+    )
 
 
-model.fit(parameters_matrix, target_variables_matrix)
 
 
-model.plots.bar_plot()
+    model = SensitivityModel(parameters, target_variables)
+
+
+    parameters_nominal_mean = [
+        analysis_parameters[parameter_name][0]
+        for parameter_name in analysis_parameters.keys()
+    ]
+    parameters_nominal_sd = [
+        analysis_parameters[parameter_name][1]
+        for parameter_name in analysis_parameters.keys()
+    ]
+    model.set_parameters_nominal(parameters_nominal_mean, parameters_nominal_sd)
+    target_variables_mean=[
+    np.mean(dispersion_results["apogee_altitude"]),
+    np.mean(dispersion_results["max_acceleration"])
+    ]
+
+    #plot the result of the sensitviy analisys
+    model.set_target_variables_nominal(target_variables_mean)
+
+    model.fit(parameters_matrix, target_variables_matrix)
+
+
+    # Workaround (RocketPy doesn't provide a save option):
+    # plt.ion() lets the code continue while bar_plot is displayed.
+    # Figures are saved and remain open for viewing if desired.
+    plt.ion() 
+    model.plots.bar_plot()
+
+    for target in range(len(target_variables)):
+        sens_fig = plt.figure(target+1)
+
+        svg_file = f"{str(output_sensitivity)}/sensitivity_{target_variables[target]}.svg"
+        sens_fig.savefig(svg_file, dpi=300)
+
+    if show_graph:
+        plt.pause(99999) # that's a lot of damag...time.
+
+    plt.close("all")
+    plt.ioff()
+
+    print("- Sensitivity analysis graphs saved successfully")
+#-------------------------------------------------------------------------------------------------------
