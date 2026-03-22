@@ -1,8 +1,9 @@
 
 from pathlib import Path
-from rocketpy import Environment, Flight, Rocket, SolidMotor
+from rocketpy import Environment, Flight, Rocket, SolidMotor 
 import json
-
+import numpy as np
+import pandas as pd
 # set path
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -10,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # The following parameters are centralized here for convenience. 
 # Core internal variables remain defined within their respective modules.
 
-show_graph = True
+show_graph = False
 use_airbrake = True
 
 latitude = 39.389700
@@ -349,3 +350,19 @@ rocket_flight.export_kml(
     extrude=True,
     altitude_mode="relative_to_ground",
 )
+
+# ------------------------------------------
+# extract mass over time value as .csv
+
+mass_data = Atlas.total_mass.source
+
+df = pd.DataFrame(mass_data, columns=["time_s", "total_mass_kg"])
+df.to_csv(BASE_DIR / "mass_analysis/mass_time_rpy.csv", index=False) 
+
+# ------------------------------------------
+# extract cg position over time value as .csv
+# the relative position is expressed from the nose tip
+cg_data = Atlas.center_of_mass.source
+
+df_cg = pd.DataFrame(cg_data, columns=["time_s", "cg_from_nose_m"])
+df_cg.to_csv(BASE_DIR / "mass_analysis/center_of_mass_rpy.csv", index=False)
