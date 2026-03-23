@@ -3,8 +3,9 @@
 
 #TODO: 
 #      Add Power on and off drag csv
-#      Upgrade environment and launch parameters
+#      Upgrade launch parameters
 #      Update to new coordinate system of reference
+#      Add realistic sensors
 
 
 # Importing libraries 
@@ -289,7 +290,7 @@ BASE_DIR = Path(__file__).resolve().parent
 filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 30
+number_of_simulations = 3
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -303,11 +304,11 @@ initial_cpu_time = process_time()
 
 # Define basic Environment object
 Env = Environment(
-    date = datetime.now() + timedelta(days=1),
-    #date = (2024, 10, 11, 12),                          #(Year, Month, Day, Hour)
-    longitude=44.290583, latitude=12.027111,
-    elevation = 160,
-    max_expected_height = 4500
+    #date = datetime.now() + timedelta(days=1),         # use for forecast
+    date = (2025, 5, 9, 12),                            #(Year, Month, Day, Hour)
+    latitude=44.290583, longitude=12.027111,
+    elevation = 18,
+    max_expected_height = 1500
 )
 
 # There are 3 possible choices of weather data: [uncomment the choosen one and comment the others]
@@ -320,50 +321,50 @@ Env = Environment(
 # For more information consult the "mean_environment_values.json" file inside the directory.
 
 # import the .json with the mean environment values oustide the defition of the atmospheric model
-with open(BASE_DIR /"""environment_data/mean_environment_values.json""", "r") as f:
-    data = json.load(f)
-"""
-Env.set_atmospheric_model(
+# with open(BASE_DIR /"""environment_data/mean_environment_values.json""", "r") as f:
+#     data = json.load(f)
 
-    # set the atmosphere model
-    type="custom_atmosphere",
+# Env.set_atmospheric_model(
 
-    # define the values (pressure, temperature and wind [E,N]) from the .json
-    pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
-    temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
-    wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
-    wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
+#     # set the atmosphere model
+#     type="custom_atmosphere",
 
-)
-"""
+#     # define the values (pressure, temperature and wind [E,N]) from the .json
+#     pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
+#     temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
+#     wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
+#     wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
+
+# )
+
 # 2. Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the environment definition), in this case the weather data will match the date chosen by the user.
 
-# Env.set_atmospheric_model(    
-#     type="Ensemble",                                                                                                  
-#     file=str(BASE_DIR / """environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"""),                                        
-#     # This section creates an updated dictionary to read the NetCDF4 files,                                           
-#     # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     
-#     dictionary= {                                                                                                     
-#         "ensemble": "number",                                                                                         
-#         "time": "valid_time",                                                                                         
-#         "latitude": "latitude",                                                                                       
-#         "longitude": "longitude",                                                                                     
-#         "level": "pressure_level",                                                                                    
-#         "temperature": "t",                                                                                           
-#         "surface_geopotential_height": None,                                                                          
-#         "geopotential_height": None,                                                                                  
-#         "geopotential": "z",                                                                                          
-#         "u_wind": "u",                                                                                                
-#         "v_wind": "v",                                                                                                
-#     },
-# )
+Env.set_atmospheric_model(    
+    type="Ensemble",                                                                                                  
+    file=str(BASE_DIR / """environment_data/Villafranca_ensemble_5to11may2020to2026.nc"""),                                        
+    # This section creates an updated dictionary to read the NetCDF4 files,                                           
+    # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     
+    dictionary= {                                                                                                     
+        "ensemble": "number",                                                                                         
+        "time": "valid_time",                                                                                         
+        "latitude": "latitude",                                                                                       
+        "longitude": "longitude",                                                                                     
+        "level": "pressure_level",                                                                                    
+        "temperature": "t",                                                                                           
+        "surface_geopotential_height": None,                                                                          
+        "geopotential_height": None,                                                                                  
+        "geopotential": "z",                                                                                          
+        "u_wind": "u",                                                                                                
+        "v_wind": "v",                                                                                                
+    },
+)
 
 # 3. The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) weather data, (change the date in the environment definition).
 
-Env.set_atmospheric_model(
-     type="Forecast",
-     file="GFS"
-)
+# Env.set_atmospheric_model(
+#      type="Forecast",
+#      file="GFS"
+# )
 
 # Set up parachute trigger for the chute
 def simulator_check_parachute_opening(p, h, y):
