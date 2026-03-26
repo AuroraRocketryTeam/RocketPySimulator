@@ -6,6 +6,7 @@
 #      Upgrade launch parameters
 #      Update to new coordinate system of reference
 #      Add realistic sensors
+#      Update the parachute
 
 
 # Importing libraries 
