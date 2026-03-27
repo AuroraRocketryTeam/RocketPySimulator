@@ -2,10 +2,10 @@
 # Authors: Daniele Bandini, Giovanni Bacchini, Caio Scattolini, Leonardo Francesco Neri, Alex Petrani, Federico Pedicini, Lorenzo Pintauro, Alessio Mrass, Andrea Di Maio
 
 #TODO:
-#      Update the geometry to v1.4
+#      Update the geometry to v1.4 (new fins, new nosecone)     (Margarida Teles)
+#      Update center of dry mass position from Openrocket
 #      Update to new coordinate system of reference for the rocket components
-#      Add realistic sensors
-#      Update the parachute
+#      Add realistic sensors        (Lorenzo Rossetti)
 
 
 # Importing libraries 
@@ -32,7 +32,7 @@ analysis_parameters = {
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (2331 / 1000, 0.03),
+    "rocket_dry_mass": (2190 / 1000, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
     "rocket_dry_inertia_11": (0.115, 0.187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
@@ -50,6 +50,19 @@ analysis_parameters = {
 
     # NOTE: These data are based on the Pro-38 247H143-13A motor, similar to our SRAD counterpart the Propulsion team is developing
 
+    #   Motor performances (impulse, burn time) are taken from the Pro-38 247H143-13A
+
+    #   Weight is distributed as a total of 520g, of which an estimated 80% (416g) as "propellant weight" or burnable material 
+    #   and the remaining 20% (104g) is added to the dry mass (2086 + 104 = 2190g)
+
+    #   Propellant is simplified into a single grain, same length as the "GRAIN+NOZZLE+FENOLICO INTERNO" (184mm) on Openrocket, outer radius is taken as
+    #   inner diameter of "GRAIN+NOZZLE+FENOLICO INTERNO" (20mm) and inner radius is made-up (5mm).
+
+    #   Grain density is adapted to give the grain a weight og 416g
+
+    #   Nozzle dimensions are taken from Borealis, as of now its just for imaging purposes.
+
+
     # Motor total impulse (N*s)
     "impulse": (247, 1),
     # Motor burn out time (s)
@@ -61,13 +74,13 @@ analysis_parameters = {
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (1820, 1),                                             # conservative average value found online, double check with Propulsion
+    "grain_density": (1920, 1),                                                 # density is (propellant weight 416g)/(grain volume 216.77cm^3)
     # Motor's grain outer radius (m)
-    "grain_outer_radius": (17.95 / 1000, 0.0001),
+    "grain_outer_radius": (20 / 1000, 0.0001),
     # Motor's grain inner radius (m)
-    "grain_initial_inner_radius": (9.05 / 1000, 0.001),
+    "grain_initial_inner_radius": (5 / 1000, 0.001),
     # Motor's grain height (m)
-    "grain_initial_height": (90.5 / 1000, 0.001),
+    "grain_initial_height": (184 / 1000, 0.001),
 
     # === Aerodynamic Details ===
     
@@ -290,7 +303,7 @@ BASE_DIR = Path(__file__).resolve().parent
 filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 15
+number_of_simulations = 3
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -417,7 +430,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         nozzle_radius=setting["nozzle_radius"],
         throat_radius=setting["throat_radius"],
         # Grain data
-        grain_number=2,
+        grain_number=1,
         grain_separation=setting["grain_separation"],
         grain_density=setting["grain_density"],
         grain_outer_radius=setting["grain_outer_radius"],
@@ -531,7 +544,9 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
 
 # Print comparison graphs to visualize data dispersion during flight
 FRED.draw()
+FRED.info()
 Pro38_247H143_13A.draw()
+Pro38_247H143_13A.info()
 
 # comparison = CompareFlights(flights)                              # comparison plots
 # comparison.velocities()
@@ -1284,6 +1299,8 @@ plt.show()
 
 FRED.draw()
 FRED.info()
+Pro38_247H143_13A.draw()
+Pro38_247H143_13A.info()
 
 # Sensitivity Analysis
 from rocketpy.tools import load_monte_carlo_data
