@@ -3,9 +3,7 @@
 
 #TODO:
 #      Update the geometry to v1.4
-#      Add Power on and off drag csv
-#      Upgrade launch parameters
-#      Update to new coordinate system of reference
+#      Update to new coordinate system of reference for the rocket components
 #      Add realistic sensors
 #      Update the parachute
 
@@ -57,9 +55,9 @@ analysis_parameters = {
     # Motor burn out time (s)
     "burn_time": (1.7, 0.01),
     # Motor's nozzle radius (m)                                                 # both nozzle dimesions are taken from Borealis
-   "nozzle_radius": (13.71 / 1000, 1 / 1000),
-   # Motor's nozzle throat radius (m)
-   "throat_radius": (9.50 / 1000, 1 / 1000),
+    "nozzle_radius": (13.71 / 1000, 1 / 1000),
+    # Motor's nozzle throat radius (m)
+    "throat_radius": (9.50 / 1000, 1 / 1000),
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
@@ -78,7 +76,7 @@ analysis_parameters = {
     # Origin of the motor coordinate system
     "nozzle_position": (0, 0.001),
     # Distance between the origin of the referential system and center of propellant mass (m) 
-    "grains_center_of_mass_position": (0.105, 0.001),                                                       ##!!!
+    "grains_center_of_mass_position": (90.5 / 1000, 0.001),                                                       ##!!!
     # Multiplier for rocket's power off drag curve to introduce uncertainty
     "power_off_drag_corr": (1.0, 0.001),                                                                    ##!!
     # Multiplier for rocket's power on drag curve to introduce uncertainty
@@ -124,7 +122,7 @@ analysis_parameters = {
     # === Parachute Details ===
 
     # Drag coefficient times reference area for the rocket main chute (m^2)
-    "cd_s_main": (0.97 * 14.3013, 0.277),          #rocketman 16ft without spillout
+    "cd_s_main": (0.97 * 1.168, 0.277),                                                         #rocketman 4ft 
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
     "lag_rec": (1.73, 0.1),
 
@@ -292,7 +290,7 @@ BASE_DIR = Path(__file__).resolve().parent
 filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 3
+number_of_simulations = 15
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -447,8 +445,8 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             setting["rocket_dry_inertia_11"],
             setting["rocket_dry_inertia_33"],
         ),
-        power_off_drag=str(BASE_DIR / """FRED_power_off.CSV"""),
-        power_on_drag=str(BASE_DIR / """FRED_power_on.CSV"""),
+        power_off_drag=str(BASE_DIR / """FRED_v1.4_CD_power_off.csv"""),
+        power_on_drag=str(BASE_DIR / """FRED_v1.4_CD_power_on.csv"""),
 
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
         center_of_mass_without_motor=0.37014,
