@@ -21,7 +21,7 @@ latitude = 39.389700
 longitude = -8.288964
 elevation = 160.0
 date_of_launch = (2024, 10, 11, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: ['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
+weather_data: Literal['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
 
 # Definition of global variables, to be used inside and outside parachute functions
 global last_negative_time, apogee_detected, sampling_rate, parachute_timer
