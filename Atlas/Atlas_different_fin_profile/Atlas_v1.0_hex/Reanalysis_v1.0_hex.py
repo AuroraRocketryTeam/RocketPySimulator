@@ -360,12 +360,13 @@ rocket_flight.export_kml(
 # mass_data = Atlas.total_mass.source
 
 # df = pd.DataFrame(mass_data, columns=["time", "mass"])
-# df.to_csv(BASE_DIR / "mass_analysis/mass/mass_time_rpy/mass_time_rpy_2.csv", index=False) 
+# df.to_csv(BASE_DIR / "mass_analysis/mass/mass_time_rpy/insertfilename.csv", index=False) 
 
 # ------------------------------------------
 # extract cg position over time value as .csv
 # the relative position is expressed from the nose tip
-cg_data = Atlas.center_of_mass.source
 
-df_cg = pd.DataFrame(cg_data, columns=["time", "CG"])
-df_cg.to_csv(BASE_DIR / "mass_analysis/CG/CG_rpy/CG_rpy_2.csv", index=False)
+# cg_data = Atlas.center_of_mass.source
+
+# df_cg = pd.DataFrame(cg_data, columns=["time", "CG"])
+# df_cg.to_csv(BASE_DIR / "mass_analysis/CG/CG_rpy/insertfilename.csv", index=False)

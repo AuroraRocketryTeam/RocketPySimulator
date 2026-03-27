@@ -85,7 +85,7 @@ analysis_parameters = {
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.01 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (1793.7, 1),
+    "grain_density": (1877, 5), # density corrected based on open rocket mass delta
     # Motor's grain outer radius (m)
     "grain_outer_radius": (35.9 / 1000, 0.0001),
     # Motor's grain inner radius (m)
