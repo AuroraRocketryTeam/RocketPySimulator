@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Load the .csv
 
-file1 = BASE_DIR / "mass_time_rpy.csv"
+file1 = BASE_DIR / "mass_time_rpy/mass_time_rpy_2.csv"
 file2 = BASE_DIR / "mass_time_openrocket.csv"
 
 # Read
@@ -40,5 +40,5 @@ ax.grid(True, alpha=0.3)
 ax.tick_params(labelsize=11)
 
 plt.tight_layout()
-plt.savefig(BASE_DIR / "images/initial_mass_compare.png", dpi=200)   # save image
+plt.savefig(BASE_DIR / "images/mass_compare_1_1.png", dpi=200)   # save image
 plt.show()

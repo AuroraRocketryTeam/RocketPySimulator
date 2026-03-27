@@ -28,6 +28,9 @@ import pickle
 # Image loading
 from imageio.v2 import imread
 
+# 
+from typing import Literal
+
 # set path
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -42,12 +45,13 @@ number_of_simulations = 15
 show_graph = False
 use_airbrake = False
 sensitivity_analysis = True
+fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
 
 latitude = 39.389700
 longitude = -8.288964
 elevation = 160.0
 date_of_launch = (2024, 10, 11, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: ['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
+weather_data: Literal['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
 
 analysis_parameters = {
     
@@ -85,7 +89,7 @@ analysis_parameters = {
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.01 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (1793.7, 1),
+    "grain_density": (1877, 5), # density corrected based on open rocket mass delta
     # Motor's grain outer radius (m)
     "grain_outer_radius": (35.9 / 1000, 0.0001),
     # Motor's grain inner radius (m)
@@ -637,6 +641,22 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         coordinate_system_orientation = "nozzle_to_combustion_chamber",
     )
 
+    # Define the drag curve that will be used
+    if fin_type == 'hex':
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
+
+    elif fin_type == 'hex_blunt':
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
+
+    elif fin_type == 'square':
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
+
+
+# Now create the Rocket
+
     # Create rocket
     Atlas = Rocket(
         radius=setting["radius"],
@@ -646,9 +666,8 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             setting["rocket_dry_inertia_11"],
             setting["rocket_dry_inertia_33"],
         ),
-        power_off_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv"),
-        power_on_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv"),
-
+        power_off_drag=power_off_drag,
+        power_on_drag=power_on_drag,
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
         center_of_mass_without_motor=1.61919,
         coordinate_system_orientation="nose_to_tail",

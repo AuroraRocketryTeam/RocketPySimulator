@@ -4,6 +4,8 @@ from rocketpy import Environment, Flight, Rocket, SolidMotor
 import json
 import numpy as np
 import pandas as pd
+from typing import Literal
+
 # set path
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -13,12 +15,13 @@ BASE_DIR = Path(__file__).resolve().parent
 
 show_graph = False
 use_airbrake = True
+fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
 
 latitude = 39.389700
 longitude = -8.288964
 elevation = 160.0
 date_of_launch = (2024, 10, 11, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: ['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
+weather_data: Literal['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
 
 # Definition of global variables, to be used inside and outside parachute functions
 global last_negative_time, apogee_detected, sampling_rate, parachute_timer
@@ -232,7 +235,10 @@ Pro75_9977M2245 = SolidMotor(
     dry_inertia=(0, 0, 0),
     nozzle_radius=29 / 1000,
     grain_number=6,
-    grain_density=1758.7,
+
+    # densità stimata assumendo corrette le misure dei grain e la variazione di massa fornita da openrocket.
+    # sapendo che la variazione di massa avviene solo per via del consumo di propellente si può stimare la densità.
+    grain_density=1877,
     grain_outer_radius= 35.9/ 1000,
     grain_initial_inner_radius=18.1/ 1000,
     grain_initial_height=156.17 / 1000,
@@ -240,17 +246,30 @@ Pro75_9977M2245 = SolidMotor(
     grains_center_of_mass_position=0.5125,
     center_of_dry_mass_position=0,
     nozzle_position=0,
-    burn_time=(0.136, 4.3),
+    burn_time=(0, 4.3),
     throat_radius=20/ 1000,
     coordinate_system_orientation="nozzle_to_combustion_chamber",
 )
+
+# Define the drag curve that will be used
+if fin_type == 'hex':
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
+
+elif fin_type == 'hex_blunt':
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
+
+elif fin_type == 'square':
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
 
 Atlas = Rocket(
     radius=75 / 1000,
     mass=25.590,
     inertia=(14.631,14.631,0.075),
-    power_off_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv"),
-    power_on_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv"),
+    power_off_drag=power_off_drag, # use the prevoius defined drag curve^
+    power_on_drag=power_on_drag, # use the prevoius defined drag curve 
     center_of_mass_without_motor=1.61919,
     coordinate_system_orientation="nose_to_tail",
 )
@@ -338,7 +357,7 @@ if show_graph:
     rocket_flight.plots.rail_buttons_forces()
 
 # print rocket flight info
-rocket_flight.info()
+# rocket_flight.info()
 
 # plot speed and acceleration
 # rocket_flight.speed()
@@ -354,15 +373,16 @@ rocket_flight.export_kml(
 # ------------------------------------------
 # extract mass over time value as .csv
 
-mass_data = Atlas.total_mass.source
+# mass_data = Atlas.total_mass.source
 
-df = pd.DataFrame(mass_data, columns=["time_s", "total_mass_kg"])
-df.to_csv(BASE_DIR / "mass_analysis/mass_time_rpy.csv", index=False) 
+# df = pd.DataFrame(mass_data, columns=["time", "mass"])
+# df.to_csv(BASE_DIR / "mass_analysis/mass/mass_time_rpy/insertfilename.csv", index=False) 
 
 # ------------------------------------------
 # extract cg position over time value as .csv
 # the relative position is expressed from the nose tip
-cg_data = Atlas.center_of_mass.source
 
-df_cg = pd.DataFrame(cg_data, columns=["time_s", "cg_from_nose_m"])
-df_cg.to_csv(BASE_DIR / "mass_analysis/center_of_mass_rpy.csv", index=False)
+# cg_data = Atlas.center_of_mass.source
+
+# df_cg = pd.DataFrame(cg_data, columns=["time", "CG"])
+# df_cg.to_csv(BASE_DIR / "mass_analysis/CG/CG_rpy/insertfilename.csv", index=False)
