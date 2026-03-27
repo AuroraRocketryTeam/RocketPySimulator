@@ -4,6 +4,8 @@ from rocketpy import Environment, Flight, Rocket, SolidMotor
 import json
 import numpy as np
 import pandas as pd
+from typing import Literal
+
 # set path
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -13,6 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 show_graph = False
 use_airbrake = True
+fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
 
 latitude = 39.389700
 longitude = -8.288964
@@ -248,12 +251,25 @@ Pro75_9977M2245 = SolidMotor(
     coordinate_system_orientation="nozzle_to_combustion_chamber",
 )
 
+# Define the drag curve that will be used
+if fin_type == 'hex':
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
+
+elif fin_type == 'hex_blunt':
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
+
+elif fin_type == 'square':
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
+
 Atlas = Rocket(
     radius=75 / 1000,
     mass=25.590,
     inertia=(14.631,14.631,0.075),
-    power_off_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv"),
-    power_on_drag=str(BASE_DIR/"simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv"),
+    power_off_drag=power_off_drag, # use the prevoius defined drag curve^
+    power_on_drag=power_on_drag, # use the prevoius defined drag curve 
     center_of_mass_without_motor=1.61919,
     coordinate_system_orientation="nose_to_tail",
 )
