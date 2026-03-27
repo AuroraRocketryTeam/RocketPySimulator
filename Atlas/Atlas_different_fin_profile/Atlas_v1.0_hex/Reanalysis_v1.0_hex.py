@@ -232,7 +232,10 @@ Pro75_9977M2245 = SolidMotor(
     dry_inertia=(0, 0, 0),
     nozzle_radius=29 / 1000,
     grain_number=6,
-    grain_density=1758.7,
+
+    # densità stimata assumendo corrette le misure dei grain e la variazione di massa fornita da openrocket.
+    # sapendo che la variazione di massa avviene solo per via del consumo di propellente si può stimare la densità.
+    grain_density=1877,
     grain_outer_radius= 35.9/ 1000,
     grain_initial_inner_radius=18.1/ 1000,
     grain_initial_height=156.17 / 1000,
@@ -240,7 +243,7 @@ Pro75_9977M2245 = SolidMotor(
     grains_center_of_mass_position=0.5125,
     center_of_dry_mass_position=0,
     nozzle_position=0,
-    burn_time=(0.136, 4.3),
+    burn_time=(0, 4.3),
     throat_radius=20/ 1000,
     coordinate_system_orientation="nozzle_to_combustion_chamber",
 )
@@ -338,7 +341,7 @@ if show_graph:
     rocket_flight.plots.rail_buttons_forces()
 
 # print rocket flight info
-rocket_flight.info()
+# rocket_flight.info()
 
 # plot speed and acceleration
 # rocket_flight.speed()
@@ -354,15 +357,15 @@ rocket_flight.export_kml(
 # ------------------------------------------
 # extract mass over time value as .csv
 
-mass_data = Atlas.total_mass.source
+# mass_data = Atlas.total_mass.source
 
-df = pd.DataFrame(mass_data, columns=["time_s", "total_mass_kg"])
-df.to_csv(BASE_DIR / "mass_analysis/mass_time_rpy.csv", index=False) 
+# df = pd.DataFrame(mass_data, columns=["time", "mass"])
+# df.to_csv(BASE_DIR / "mass_analysis/mass/mass_time_rpy/mass_time_rpy_2.csv", index=False) 
 
 # ------------------------------------------
 # extract cg position over time value as .csv
 # the relative position is expressed from the nose tip
 cg_data = Atlas.center_of_mass.source
 
-df_cg = pd.DataFrame(cg_data, columns=["time_s", "cg_from_nose_m"])
-df_cg.to_csv(BASE_DIR / "mass_analysis/center_of_mass_rpy.csv", index=False)
+df_cg = pd.DataFrame(cg_data, columns=["time", "CG"])
+df_cg.to_csv(BASE_DIR / "mass_analysis/CG/CG_rpy/CG_rpy_2.csv", index=False)

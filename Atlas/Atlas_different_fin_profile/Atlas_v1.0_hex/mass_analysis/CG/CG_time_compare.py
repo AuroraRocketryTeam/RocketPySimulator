@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Load the .csv
 
-file1 = BASE_DIR / "CG_rpy.csv"
+file1 = BASE_DIR / "CG_rpy/CG_rpy_2.csv"
 file2 = BASE_DIR / "CG_openrocket.csv"
 
 # Read
@@ -18,7 +18,7 @@ df2 = pd.read_csv(file2)
 fig, ax = plt.subplots(figsize=(12, 6))
 
 ax.plot(
-    df1["time"], df1["CG"],
+    df1["time"], df1["CG"]*100, # the comparison is measured in [cm], the rpy data is in [m]
     color="royalblue",
     linewidth=1.5,
     label=f"RocketPy ({len(df1)} points)"
@@ -40,5 +40,5 @@ ax.grid(True, alpha=0.3)
 ax.tick_params(labelsize=11)
 
 plt.tight_layout()
-plt.savefig(BASE_DIR / "images/initial_CG_compare.png", dpi=200)   # save image
+plt.savefig(BASE_DIR / "images/CG_compare_2.png", dpi=200)   # save image
 plt.show()
