@@ -105,15 +105,15 @@ analysis_parameters = {
     # Number of fins
     "fin_number" : (3, 0), 
     # Fin span (m)
-    "fin_span": (0.14, 0.0005), 
+    "fin_span": (0.105, 0.0005), 
     # Fin root chord (m)
-    "fin_root_chord": (0.26, 0.0005), 
+    "fin_root_chord": (0.11, 0.0005), 
     # Fin tip chord (m)
-    "fin_tip_chord": (0.05, 0.0005), 
+    "fin_tip_chord": (0.03, 0.0005), 
     # Axial distance between rocket's tip and nearest point in its fin (m)
-    "fin_position": (0.48, 0.005), 
+    "fin_position": (0.61, 0.005), 
     # Fin sweep angle (degrees)
-    "fin_sweep_angle": (61.2, 0.005), 
+    "fin_sweep_angle": (33.7, 0.005), 
     # Tail length (m)
     "tail_length": (0.042, 0.001), 
     # Tail bottom radius (m)
@@ -462,7 +462,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         power_on_drag=str(BASE_DIR / """FRED_v1.4_CD_power_on.csv"""),
 
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
-        center_of_mass_without_motor=0.37014,
+        center_of_mass_without_motor=0.386,
         coordinate_system_orientation="nose_to_tail",
     )
 
