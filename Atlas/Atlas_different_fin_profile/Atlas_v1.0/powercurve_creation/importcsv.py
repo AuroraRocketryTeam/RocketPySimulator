@@ -9,7 +9,7 @@ max_righe = 120
 
 righe_output = []
 
-with open(input_file, newline='', encoding='utf-8') as csv_in:
+with open(input_file, newline='') as csv_in:
     reader = csv.reader(csv_in, delimiter=',')
 
     # Salta la prima riga
