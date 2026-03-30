@@ -2,8 +2,6 @@
 # Authors: Daniele Bandini, Giovanni Bacchini, Caio Scattolini, Leonardo Francesco Neri, Alex Petrani, Federico Pedicini, Lorenzo Pintauro, Alessio Mrass, Andrea Di Maio
 
 #TODO:
-#      Update the geometry to v1.4 (new fins, new nosecone)     (Margarida Teles)
-#      Update center of dry mass position from Openrocket
 #      Update to new coordinate system of reference for the rocket components
 #      Add realistic sensors        (Lorenzo Rossetti)
 
@@ -254,44 +252,37 @@ def export_flight_error(flight_setting):
 
 
 # The following function is a Python representation of the C code that will be used on the rocket to detect the apogee condition. In the actual code, detection of negative velocity is achieved thanks to the readings from the IMU sensor
+def check_apogee(vertical_velocity, current_time, threshold=0.1):
 
+    global last_negative_time, apogee_detected, parachute_stopwatch
 
-
-
-def main_parachute_opening(apogee_detected:bool, altitude:float) -> bool:
-    return apogee_detected and altitude <= 200 # meters 
-
-# def check_apogee(vertical_velocity, current_time, threshold=0.1):
-
-#     global last_negative_time, apogee_detected, parachute_stopwatch
-
-#     # If the parachute activation signal has already been sent, confirm it and exit the function
-#     if apogee_detected:
-#         return True, last_negative_time
+    # If the parachute activation signal has already been sent, confirm it and exit the function
+    if apogee_detected:
+        return True, last_negative_time
     
-#     # Otherwise, check if the rocket is losing altitude
-#     if vertical_velocity < 0:
+    # Otherwise, check if the rocket is losing altitude
+    if vertical_velocity < 0:
 
-#         # if a descent is being detected, check if this is the first time this occurs
-#         if last_negative_time is None:
+        # if a descent is being detected, check if this is the first time this occurs
+        if last_negative_time is None:
 
-#             # if it is, mark this instant and exit the function
-#             last_negative_time = parachute_stopwatch
-#             return False, last_negative_time
+            # if it is, mark this instant and exit the function
+            last_negative_time = parachute_stopwatch
+            return False, last_negative_time
         
-#         elif (current_time - last_negative_time) >= threshold: #0.1s
+        elif (current_time - last_negative_time) >= threshold: #0.1s
 
-#             # if it isn't and enough time has passed with a continuous descent, acknowledge apogee and exit the function
-#             return True, last_negative_time
+            # if it isn't and enough time has passed with a continuous descent, acknowledge apogee and exit the function
+            return True, last_negative_time
         
-#         else:
+        else:
 
-#             # if it isn't and not enough time has passed with a continuous descent, return False and exit the function
-#             return False, last_negative_time
+            # if it isn't and not enough time has passed with a continuous descent, return False and exit the function
+            return False, last_negative_time
         
-#     # if a descent is no longer being (or has never been) detected, return False and exit the function
-#     else:
-#         return False, None
+    # if a descent is no longer being (or has never been) detected, return False and exit the function
+    else:
+        return False, None
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -376,25 +367,25 @@ Env.set_atmospheric_model(
 #      file="GFS"
 # )
 
-# Set up parachute trigger for the chute
-# def simulator_check_parachute_opening(p, h, y):
-#     global last_negative_time, apogee_detected, parachute_stopwatch, sampling_rate
-#     altitude = h
-#     vertical_velocity = y[5]
+#Set up parachute trigger for the chute
+def simulator_check_parachute_opening(p, h, y):
+    global last_negative_time, apogee_detected, parachute_stopwatch, sampling_rate
+    altitude = h
+    vertical_velocity = y[5]
 
-#     # Update counter for flight time to apogee: each time this function is called, the timer advances of 1 over the frequency at which the function is called. This is a workaround to get a measure of in-flight time
-#     # into the apogee detection algorythm and successfully implement its "consistent descent signal" principle.
-#     parachute_stopwatch += 1/sampling_rate
+    # Update counter for flight time to apogee: each time this function is called, the timer advances of 1 over the frequency at which the function is called. This is a workaround to get a measure of in-flight time
+    # into the apogee detection algorythm and successfully implement its "consistent descent signal" principle.
+    parachute_stopwatch += 1/sampling_rate
 
-#     # Mark instant at which the current call is being made
-#     now = parachute_stopwatch
+    # Mark instant at which the current call is being made
+    now = parachute_stopwatch
     
-#     # Call apogee detection algorythm
-#     apogee_detected, last_negative_time = check_apogee(
-#         vertical_velocity,
-#         now,  
-#     )
-#     return apogee_detected
+    # Call apogee detection algorythm
+    apogee_detected, last_negative_time = check_apogee(
+        vertical_velocity,
+        now,  
+    )
+    return apogee_detected
 
 
 # Initiate collection of flight data. This allows to compare different flight from the Montecarlo analysis and visualize data dispersion and overall characteristics of the flight and the simulation itself
@@ -509,7 +500,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     Main = FRED.add_parachute(
         "Main",
         cd_s=setting["cd_s_main"],
-        trigger="apogee",
+        trigger=simulator_check_parachute_opening,
         sampling_rate= sampling_rate,
         lag=setting["lag_rec"] + setting["lag_se"],
         noise=(
@@ -539,9 +530,9 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     flights.append(rocket_flight)
 
 # Print comparison graphs to visualize data dispersion during flight
-FRED.draw()
+#FRED.draw()
 FRED.info()
-Pro38_247H143_13A.draw()
+#Pro38_247H143_13A.draw()
 Pro38_247H143_13A.info()
 
 # comparison = CompareFlights(flights)                              # comparison plots
