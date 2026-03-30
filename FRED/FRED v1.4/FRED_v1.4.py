@@ -58,14 +58,14 @@ analysis_parameters = {
     "impulse": (impulse, 1),
     # Motor burn out time (s)
     "burn_time": (burn_time, 0.01),
-    # Motor's nozzle radius (m)                                                 # both nozzle dimesions are taken from Borealis
+    # Motor's nozzle radius (m)                                                         # both nozzle dimesions are taken from Borealis
     "nozzle_radius": (13.71 / 1000, 1 / 1000),
     # Motor's nozzle throat radius (m)
     "throat_radius": (9.50 / 1000, 1 / 1000),
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (grain_density, 1),                                                 # density is (propellant weight 416g)/(grain volume 216.77cm^3)
+    "grain_density": (grain_density, 1),
     # Motor's grain outer radius (m)
     "grain_outer_radius": (grain_external_radius, 0.0001),
     # Motor's grain inner radius (m)
@@ -80,11 +80,11 @@ analysis_parameters = {
     # Origin of the motor coordinate system
     "nozzle_position": (0, 0.001),
     # Distance between the origin of the referential system and center of propellant mass (m) 
-    "grains_center_of_mass_position": (90.5 / 1000, 0.001),                                                       ##!!!
+    "grains_center_of_mass_position": (90.5 / 1000, 0.001), 
     # Multiplier for rocket's power off drag curve to introduce uncertainty
-    "power_off_drag_corr": (1.0, 0.001),                                                                    ##!!
+    "power_off_drag_corr": (1.0, 0.001),
     # Multiplier for rocket's power on drag curve to introduce uncertainty
-    "power_on_drag_corr": (1.0, 0.001),                                                                     ##!!
+    "power_on_drag_corr": (1.0, 0.001),
     # Rocket's nose cone length (m)
     "nose_length": (0.14, 0.001),
     # Power of the function that describes the shape of the nose cone
@@ -117,7 +117,7 @@ analysis_parameters = {
     # Launch rail inclination angle relative to the horizontal plane (degrees)
     "inclination": (84, 0.5),
     # Launch rail heading relative to north (degrees)
-    "heading": (150, 1),
+    "heading": (160, 1),
     # Launch rail length (m)
     "rail_length": (2, 0.005),
     # Members of the ensemble forecast to be used
@@ -125,7 +125,7 @@ analysis_parameters = {
 
     # === Parachute Details ===
     # Drag coefficient times reference area for the rocket main chute (m^2)
-    "cd_s_main": (0.97 * 1.168, 0.0277),                                                         #rocketman 4ft 
+    "cd_s_main": (0.97 * 1.168, 0.0277),
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
     "lag_rec": (1.73, 0.1),
 
@@ -291,7 +291,7 @@ BASE_DIR = Path(__file__).resolve().parent
 filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 25
+number_of_simulations = 15
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -1270,8 +1270,8 @@ ax.set_ylabel("North (m)")
 ax.set_xlabel("East (m)")
 # Add background image to plot
 # You can translate the basemap by changing dx and dy (in meters)
-dx = 0
-dy = 0
+dx = 250
+dy = -150
 plt.imshow(img, zorder=0, extent=[-850-dx, 850-dx, -500-dy, 500-dy])
 plt.axhline(0, color="black", linewidth=0.5)
 plt.axvline(0, color="black", linewidth=0.5)
