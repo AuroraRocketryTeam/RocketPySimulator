@@ -292,7 +292,7 @@ BASE_DIR = Path(__file__).resolve().parent
 filename = BASE_DIR / "Atlas"
 print("Filename is:")
 print(filename)
-number_of_simulations = 3
+number_of_simulations = 25
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")

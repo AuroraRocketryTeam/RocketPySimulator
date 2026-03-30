@@ -7,7 +7,6 @@
 #      Update to new coordinate system of reference for the rocket components
 #      Add realistic sensors        (Lorenzo Rossetti)
 
-
 # Importing libraries 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -26,6 +25,15 @@ import json
 import os
 import pickle
 
+#   SRAD motor info v1.0
+impulse = 455.15
+burn_time = 1.199
+grain_external_radius = 0.04 / 2
+grain_internal_radius = 0.01 / 2 
+grain_length = 0.1840
+grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
+grain_mass = 0.4019
+grain_density = grain_mass / grain_volume
    
 analysis_parameters = {
     
@@ -34,9 +42,9 @@ analysis_parameters = {
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
     "rocket_dry_mass": (2190 / 1000, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
-    "rocket_dry_inertia_11": (0.115, 0.187),
+    "rocket_dry_inertia_11": (0.115, 0.00187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
-    "rocket_dry_inertia_33": (0.004, 0.00122),
+    "rocket_dry_inertia_33": (0.004, 0.000122),
     # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation). The weight of the motor structure is included in the rocket dry mass
     "motor_dry_mass": (0.0001, 0.0001),
     # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
@@ -48,25 +56,10 @@ analysis_parameters = {
 
     # === Propulsion Details ===
 
-    # NOTE: These data are based on the Pro-38 247H143-13A motor, similar to our SRAD counterpart the Propulsion team is developing
-
-    #   Motor performances (impulse, burn time) are taken from the Pro-38 247H143-13A
-
-    #   Weight is distributed as a total of 520g, of which an estimated 80% (416g) as "propellant weight" or burnable material 
-    #   and the remaining 20% (104g) is added to the dry mass (2086 + 104 = 2190g)
-
-    #   Propellant is simplified into a single grain, same length as the "GRAIN+NOZZLE+FENOLICO INTERNO" (184mm) on Openrocket, outer radius is taken as
-    #   inner diameter of "GRAIN+NOZZLE+FENOLICO INTERNO" (20mm) and inner radius is made-up (5mm).
-
-    #   Grain density is adapted to give the grain a weight og 416g
-
-    #   Nozzle dimensions are taken from Borealis, as of now its just for imaging purposes.
-
-
     # Motor total impulse (N*s)
-    "impulse": (247, 1),
+    "impulse": (impulse, 1),
     # Motor burn out time (s)
-    "burn_time": (1.7, 0.01),
+    "burn_time": (burn_time, 0.01),
     # Motor's nozzle radius (m)                                                 # both nozzle dimesions are taken from Borealis
     "nozzle_radius": (13.71 / 1000, 1 / 1000),
     # Motor's nozzle throat radius (m)
@@ -74,13 +67,13 @@ analysis_parameters = {
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (1920, 1),                                                 # density is (propellant weight 416g)/(grain volume 216.77cm^3)
+    "grain_density": (grain_density, 1),                                                 # density is (propellant weight 416g)/(grain volume 216.77cm^3)
     # Motor's grain outer radius (m)
-    "grain_outer_radius": (20 / 1000, 0.0001),
+    "grain_outer_radius": (grain_external_radius, 0.0001),
     # Motor's grain inner radius (m)
-    "grain_initial_inner_radius": (5 / 1000, 0.001),
+    "grain_initial_inner_radius": (grain_internal_radius, 0.001),
     # Motor's grain height (m)
-    "grain_initial_height": (184 / 1000, 0.001),
+    "grain_initial_height": (grain_length, 0.001),
 
     # === Aerodynamic Details ===
     
@@ -97,7 +90,7 @@ analysis_parameters = {
     # Rocket's nose cone length (m)
     "nose_length": (0.14, 0.001),
     # Power of the function that describes the shape of the nose cone
-    "nose_pwr" : (0.0, 0.001),
+    "nose_pwr" : (0.4, 0.001),                          
     # Axial distance from the tip of the nose (m)
     "tail_position": (0.72, 0.001),
     # The origin of the coordinate system (m)
@@ -126,16 +119,15 @@ analysis_parameters = {
     # Launch rail inclination angle relative to the horizontal plane (degrees)
     "inclination": (84, 0.5),
     # Launch rail heading relative to north (degrees)
-    "heading": (200, 1),
+    "heading": (150, 1),
     # Launch rail length (m)
     "rail_length": (2, 0.005),
     # Members of the ensemble forecast to be used
     "ensemble_member": list(range(10)),
 
     # === Parachute Details ===
-
     # Drag coefficient times reference area for the rocket main chute (m^2)
-    "cd_s_main": (0.97 * 1.168, 0.277),                                                         #rocketman 4ft 
+    "cd_s_main": (0.97 * 1.168, 0.0277),                                                         #rocketman 4ft 
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
     "lag_rec": (1.73, 0.1),
 
@@ -264,37 +256,42 @@ def export_flight_error(flight_setting):
 # The following function is a Python representation of the C code that will be used on the rocket to detect the apogee condition. In the actual code, detection of negative velocity is achieved thanks to the readings from the IMU sensor
 
 
-def check_apogee(vertical_velocity, current_time, threshold=0.1):
 
-    global last_negative_time, apogee_detected, parachute_stopwatch
 
-    # If the parachute activation signal has already been sent, confirm it and exit the function
-    if apogee_detected:
-        return True, last_negative_time
+def main_parachute_opening(apogee_detected:bool, altitude:float) -> bool:
+    return apogee_detected and altitude <= 200 # meters 
+
+# def check_apogee(vertical_velocity, current_time, threshold=0.1):
+
+#     global last_negative_time, apogee_detected, parachute_stopwatch
+
+#     # If the parachute activation signal has already been sent, confirm it and exit the function
+#     if apogee_detected:
+#         return True, last_negative_time
     
-    # Otherwise, check if the rocket is losing altitude
-    if vertical_velocity < 0:
+#     # Otherwise, check if the rocket is losing altitude
+#     if vertical_velocity < 0:
 
-        # if a descent is being detected, check if this is the first time this occurs
-        if last_negative_time is None:
+#         # if a descent is being detected, check if this is the first time this occurs
+#         if last_negative_time is None:
 
-            # if it is, mark this instant and exit the function
-            last_negative_time = parachute_stopwatch
-            return False, last_negative_time
+#             # if it is, mark this instant and exit the function
+#             last_negative_time = parachute_stopwatch
+#             return False, last_negative_time
         
-        elif (current_time - last_negative_time) >= threshold: #0.1s
+#         elif (current_time - last_negative_time) >= threshold: #0.1s
 
-            # if it isn't and enough time has passed with a continuous descent, acknowledge apogee and exit the function
-            return True, last_negative_time
+#             # if it isn't and enough time has passed with a continuous descent, acknowledge apogee and exit the function
+#             return True, last_negative_time
         
-        else:
+#         else:
 
-            # if it isn't and not enough time has passed with a continuous descent, return False and exit the function
-            return False, last_negative_time
+#             # if it isn't and not enough time has passed with a continuous descent, return False and exit the function
+#             return False, last_negative_time
         
-    # if a descent is no longer being (or has never been) detected, return False and exit the function
-    else:
-        return False, None
+#     # if a descent is no longer being (or has never been) detected, return False and exit the function
+#     else:
+#         return False, None
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -303,7 +300,7 @@ BASE_DIR = Path(__file__).resolve().parent
 filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 3
+number_of_simulations = 25
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -380,24 +377,24 @@ Env.set_atmospheric_model(
 # )
 
 # Set up parachute trigger for the chute
-def simulator_check_parachute_opening(p, h, y):
-    global last_negative_time, apogee_detected, parachute_stopwatch, sampling_rate
-    altitude = h
-    vertical_velocity = y[5]
+# def simulator_check_parachute_opening(p, h, y):
+#     global last_negative_time, apogee_detected, parachute_stopwatch, sampling_rate
+#     altitude = h
+#     vertical_velocity = y[5]
 
-    # Update counter for flight time to apogee: each time this function is called, the timer advances of 1 over the frequency at which the function is called. This is a workaround to get a measure of in-flight time
-    # into the apogee detection algorythm and successfully implement its "consistent descent signal" principle.
-    parachute_stopwatch += 1/sampling_rate
+#     # Update counter for flight time to apogee: each time this function is called, the timer advances of 1 over the frequency at which the function is called. This is a workaround to get a measure of in-flight time
+#     # into the apogee detection algorythm and successfully implement its "consistent descent signal" principle.
+#     parachute_stopwatch += 1/sampling_rate
 
-    # Mark instant at which the current call is being made
-    now = parachute_stopwatch
+#     # Mark instant at which the current call is being made
+#     now = parachute_stopwatch
     
-    # Call apogee detection algorythm
-    apogee_detected, last_negative_time = check_apogee(
-        vertical_velocity,
-        now,  
-    )
-    return apogee_detected
+#     # Call apogee detection algorythm
+#     apogee_detected, last_negative_time = check_apogee(
+#         vertical_velocity,
+#         now,  
+#     )
+#     return apogee_detected
 
 
 # Initiate collection of flight data. This allows to compare different flight from the Montecarlo analysis and visualize data dispersion and overall characteristics of the flight and the simulation itself
@@ -422,7 +419,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Define COTS motor
     Pro38_247H143_13A = SolidMotor(
         # Thrust data
-        thrust_source=str(BASE_DIR /"""Cesaroni_247H143-13A.csv"""),
+        thrust_source=str(BASE_DIR /"""SRAD_thrustcurve_v1.0.csv"""),
         burn_time=setting["burn_time"],
         reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
         interpolation_method="linear",
@@ -467,11 +464,11 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define rail buttons
-    FRED.set_rail_buttons(
-        upper_button_position= setting["upper_button_y"], 
-        lower_button_position= setting["lower_button_y"], 
-        angular_position= setting["angular_button"],
-    )
+    # FRED.set_rail_buttons(
+    #     # upper_button_position= setting["upper_button_y"], 
+    #     lower_button_position= setting["lower_button_y"], 
+    #     angular_position= setting["angular_button"],
+    # )
 
     # Add the motor to the rocket assembly
     FRED.add_motor(Pro38_247H143_13A, position=0.762)   # sets the motor's CDM on the rocket's CDM. The "grain center of mass position" parameter will handle the position of the actual motor
@@ -483,7 +480,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Define and add the Nosecone section
     NoseCone = FRED.add_nose(
         length=setting["nose_length"],
-        kind="ogive",
+        kind= "elliptical",
         power= "nose_pwr",
         position=setting["nose_position"],
     )
@@ -512,7 +509,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     Main = FRED.add_parachute(
         "Main",
         cd_s=setting["cd_s_main"],
-        trigger=simulator_check_parachute_opening,
+        trigger="apogee",
         sampling_rate= sampling_rate,
         lag=setting["lag_rec"] + setting["lag_se"],
         noise=(
@@ -521,7 +518,6 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             setting["noise_p_tc"],
         ),
     )
-
     # Run trajectory simulation
     try:
         
