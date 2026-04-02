@@ -39,8 +39,8 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'prova'
-number_of_simulations = 15
+output_dir_name = 'SRAD_motor_test'
+number_of_simulations = 50
 
 show_graph = False
 sensitivity_analysis = True
@@ -49,7 +49,7 @@ latitude = 44.290583
 longitude = 12.027111
 elevation = 18
 date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
+weather_data: Literal['c','e','f','i'] = 'e'        #(Custom, Ensemble, Forecast, Isa)
 
 #   SRAD motor info v1.0
 impulse = 455.15
@@ -558,7 +558,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         nozzle_radius=setting["nozzle_radius"],
         throat_radius=setting["throat_radius"],
         # Grain data
-        grain_number=6,
+        grain_number=1,
         grain_separation=setting["grain_separation"],
         grain_density=setting["grain_density"],
         grain_outer_radius=setting["grain_outer_radius"],
@@ -577,14 +577,14 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         coordinate_system_orientation = "nozzle_to_combustion_chamber",
     )
 
-    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_power_off.csv")
-    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_power_on.csv")
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.4_CD_power_off.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.4_CD_power_on.csv")
 
 
 # Now create the Rocket
 
     # Create rocket
-    Atlas = Rocket(
+    FRED = Rocket(
         radius=setting["radius"],
         mass=setting["rocket_dry_mass"],
         inertia=(
@@ -600,7 +600,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define rail buttons
-    Atlas.set_rail_buttons(
+    FRED.set_rail_buttons(
         upper_button_position= setting["upper_button_y"], 
         lower_button_position= setting["lower_button_y"], 
         angular_position= setting["angular_button"],
@@ -609,14 +609,14 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Add the motor to the rocket assembly
     # sets the motor's CDM on the rocket's CDM.
     # The "grain center of mass position" parameter will handle the position of the actual motor
-    Atlas.add_motor(Solidmotor, position=0.762)   
+    FRED.add_motor(Solidmotor, position=0.762)   
 
     # Add uncertainty to the drag curves, by multiplying them by a small, random corrective factor
-    Atlas.power_off_drag *= setting["power_off_drag_corr"]
-    Atlas.power_on_drag *= setting["power_on_drag_corr"]
+    FRED.power_off_drag *= setting["power_off_drag_corr"]
+    FRED.power_on_drag *= setting["power_on_drag_corr"]
 
     # Define and add the Nosecone section
-    NoseCone = Atlas.add_nose(
+    NoseCone = FRED.add_nose(
         length=setting["nose_length"],
         kind="elliptical",
         power= "nose_pwr",
@@ -624,7 +624,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define and add the Fins
-    FinSet = Atlas.add_trapezoidal_fins(
+    FinSet = FRED.add_trapezoidal_fins(
         n=3,
         span=setting["fin_span"],
         root_chord=setting["fin_root_chord"],
@@ -636,7 +636,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define and add the Boat-tail
-    Tail = Atlas.add_tail(
+    Tail = FRED.add_tail(
         top_radius=setting["tail_top_radius"],
         bottom_radius=setting["tail_bottom_radius"], 
         length=setting["tail_length"], 
@@ -644,7 +644,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define and add the Main parachute
-    Main = Atlas.add_parachute(
+    Main = FRED.add_parachute(
         "Main",
         cd_s=setting["cd_s_main"],
         trigger=simulator_check_chute_opening,
@@ -660,7 +660,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Run trajectory simulation
     try: 
         rocket_flight = Flight(
-            rocket=Atlas,
+            rocket=FRED,
             environment=Env,
             rail_length=setting["rail_length"],
             inclination=setting["inclination"],
@@ -754,7 +754,7 @@ for line in dispersion_output_file:
 dispersion_output_file.close()
 #--------------------------------------------------------------------------------------------------------
 
-
+FRED.draw()
 
 
 
@@ -930,7 +930,7 @@ for pp in all_plots:
 #-------------------------------------------------------------------------------------------------------- LAUNCH SITE
 print(colored('\n\nLaunch site graph:'))
 # Import background map
-img = imread(str(BASE_DIR / "simulation_inputs/environment_data/Villafranca_airfield_launch_site.png"))
+img = imread(str(BASE_DIR / "simulation_inputs/environment_data/Villafranca_airfield_launch_site.jpg"))
 
 # Retrieve dispersion data por apogee and impact XY position
 apogee_x = np.array(dispersion_results["apogee_x"])
