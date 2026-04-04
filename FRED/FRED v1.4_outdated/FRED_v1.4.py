@@ -1,5 +1,9 @@
-# RocketPy Preliminary Simulation of the Atlas rocket, Aurora Rocketry Team, EuRoC 2025
+# RocketPy Preliminary Simulation of the Flight Research Experimental Device (F.R.E.D.) rocket,by Aurora Rocketry Team
 # Authors: Daniele Bandini, Giovanni Bacchini, Caio Scattolini, Leonardo Francesco Neri, Alex Petrani, Federico Pedicini, Lorenzo Pintauro, Alessio Mrass, Andrea Di Maio
+
+#TODO:
+#      Update to new coordinate system of reference for the rocket components
+#      Add realistic sensors        (Lorenzo Rossetti)
 
 # Importing libraries 
 import matplotlib as mpl
@@ -7,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from time import process_time
+from datetime import datetime, timedelta
 
 from rocketpy import Environment, SolidMotor, Rocket, Flight, CompareFlights
 import imageio.v2 as imageio
@@ -18,17 +23,26 @@ import json
 import os
 import pickle
 
+#   SRAD motor info v1.0
+impulse = 455.15
+burn_time = 1.199
+grain_external_radius = 0.04 / 2
+grain_internal_radius = 0.01 / 2 
+grain_length = 0.1840
+grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
+grain_mass = 0.4019
+grain_density = grain_mass / grain_volume
    
 analysis_parameters = {
     
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (25.590, 0.3),
+    "rocket_dry_mass": (2190 / 1000, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
-    "rocket_dry_inertia_11": (14.631, 0.187),
+    "rocket_dry_inertia_11": (0.115, 0.00187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
-    "rocket_dry_inertia_33": (0.075, 0.00122),
+    "rocket_dry_inertia_33": (0.004, 0.000122),
     # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation). The weight of the motor structure is included in the rocket dry mass
     "motor_dry_mass": (0.0001, 0.0001),
     # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
@@ -40,94 +54,87 @@ analysis_parameters = {
 
     # === Propulsion Details ===
 
-    # NOTE: many of these values have been estimated based on the few data made available by the motor producers, such as
-    # technical drawings for the exterior of the motor and information about the total mass of the grains.
-    # You can check the grain_dimensions.m file to see the algorithm we used to calculate the grain inner radius and length from known data.
-
     # Motor total impulse (N*s)
-    "impulse": (9977, 5),
+    "impulse": (impulse, 1),
     # Motor burn out time (s)
-    "burn_time": (4.3, 0.1),
-    # Motor's nozzle radius (m), obtained by scaling the known geometry of a Pro54 rocket motor nozzle (real nozzle geometry for Pro75 motors is not publicly available)
-    "nozzle_radius": (29/ 1000, 0.5 / 1000),
-    # Motor's nozzle throat radius (m), obtained by scaling the known geometry of a Pro54 rocket motor nozzle (real nozzle geometry for Pro75 motors is not publicly available)
-    "throat_radius": (20 / 1000, 0.5 / 1000),
+    "burn_time": (burn_time, 0.01),
+    # Motor's nozzle radius (m)                                                         # both nozzle dimesions are taken from Borealis
+    "nozzle_radius": (13.71 / 1000, 1 / 1000),
+    # Motor's nozzle throat radius (m)
+    "throat_radius": (9.50 / 1000, 1 / 1000),
     # Motor's grain separation (axial distance between two grains) (m)
-    "grain_separation": (3 / 1000, 0.01 / 1000),
+    "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (1793.7, 1),
+    "grain_density": (grain_density, 1),
     # Motor's grain outer radius (m)
-    "grain_outer_radius": (35.9 / 1000, 0.0001),
+    "grain_outer_radius": (grain_external_radius, 0.0001),
     # Motor's grain inner radius (m)
-    "grain_initial_inner_radius": (18.10 / 1000, 0.0001),
+    "grain_initial_inner_radius": (grain_internal_radius, 0.001),
     # Motor's grain height (m)
-    "grain_initial_height": (156.17/ 1000, 0.0001),
+    "grain_initial_height": (grain_length, 0.001),
 
     # === Aerodynamic Details ===
     
     # Rocket's radius (m)
-    "radius": (75 / 1000, 0.001),
+    "radius": (42.5 / 1000, 0.001),
     # Origin of the motor coordinate system
-    "nozzle_position": (0, 0.0001),
+    "nozzle_position": (0, 0.001),
     # Distance between the origin of the referential system and center of propellant mass (m) 
-    "grains_center_of_mass_position": (0.5125, 0.01),
+    "grains_center_of_mass_position": (90.5 / 1000, 0.001), 
     # Multiplier for rocket's power off drag curve to introduce uncertainty
     "power_off_drag_corr": (1.0, 0.001),
     # Multiplier for rocket's power on drag curve to introduce uncertainty
     "power_on_drag_corr": (1.0, 0.001),
     # Rocket's nose cone length (m)
-    "nose_length": (0.43, 0.001),
+    "nose_length": (0.14, 0.001),
     # Power of the function that describes the shape of the nose cone
-    "nose_pwr" : (0.0, 0.001),
+    "nose_pwr" : (0.4, 0.001),                          
     # Axial distance from the tip of the nose (m)
-    "tail_position": (3.005, 0.001),
+    "tail_position": (0.72, 0.001),
     # The origin of the coordinate system (m)
     "nose_position": (0, 0),
     # Number of fins
     "fin_number" : (3, 0), 
     # Fin span (m)
-    "fin_span": (0.142, 0.0005), 
+    "fin_span": (0.105, 0.0005), 
     # Fin root chord (m)
-    "fin_root_chord": (0.28, 0.0005), 
+    "fin_root_chord": (0.11, 0.0005), 
     # Fin tip chord (m)
-    "fin_tip_chord": (0.06, 0.0005), 
+    "fin_tip_chord": (0.03, 0.0005), 
     # Axial distance between rocket's tip and nearest point in its fin (m)
-    "fin_position": (2.71, 0.005), 
+    "fin_position": (0.61, 0.005), 
     # Fin sweep angle (degrees)
-    "fin_sweep_angle": (58.2, 0.005), 
+    "fin_sweep_angle": (33.7, 0.005), 
     # Tail length (m)
-    "tail_length": (0.075, 0.001), 
+    "tail_length": (0.042, 0.001), 
     # Tail bottom radius (m)
-    "tail_bottom_radius": (0.05, 0.001), 
+    "tail_bottom_radius": (29/1000, 0.001), 
     # Tail top radius (m)
-    "tail_top_radius": (0.075, 0.001), 
+    "tail_top_radius": (42.5/1000, 0.001), 
 
     # === Launch and Environment Details ===
 
     # Launch rail inclination angle relative to the horizontal plane (degrees)
     "inclination": (84, 0.5),
     # Launch rail heading relative to north (degrees)
-    "heading": (145, 1),
+    "heading": (160, 1),
     # Launch rail length (m)
-    "rail_length": (11, 0.005),
+    "rail_length": (2, 0.005),
     # Members of the ensemble forecast to be used
     "ensemble_member": list(range(10)),
 
     # === Parachute Details ===
-
-    # Drag coefficient times reference area for the rocket drogue chute (m^2)
-    "cd_s_drogue": (0.97 * 0.9144,0.006),         #rocketman 3ft without spillout
     # Drag coefficient times reference area for the rocket main chute (m^2)
-    "cd_s_main": (0.97 * 14.3013, 0.277),          #rocketman 16ft without spillout
+    "cd_s_main": (0.97 * 1.168, 0.0277),
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
     "lag_rec": (1.73, 0.1),
 
     # === Rail buttons Details ===
     
     # Position of the rail button closer to the tip of the rocket (m)
-    "upper_button_y": (0.57, 0.005),
+    "upper_button_y": (0.14, 0.005),
     # Position of the rail button further to the tip of the rocket (m)
-    "lower_button_y": (2.14, 0.005),
+    "lower_button_y": (0.545, 0.005),
     # Angular position of the buttons (degrees)
     "angular_button": (0, 0.01),
 
@@ -245,8 +252,6 @@ def export_flight_error(flight_setting):
 
 
 # The following function is a Python representation of the C code that will be used on the rocket to detect the apogee condition. In the actual code, detection of negative velocity is achieved thanks to the readings from the IMU sensor
-
-
 def check_apogee(vertical_velocity, current_time, threshold=0.1):
 
     global last_negative_time, apogee_detected, parachute_stopwatch
@@ -278,21 +283,15 @@ def check_apogee(vertical_velocity, current_time, threshold=0.1):
     # if a descent is no longer being (or has never been) detected, return False and exit the function
     else:
         return False, None
-    
 
-# The following function is a Python representation of the C code that will be used on the rocket to detect the main parachute opening condition. In the code, the height is determined by filtering barometer readings with a Kalman filter
- 
-
-def main_parachute_opening(apogee_detected:bool, altitude:float) -> bool:
-    return apogee_detected and altitude <= 450.0 # meters 
 
 BASE_DIR = Path(__file__).resolve().parent
 
 # Basic analysis info
-filename = BASE_DIR / "Atlas"
+filename = BASE_DIR / "FRED"
 print("Filename is:")
 print(filename)
-number_of_simulations = 25
+number_of_simulations = 15
 # Create data files for inputs, outputs and error logging
 dispersion_error_file = open(str(filename) + ".disp_errors.txt", "w")
 dispersion_input_file = open(str(filename) + ".disp_inputs.json", "w")
@@ -306,10 +305,11 @@ initial_cpu_time = process_time()
 
 # Define basic Environment object
 Env = Environment(
-    date = (2024, 10, 11, 12),                          #(Year, Month, Day, Hour)
-    longitude=-8.288963, latitude=39.3897,
-    elevation = 160,
-    max_expected_height = 4500
+    #date = datetime.now() + timedelta(days=1),         # use for forecast
+    date = (2025, 5, 9, 12),                            #(Year, Month, Day, Hour)
+    latitude=44.290583, longitude=12.027111,
+    elevation = 18,
+    max_expected_height = 1500
 )
 
 # There are 3 possible choices of weather data: [uncomment the choosen one and comment the others]
@@ -322,53 +322,53 @@ Env = Environment(
 # For more information consult the "mean_environment_values.json" file inside the directory.
 
 # import the .json with the mean environment values oustide the defition of the atmospheric model
-with open(BASE_DIR /"""environment_data/mean_environment_values.json""", "r") as f:
-    data = json.load(f)
+# with open(BASE_DIR /"""environment_data/mean_environment_values.json""", "r") as f:
+#     data = json.load(f)
 
-Env.set_atmospheric_model(
+# Env.set_atmospheric_model(
 
-    # set the atmosphere model
-    type="custom_atmosphere",
+#     # set the atmosphere model
+#     type="custom_atmosphere",
 
-    # define the values (pressure, temperature and wind [E,N]) from the .json
-    pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
-    temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
-    wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
-    wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
+#     # define the values (pressure, temperature and wind [E,N]) from the .json
+#     pressure = data["atmospheric_model_pressure_profile"][str(Env.date[3])],
+#     temperature= data["atmospheric_model_temperature_profile"][str(Env.date[3])],
+#     wind_u= data["atmospheric_model_wind_velocity_x_profile"][str(Env.date[3])],
+#     wind_v= data["atmospheric_model_wind_velocity_y_profile"][str(Env.date[3])]
 
-)
+# )
 
 # 2. Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the environment definition), in this case the weather data will match the date chosen by the user.
 
-# Env.set_atmospheric_model(    
-#     type="Ensemble",                                                                                                  
-#     file=str(BASE_DIR / """environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"""),                                        
-#     # This section creates an updated dictionary to read the NetCDF4 files,                                           
-#     # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     
-#     dictionary= {                                                                                                     
-#         "ensemble": "number",                                                                                         
-#         "time": "valid_time",                                                                                         
-#         "latitude": "latitude",                                                                                       
-#         "longitude": "longitude",                                                                                     
-#         "level": "pressure_level",                                                                                    
-#         "temperature": "t",                                                                                           
-#         "surface_geopotential_height": None,                                                                          
-#         "geopotential_height": None,                                                                                  
-#         "geopotential": "z",                                                                                          
-#         "u_wind": "u",                                                                                                
-#         "v_wind": "v",                                                                                                
-#     },
-# )
+Env.set_atmospheric_model(    
+    type="Ensemble",                                                                                                  
+    file=str(BASE_DIR / """environment_data/Villafranca_ensemble_5to11may2020to2026.nc"""),                                        
+    # This section creates an updated dictionary to read the NetCDF4 files,                                           
+    # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 files in the new format     
+    dictionary= {                                                                                                     
+        "ensemble": "number",                                                                                         
+        "time": "valid_time",                                                                                         
+        "latitude": "latitude",                                                                                       
+        "longitude": "longitude",                                                                                     
+        "level": "pressure_level",                                                                                    
+        "temperature": "t",                                                                                           
+        "surface_geopotential_height": None,                                                                          
+        "geopotential_height": None,                                                                                  
+        "geopotential": "z",                                                                                          
+        "u_wind": "u",                                                                                                
+        "v_wind": "v",                                                                                                
+    },
+)
 
 # 3. The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) weather data, (change the date in the environment definition).
 
 # Env.set_atmospheric_model(
-#     type="Forecast",
-#     file="GFS"
+#      type="Forecast",
+#      file="GFS"
 # )
 
-# Set up parachute trigger for the drogue chute
-def simulator_check_drogue_opening(p, h, y):
+#Set up parachute trigger for the chute
+def simulator_check_parachute_opening(p, h, y):
     global last_negative_time, apogee_detected, parachute_stopwatch, sampling_rate
     altitude = h
     vertical_velocity = y[5]
@@ -386,14 +386,6 @@ def simulator_check_drogue_opening(p, h, y):
         now,  
     )
     return apogee_detected
-
-# Set up parachute trigger for the main chute
-def simulator_check_main_opening(p, h, y):
-    global last_negative_time, apogee_detected
-    altitude = h
-
-    # Call parachute activation algorythm and return its output value
-    return main_parachute_opening(apogee_detected, altitude)
 
 
 # Initiate collection of flight data. This allows to compare different flight from the Montecarlo analysis and visualize data dispersion and overall characteristics of the flight and the simulation itself
@@ -416,9 +408,9 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         Env.select_ensemble_member(setting["ensemble_member"])
 
     # Define COTS motor
-    Pro75_9977M2245 = SolidMotor(
+    Pro38_247H143_13A = SolidMotor(
         # Thrust data
-        thrust_source=str(BASE_DIR /"""Cesaroni_9977_M2245.csv"""),
+        thrust_source=str(BASE_DIR /"""SRAD_thrustcurve_v1.0.csv"""),
         burn_time=setting["burn_time"],
         reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
         interpolation_method="linear",
@@ -426,7 +418,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         nozzle_radius=setting["nozzle_radius"],
         throat_radius=setting["throat_radius"],
         # Grain data
-        grain_number=6,
+        grain_number=1,
         grain_separation=setting["grain_separation"],
         grain_density=setting["grain_density"],
         grain_outer_radius=setting["grain_outer_radius"],
@@ -446,7 +438,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Create rocket
-    Atlas = Rocket(
+    FRED = Rocket(
         radius=setting["radius"],
         mass=setting["rocket_dry_mass"],
         inertia=(
@@ -454,38 +446,38 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             setting["rocket_dry_inertia_11"],
             setting["rocket_dry_inertia_33"],
         ),
-        power_off_drag=str(BASE_DIR / """Hexagonal_power_off.CSV"""),
-        power_on_drag=str(BASE_DIR / """Hexagonal_power_on.CSV"""),
+        power_off_drag=str(BASE_DIR / """FRED_v1.4_CD_power_off.csv"""),
+        power_on_drag=str(BASE_DIR / """FRED_v1.4_CD_power_on.csv"""),
 
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
-        center_of_mass_without_motor=1.61919,
+        center_of_mass_without_motor=0.386,
         coordinate_system_orientation="nose_to_tail",
     )
 
     # Define rail buttons
-    Atlas.set_rail_buttons(
-        upper_button_position= setting["upper_button_y"], 
-        lower_button_position= setting["lower_button_y"], 
-        angular_position= setting["angular_button"],
-    )
+    # FRED.set_rail_buttons(
+    #     # upper_button_position= setting["upper_button_y"], 
+    #     lower_button_position= setting["lower_button_y"], 
+    #     angular_position= setting["angular_button"],
+    # )
 
     # Add the motor to the rocket assembly
-    Atlas.add_motor(Pro75_9977M2245, position=3.08)   # sets the motor's CDM on the rocket's CDM. The "grain center of mass position" parameter will handle the position of the actual motor
+    FRED.add_motor(Pro38_247H143_13A, position=0.762)   # sets the motor's CDM on the rocket's CDM. The "grain center of mass position" parameter will handle the position of the actual motor
 
     # Add uncertainty to the drag curves, by multiplying them by a small, random corrective factor
-    Atlas.power_off_drag *= setting["power_off_drag_corr"]
-    Atlas.power_on_drag *= setting["power_on_drag_corr"]
+    FRED.power_off_drag *= setting["power_off_drag_corr"]
+    FRED.power_on_drag *= setting["power_on_drag_corr"]
 
     # Define and add the Nosecone section
-    NoseCone = Atlas.add_nose(
+    NoseCone = FRED.add_nose(
         length=setting["nose_length"],
-        kind="lvhaack",
+        kind= "elliptical",
         power= "nose_pwr",
         position=setting["nose_position"],
     )
 
     # Define and add the Fins
-    FinSet = Atlas.add_trapezoidal_fins(
+    FinSet = FRED.add_trapezoidal_fins(
         n=3,
         span=setting["fin_span"],
         root_chord=setting["fin_root_chord"],
@@ -497,32 +489,18 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define and add the Boat-tail
-    Tail = Atlas.add_tail(
+    Tail = FRED.add_tail(
         top_radius=setting["tail_top_radius"],
         bottom_radius=setting["tail_bottom_radius"], 
         length=setting["tail_length"], 
         position = setting["tail_position"],
     )
 
-    # Define and add the Drogue parachute
-    Drogue = Atlas.add_parachute(
-        "Drogue",
-        cd_s=setting["cd_s_drogue"],
-        trigger=simulator_check_drogue_opening,
-        sampling_rate= sampling_rate,
-        lag=setting["lag_rec"] + setting["lag_se"],
-        noise=(
-            setting["noise_mean"],
-            setting["noise_p_stdev"],
-            setting["noise_p_tc"],
-        ),
-    )
-
     # Define and add the Main parachute
-    Main = Atlas.add_parachute(
+    Main = FRED.add_parachute(
         "Main",
         cd_s=setting["cd_s_main"],
-        trigger=simulator_check_main_opening,
+        trigger=simulator_check_parachute_opening,
         sampling_rate= sampling_rate,
         lag=setting["lag_rec"] + setting["lag_se"],
         noise=(
@@ -531,12 +509,11 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             setting["noise_p_tc"],
         ),
     )
-
     # Run trajectory simulation
     try:
         
         rocket_flight = Flight(
-            rocket=Atlas,
+            rocket=FRED,
             environment=Env,
             rail_length=setting["rail_length"],
             inclination=setting["inclination"],
@@ -553,20 +530,24 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     flights.append(rocket_flight)
 
 # Print comparison graphs to visualize data dispersion during flight
-Atlas.draw()
-Env.all_info()
-comparison = CompareFlights(flights)
-comparison.velocities()
-comparison.accelerations()
-comparison.attitude_angles()
-comparison.euler_angles()
-comparison.attitude_frequency()
-comparison.aerodynamic_forces()
-comparison.aerodynamic_moments()
-comparison.angular_velocities()
-comparison.trajectories_3d()
-comparison.rail_buttons_forces()
-comparison.stability_margin()
+#FRED.draw()
+FRED.info()
+#Pro38_247H143_13A.draw()
+Pro38_247H143_13A.info()
+
+# comparison = CompareFlights(flights)                              # comparison plots
+# comparison.velocities()
+# comparison.accelerations()
+# comparison.attitude_angles()
+# comparison.euler_angles()
+# comparison.attitude_frequency()
+# comparison.aerodynamic_forces()
+# comparison.aerodynamic_moments()
+# comparison.angular_velocities()
+# comparison.trajectories_3d()
+# comparison.rail_buttons_forces()
+# comparison.stability_margin()
+
 
 # Done
 
@@ -579,7 +560,7 @@ dispersion_input_file.close()
 dispersion_output_file.close()
 dispersion_error_file.close()
 
-filename = BASE_DIR / "Atlas"
+filename = BASE_DIR / "FRED"
 
 # Initialize variable to store all results
 dispersion_general_results = []
@@ -1210,7 +1191,7 @@ from imageio import imread
 from matplotlib.patches import Ellipse
 
 # Import background map
-img = imread(str(BASE_DIR / """environment_data/santa_margarida_military_shooting_range_launch_site.png"""))
+img = imread(str(BASE_DIR / """environment_data/Villafranca_airfield_launch_site.JPG"""))
 
 # Retrieve dispersion data por apogee and impact XY position
 apogee_x = np.array(dispersion_results["apogee_x"])
@@ -1289,13 +1270,13 @@ ax.set_ylabel("North (m)")
 ax.set_xlabel("East (m)")
 # Add background image to plot
 # You can translate the basemap by changing dx and dy (in meters)
-dx = 0
-dy = 0
-plt.imshow(img, zorder=0, extent=[-2000-dx, 2000-dx, -2000-dy, 2000-dy])
+dx = 250
+dy = -150
+plt.imshow(img, zorder=0, extent=[-850-dx, 850-dx, -500-dy, 500-dy])
 plt.axhline(0, color="black", linewidth=0.5)
 plt.axvline(0, color="black", linewidth=0.5)
-plt.xlim(-2000, 2000)
-plt.ylim(-1500, 1500)
+plt.xlim(-850, 850)
+plt.ylim(-500, 500)
 
 # Save plot and show result
 plt.savefig(str(filename) + ".pdf", bbox_inches="tight", pad_inches=0)
@@ -1303,10 +1284,10 @@ plt.savefig(str(filename) + ".svg", bbox_inches="tight", pad_inches=0)
 plt.show()
 
 
-Atlas.draw()
-Atlas.info()
-Pro75_9977M2245.draw()
-Pro75_9977M2245.info()
+FRED.draw()
+FRED.info()
+Pro38_247H143_13A.draw()
+Pro38_247H143_13A.info()
 
 # Sensitivity Analysis
 from rocketpy.tools import load_monte_carlo_data
