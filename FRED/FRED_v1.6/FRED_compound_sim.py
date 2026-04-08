@@ -279,8 +279,8 @@ from matplotlib.patches import FancyArrow
 t0 = 0
 tf = 2       # [sec]
 dt = 0.001
-time = np.arange(t0, tf+dt, dt)
-N = len(time)
+t = np.arange(t0, tf+dt, dt)
+N = len(t)
 
 # initialize arrays
 T = np.zeros(N)       # Thrust [N]
@@ -324,13 +324,13 @@ for i in range(N-1):
     if D_int_array[i] >= D_ext or L_single_grain_array[i] <= 0: # check to close the loop
 
         index_burnout = i
-        t_burnout = time[i]
+        t_burnout = t[i]
         print(f"Burnout time = {t_burnout:.3f} sec")
         break
 
     if M_pr_array[i] <= 0:
         index_burnout = i
-        t_burnout = time[i]
+        t_burnout = t[i]
         print(f"Burnout time = {t_burnout:.3f} sec (mass exhausted)")
         break
 
@@ -389,7 +389,7 @@ for i in range(N-1):
 
 """**PERFORMANCIES**"""
 
-I_total = np.trapezoid(T[:index_burnout], time[:index_burnout])
+I_total = np.trapezoid(T[:index_burnout], t[:index_burnout])
 I_sp_final = I_total / (M_pr*g)
 T_avg = np.mean(T[:index_burnout])
 
@@ -434,26 +434,26 @@ def show_graphics():
                         subplot_titles=("Thrust","CC pressure","c_star","Burn rate","Burning surface",
                                         "Mass flow rate","Propellant mass","CF","Pe and Pamb","gamma","Exit Mach","Temperatures"))
 
-    fig.add_trace(go.Scatter(x=time, y=T, showlegend=False,line=dict(color='red')), row=1, col=1)
-    fig.add_trace(go.Scatter(x=time, y=P0/1e5, showlegend=False,line=dict(color='blue')), row=1, col=2)
-    fig.add_trace(go.Scatter(x=time, y=c_star, showlegend=False,line=dict(color='yellow')), row=1, col=3)
-    fig.add_trace(go.Scatter(x=time, y=r, showlegend=False,line=dict(color='red')), row=2, col=1)
-    fig.add_trace(go.Scatter(x=time, y=Ab, showlegend=False,line=dict(color='orange')), row=2, col=2)
-    fig.add_trace(go.Scatter(x=time, y=mdot, showlegend=False,line=dict(color='orange')), row=2, col=3)
-    fig.add_trace(go.Scatter(x=time, y=M_pr_array, showlegend=False,line=dict(color='orange')), row=3, col=1)
-    fig.add_trace(go.Scatter(x=time, y=CF, showlegend=False,line=dict(color='red')), row=3, col=2)
-    fig.add_trace(go.Scatter(x=time, y=Pe/1e5, name="Pe",line=dict(color='blue')), row=3, col=3)
-    fig.add_trace(go.Scatter(x=time, y=Pe_cea/1e5, name="Pe cea",line=dict(color='yellow')), row=3, col=3)
-    fig.add_trace(go.Scatter(x=time, y=np.full_like(time, P_amb/1e5), name="Pamb (sea level)",line=dict(color='red')), row=3, col=3)
-    fig.add_trace(go.Scatter(x=time, y=gamma_nozzle_exit, name = "Exit",showlegend=False,line=dict(color='red')), row=4, col=1)
-    fig.add_trace(go.Scatter(x=time, y=gamma_chamber, name = "Chamber",showlegend=False,line=dict(color='blue')), row=4, col=1)
-    fig.add_trace(go.Scatter(x=time, y=gamma_throat, name = "Throat",showlegend=False,line=dict(color='green')), row=4, col=1)
-    fig.add_trace(go.Scatter(x=time, y=M_e, showlegend=False,line=dict(color='blue')), row=4, col=2)
+    fig.add_trace(go.Scatter(x=t, y=T, showlegend=False,line=dict(color='red')), row=1, col=1)
+    fig.add_trace(go.Scatter(x=t, y=P0/1e5, showlegend=False,line=dict(color='blue')), row=1, col=2)
+    fig.add_trace(go.Scatter(x=t, y=c_star, showlegend=False,line=dict(color='yellow')), row=1, col=3)
+    fig.add_trace(go.Scatter(x=t, y=r, showlegend=False,line=dict(color='red')), row=2, col=1)
+    fig.add_trace(go.Scatter(x=t, y=Ab, showlegend=False,line=dict(color='orange')), row=2, col=2)
+    fig.add_trace(go.Scatter(x=t, y=mdot, showlegend=False,line=dict(color='orange')), row=2, col=3)
+    fig.add_trace(go.Scatter(x=t, y=M_pr_array, showlegend=False,line=dict(color='orange')), row=3, col=1)
+    fig.add_trace(go.Scatter(x=t, y=CF, showlegend=False,line=dict(color='red')), row=3, col=2)
+    fig.add_trace(go.Scatter(x=t, y=Pe/1e5, name="Pe",line=dict(color='blue')), row=3, col=3)
+    fig.add_trace(go.Scatter(x=t, y=Pe_cea/1e5, name="Pe cea",line=dict(color='yellow')), row=3, col=3)
+    fig.add_trace(go.Scatter(x=t, y=np.full_like(t, P_amb/1e5), name="Pamb (sea level)",line=dict(color='red')), row=3, col=3)
+    fig.add_trace(go.Scatter(x=t, y=gamma_nozzle_exit, name = "Exit",showlegend=False,line=dict(color='red')), row=4, col=1)
+    fig.add_trace(go.Scatter(x=t, y=gamma_chamber, name = "Chamber",showlegend=False,line=dict(color='blue')), row=4, col=1)
+    fig.add_trace(go.Scatter(x=t, y=gamma_throat, name = "Throat",showlegend=False,line=dict(color='green')), row=4, col=1)
+    fig.add_trace(go.Scatter(x=t, y=M_e, showlegend=False,line=dict(color='blue')), row=4, col=2)
 
-    fig.add_trace(go.Scatter(x=time, y=T_matrix[:,0], name="T_chamber", line=dict(color='red')), row=4, col=3)
-    fig.add_trace(go.Scatter(x=time, y=T_matrix[:,1], name="T_throat", line=dict(color='green')), row=4, col=3)
-    fig.add_trace(go.Scatter(x=time, y=T_matrix[:,2], name="T_exit", line=dict(color='blue')), row=4, col=3)
-    fig.add_trace(go.Scatter(x=time, y=T_comb, name="T_comb", line=dict(color='orange', dash='dash')), row=4, col=3)
+    fig.add_trace(go.Scatter(x=t, y=T_matrix[:,0], name="T_chamber", line=dict(color='red')), row=4, col=3)
+    fig.add_trace(go.Scatter(x=t, y=T_matrix[:,1], name="T_throat", line=dict(color='green')), row=4, col=3)
+    fig.add_trace(go.Scatter(x=t, y=T_matrix[:,2], name="T_exit", line=dict(color='blue')), row=4, col=3)
+    fig.add_trace(go.Scatter(x=t, y=T_comb, name="T_comb", line=dict(color='orange', dash='dash')), row=4, col=3)
 
     fig.update_xaxes(title_text="Time [s]", row=1, col=1)
     fig.update_xaxes(title_text="Time [s]", row=1, col=2)
@@ -499,12 +499,12 @@ fig = make_subplots(rows=2, cols=2,
 
 fig.add_trace(go.Scatter(x=Kn_computed, y=P_arr/1e5, name = "Theoretical Kn",line=dict(color='blue')), row=1, col=1)
 fig.add_trace(go.Scatter(x=Kn_geometry[:index_burnout], y=P0[:index_burnout]/1e5, name = "Geometrical Kn",line=dict(color='red')), row=1, col=1)
-fig.add_trace(go.Scatter(x=time[:index_burnout] , y = m_flux, name = "Normalized mass flux",line=dict(color='green')), row=1, col=2)
+fig.add_trace(go.Scatter(x=t[:index_burnout] , y = m_flux, name = "Normalized mass flux",line=dict(color='green')), row=1, col=2)
 fig.add_hline(y=1406.5, line=dict(color='red', dash='dash'), row=1, col=2)
 fig.add_hline(y=1898, line=dict(color='red', dash='dash'), row=1, col=2)
 fig.add_trace(go.Scatter(x=fac_CR[:index_burnout], y=M_cc[:index_burnout], showlegend=False,line=dict(color='blue')), row=2, col=1)
 fig.add_hline(y=0.7, line=dict(color='red', dash='dash'), row=2, col=1)
-fig.add_trace(go.Scatter(x=time[:index_burnout], y=M_cc[:index_burnout], showlegend=False,line=dict(color='blue')), row=2, col=2)
+fig.add_trace(go.Scatter(x=t[:index_burnout], y=M_cc[:index_burnout], showlegend=False,line=dict(color='blue')), row=2, col=2)
 fig.add_hline(y=0.7, line=dict(color='red', dash='dash'), row=2, col=2)
 
 
@@ -563,13 +563,13 @@ def show_custom_plots():
     fig2.update_xaxes(title_text="Mach Number M", row=1, col=3, range=[0, 4])
     fig2.update_yaxes(title_text="Expansion Ratio eps", row=1, col=3, range=[0, 12])
 
-    fig2.add_trace(go.Scatter(x=time[:index_burnout], y=P0[:index_burnout]/1e5, name='P0 (chamber)', line=dict(color='blue')), row=1, col=1)
-    fig2.add_trace(go.Scatter(x=time[:index_burnout], y=Pe[:index_burnout]/1e5, name='Pe (exit)', line=dict(color='green')), row=1, col=1)
-    fig2.add_trace(go.Scatter(x=time[:index_burnout], y=Pt[:index_burnout]/1e5, name='Pt (throat)', line=dict(color='red')), row=1, col=1)
+    fig2.add_trace(go.Scatter(x=t[:index_burnout], y=P0[:index_burnout]/1e5, name='P0 (chamber)', line=dict(color='blue')), row=1, col=1)
+    fig2.add_trace(go.Scatter(x=t[:index_burnout], y=Pe[:index_burnout]/1e5, name='Pe (exit)', line=dict(color='green')), row=1, col=1)
+    fig2.add_trace(go.Scatter(x=t[:index_burnout], y=Pt[:index_burnout]/1e5, name='Pt (throat)', line=dict(color='red')), row=1, col=1)
 
-    fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,0], name="T_chamber",showlegend=False, line=dict(color='blue')), row=1, col=2)
-    fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,1], name="T_throat",showlegend=False, line=dict(color='red')), row=1, col=2)
-    fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,2], name="T_exit",showlegend=False, line=dict(color='green')), row=1, col=2)
+    fig2.add_trace(go.Scatter(x=t, y=T_matrix[:,0], name="T_chamber",showlegend=False, line=dict(color='blue')), row=1, col=2)
+    fig2.add_trace(go.Scatter(x=t, y=T_matrix[:,1], name="T_throat",showlegend=False, line=dict(color='red')), row=1, col=2)
+    fig2.add_trace(go.Scatter(x=t, y=T_matrix[:,2], name="T_exit",showlegend=False, line=dict(color='green')), row=1, col=2)
 
     fig2.update_layout(height=500, title_text="Nozzle Analytics")
     fig2.show()
@@ -657,10 +657,10 @@ fig.update_xaxes(type="log", title="Expansion ratio ε", row=1, col=3)
 fig.update_yaxes(title="CF", row=1, col=2, range=[cf_curve.min() * 0.95, cf_curve.max() * 1.05])
 fig.update_yaxes(title="CF / CF convergent", row=1, col=3, range=[cf_norm.min() * 0.95, cf_norm.max() * 1.05])
 
-fig.add_trace(go.Scatter(x=time, y=M_e * sonic_exit, line=dict(color='green'), name="Exit", showlegend=False), row=1, col=1)
-fig.add_trace(go.Scatter(x=time, y=M_cc * sonic_chamber, line=dict(color='blue'), name="Chamber", showlegend=False), row=1, col=1)
+fig.add_trace(go.Scatter(x=t, y=M_e * sonic_exit, line=dict(color='green'), name="Exit", showlegend=False), row=1, col=1)
+fig.add_trace(go.Scatter(x=t, y=M_cc * sonic_chamber, line=dict(color='blue'), name="Chamber", showlegend=False), row=1, col=1)
 M_t = np.zeros(N)+1
-fig.add_trace(go.Scatter(x=time, y=M_t * sonic_throat, line=dict(color='red'), name="Throat", showlegend=False), row=1, col=1)
+fig.add_trace(go.Scatter(x=t, y=M_t * sonic_throat, line=dict(color='red'), name="Throat", showlegend=False), row=1, col=1)
 
 
 fig.update_layout(title="Nozzle Performance Analysis - AVERAGE CONDITIONS", height=500)
@@ -676,7 +676,7 @@ print(f"Is the design point close to the CF maximum? {'Yes' if is_close_to_max e
 print(f"(You are at ε = {exp_ratio}, Max is at ε ≈ {eps_opt:.2f})\n")
 
 # --- THRUST
-thrust_curve = np.column_stack((time[:index_burnout], T[:index_burnout]))
+thrust_curve = np.column_stack((t[:index_burnout], T[:index_burnout]))
 
 
 #-------------------------------------------------------------------------------------------------------- MONTECARLO PARAMETERS
