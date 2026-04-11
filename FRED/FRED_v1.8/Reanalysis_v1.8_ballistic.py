@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from rocketpy import Environment, Flight, Rocket, SolidMotor 
 import json
@@ -118,10 +117,12 @@ grain_length = 0.1530
 grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
 grain_mass = 0.4019
 grain_dens = grain_mass / grain_volume
+thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_v1.1.csv")
 
 solid_motor = SolidMotor(
     burn_time=0.968,
-    thrust_source =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_v1.1.csv"),
+    thrust_source = thrust_curve,
+    reshape_thrust_curve=(burn_time, impulse), 
     grain_number=1,
     #   DRY PARAMETERS
     dry_mass= 0,

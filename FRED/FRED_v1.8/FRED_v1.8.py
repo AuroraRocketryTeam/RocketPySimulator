@@ -59,7 +59,7 @@ grain_internal_radius = 0.015 / 2
 grain_length = 0.1530
 grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
 grain_mass = 0.4019
-grain_density = grain_mass / grain_volume
+grain_dens = grain_mass / grain_volume
 thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_v1.1.csv")
 
 CG_position_from_nose = 432.2 / 1000
@@ -96,7 +96,7 @@ analysis_parameters = {
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
-    "grain_density": (grain_density, 1),
+    "grain_density": (grain_dens, 1),
     # Motor's grain outer radius (m)
     "grain_outer_radius": (grain_external_radius, 0.0001),
     # Motor's grain inner radius (m)
