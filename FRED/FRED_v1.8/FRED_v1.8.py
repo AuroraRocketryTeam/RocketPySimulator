@@ -39,8 +39,9 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_v1.8_design_test'
+output_dir_name = 'FRED_v1.8_nominal_11-4-2016'
 number_of_simulations = 15
+ballistic = True
 
 show_graph = False
 sensitivity_analysis = True
@@ -52,15 +53,15 @@ date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
 weather_data: Literal['c','e','f','i'] = 'e'        #(Custom, Ensemble, Forecast, Isa)
 
 #   SRAD motor info v1.1
-impulse = 309
-burn_time = 0.968
-grain_external_radius = 0.038 / 2
-grain_internal_radius = 0.015 / 2 
-grain_length = 0.1530
+impulse = 213
+t_burnout = 1.49
+grain_external_radius = 0.035 / 2
+grain_internal_radius = 0.012 / 2 
+grain_length = 0.125
 grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
-grain_mass = 0.4019
+grain_mass = 0.190
 grain_dens = grain_mass / grain_volume
-thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_v1.1.csv")
+thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/Brico-H141-noFe.csv")
 
 CG_position_from_nose = 432.2 / 1000
 
@@ -111,7 +112,7 @@ analysis_parameters = {
     # Origin of the motor coordinate system
     "nozzle_position": (0, 0.001),
     # Distance between the origin of the referential system and center of propellant mass (m) 
-    "grains_center_of_mass_position": (119.5 / 1000, 0.001), 
+    "grains_center_of_mass_position": (107 / 1000, 0.001), 
     # Multiplier for rocket's power off drag curve to introduce uncertainty
     "power_off_drag_corr": (1.0, 0.001),
     # Multiplier for rocket's power on drag curve to introduce uncertainty
@@ -646,18 +647,19 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define and add the Main parachute
-    Main = FRED.add_parachute(
-        "Main",
-        cd_s=setting["cd_s_main"],
-        trigger=simulator_check_chute_opening,
-        sampling_rate= sampling_rate,
-        lag=setting["lag_rec"] + setting["lag_se"],
-        noise=(
-            setting["noise_mean"],
-            setting["noise_p_stdev"],
-            setting["noise_p_tc"],
-        ),
-    )
+    if not ballistic:
+        Main = FRED.add_parachute(
+            "Main",
+            cd_s=setting["cd_s_main"],
+            trigger=simulator_check_chute_opening,
+            sampling_rate= sampling_rate,
+            lag=setting["lag_rec"] + setting["lag_se"],
+            noise=(
+                setting["noise_mean"],
+                setting["noise_p_stdev"],
+                setting["noise_p_tc"],
+            ),
+        )
     
     # Run trajectory simulation
     try: 

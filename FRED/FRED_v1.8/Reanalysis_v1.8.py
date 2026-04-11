@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 show_graph = False
+ballistic = True
 
 latitude = 44.290583
 longitude = 12.027111
@@ -167,15 +168,15 @@ elif weather_data!='i':
 ## DEFINE THE ROCKET PARTS
 
 #   SRAD motor info v1.1
-impulse = 309
-t_burnout = 0.968
-grain_external_radius = 0.038 / 2
-grain_internal_radius = 0.015 / 2 
-grain_length = 0.1530
+impulse = 213
+t_burnout = 1.49
+grain_external_radius = 0.035 / 2
+grain_internal_radius = 0.012 / 2 
+grain_length = 0.125
 grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
-grain_mass = 0.4019
+grain_mass = 0.190
 grain_dens = grain_mass / grain_volume
-thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_v1.1.csv")
+thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/Brico-H141-noFe.csv")
 
 solid_motor = SolidMotor(
     burn_time=t_burnout,
@@ -243,15 +244,15 @@ tail = FRED.add_tail(
     length=0.047,
     position=0.795,
 )
-
-Main = FRED.add_parachute(
-    "Main",
-    cd_s=0.97*1.168,
-    trigger=simulator_check_drogue_opening,
-    sampling_rate=105,
-    lag=1.73,
-    noise=(0, 6.5, 0.3),
-)
+if not ballistic:
+    Main = FRED.add_parachute(
+        "Main",
+        cd_s=0.97*1.168,
+        trigger=simulator_check_drogue_opening,
+        sampling_rate=105,
+        lag=1.73,
+        noise=(0, 6.5, 0.3),
+    )
 
 
 # Simulate the flight
@@ -283,13 +284,19 @@ rocket_flight.info()
 # rocket_flight.speed()
 # rocket_flight.acceleration()
 
-# save trajectory, .kml can be open in google earth
-# rocket_flight.export_kml(
-#     file_name=str(BASE_DIR/"reanalysis_output/trajectory.kml"),
-#     extrude=True,
-#     altitude_mode="relative_to_ground",
-# )
-
+#save trajectory, .kml can be open in google earth
+if ballistic:
+    rocket_flight.export_kml(
+        file_name=str(BASE_DIR/"reanalysis_output/ballistic/trajectory.kml"),
+        extrude=True,
+        altitude_mode="relative_to_ground",
+    )
+else:
+    rocket_flight.export_kml(
+        file_name=str(BASE_DIR/"reanalysis_output/nominal/trajectory.kml"),
+        extrude=True,
+        altitude_mode="relative_to_ground",
+    )
 # ------------------------------------------
 # extract mass over time value as .csv
 
