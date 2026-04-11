@@ -16,6 +16,8 @@ BASE_DIR = Path(__file__).resolve().parent
 show_graph = False
 ballistic = True
 
+ballast = 1600 / 1000
+
 latitude = 44.290583
 longitude = 12.027111
 elevation = 18
@@ -207,7 +209,7 @@ power_on_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_
 
 FRED = Rocket(
     radius= 42.5 / 1000,
-    mass= 2199.647 / 1000,
+    mass= 2199.647 / 1000 + ballast,
     inertia=(0.149,0.149,0.002),
     power_off_drag=power_off_drag, # use the prevoius defined drag curve^
     power_on_drag=power_on_drag, # use the prevoius defined drag curve 

@@ -40,8 +40,8 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'FRED_v1.8_nominal_11-4-2016'
-number_of_simulations = 15
-ballistic = True
+number_of_simulations = 150
+ballistic = False
 
 show_graph = False
 sensitivity_analysis = True
@@ -65,12 +65,14 @@ thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/Brico-H141-noFe.cs
 
 CG_position_from_nose = 432.2 / 1000
 
+ballast = 1350 / 1000
+
 analysis_parameters = {
     
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (2199.647 / 1000, 0.03),
+    "rocket_dry_mass": (2199.647 / 1000 + ballast, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
     "rocket_dry_inertia_11": (0.149, 0.00187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
@@ -89,7 +91,7 @@ analysis_parameters = {
     # Motor total impulse (N*s)
     "impulse": (impulse, 1),
     # Motor burn out time (s)
-    "burn_time": (burn_time, 0.01),
+    "burn_time": (t_burnout, 0.01),
     # Motor's nozzle radius (m)                                                         # both nozzle dimesions are taken from Borealis
     "nozzle_radius": (13.71 / 1000, 1 / 1000),                          # UPDATE
     # Motor's nozzle throat radius (m)
