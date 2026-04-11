@@ -62,7 +62,7 @@ grain_mass = 0.4019
 grain_density = grain_mass / grain_volume
 thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_v1.1.csv")
 
-CG_position_from_nose = 432 / 1000
+CG_position_from_nose = 432.2 / 1000
 
 analysis_parameters = {
     

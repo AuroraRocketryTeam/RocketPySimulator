@@ -14,7 +14,6 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 show_graph = False
-use_airbrake = True
 
 latitude = 44.290583
 longitude = 12.027111
@@ -182,68 +181,68 @@ solid_motor = SolidMotor(
     thrust_source =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_v1.1.csv"),
     grain_number=1,
     #   DRY PARAMETERS
-    dry_mass=0,
-    dry_inertia=(0, 0, 0),
-    center_of_dry_mass_position=0,
+    dry_mass= 0,
+    dry_inertia= (0, 0, 0),
+    center_of_dry_mass_position= 0,
     #   GRAIN PARAMETERS
     grain_density= grain_dens,
     grain_outer_radius= grain_external_radius,
     grain_initial_inner_radius= grain_internal_radius,
     grain_initial_height= grain_length,
-    grain_separation=3 / 1000,
+    grain_separation= 3 / 1000,
     #   NOZZLE PARAMETERS
-    nozzle_radius=29 / 1000,
+    nozzle_radius= 29 / 1000,
     nozzle_position=0,
-    throat_radius=20/ 1000,
+    throat_radius= 20/ 1000,
     #   POSITIONING PARAMETERS
-    grains_center_of_mass_position=125 / 1000,
+    grains_center_of_mass_position= 119.5 / 1000,
     coordinate_system_orientation="nozzle_to_combustion_chamber",
 )
 
-power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.4_CD_power_off.csv")
-power_on_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.4_CD_power_on.csv")
+power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_power_off.csv")
+power_on_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_power_on.csv")
 
-Atlas = Rocket(
-    radius=42.5 / 1000,
-    mass=2672 / 1000,
-    inertia=(0.115,0.115,0.004),
+FRED = Rocket(
+    radius= 42.5 / 1000,
+    mass= 2199.647 / 1000,
+    inertia=(0.149,0.149,0.002),
     power_off_drag=power_off_drag, # use the prevoius defined drag curve^
     power_on_drag=power_on_drag, # use the prevoius defined drag curve 
-    center_of_mass_without_motor= 412 / 1000,
+    center_of_mass_without_motor= 432.2 / 1000,
     coordinate_system_orientation="nose_to_tail",
 )
-Atlas.add_motor(solid_motor, position=0.814)
+FRED.add_motor(solid_motor, position=0.814)
 
-Rail_Buttons = Atlas.set_rail_buttons(
-    upper_button_position=0.14,
-    lower_button_position=0.545,
+Rail_Buttons = FRED.set_rail_buttons(
+    upper_button_position= 424 / 1000,
+    lower_button_position= 625 / 1000,
     angular_position=0,
 )
 
-nose_cone = Atlas.add_nose(
+nose_cone = FRED.add_nose(
     length=0.14, 
     kind="elliptical", 
     position=0
 )
 
-fin_set = Atlas.add_trapezoidal_fins(
+fin_set = FRED.add_trapezoidal_fins(
     n=3,
     root_chord=0.12,
     tip_chord=0.03,
     span=0.12,
-    position=0.77,
+    position=0.675,
     cant_angle=0,
     sweep_angle=30.3,
 )
 
-tail = Atlas.add_tail(
+tail = FRED.add_tail(
     top_radius= 42.5 / 1000,
-    bottom_radius= 29 / 1000,
-    length=0.044,
-    position=0.65,
+    bottom_radius= 33.5 / 1000,
+    length=0.047,
+    position=0.795,
 )
 
-Main = Atlas.add_parachute(
+Main = FRED.add_parachute(
     "Main",
     cd_s=0.97*1.168,
     trigger=simulator_check_drogue_opening,
@@ -255,18 +254,17 @@ Main = Atlas.add_parachute(
 
 # Simulate the flight
 rocket_flight = Flight(
-    rocket=Atlas,
+    rocket=FRED,
     environment=Env,
-    rail_length=12,
+    rail_length=2,
     inclination=84,
-    heading=144,
-    time_overshoot = not use_airbrake
+    heading=160,
 )
 
 # if activated, shows graphs 
 if show_graph:
-    Atlas.draw()
-    Atlas.plots.total_mass()
+    FRED.draw()
+    FRED.plots.total_mass()
     rocket_flight.plots.linear_kinematics_data()
     rocket_flight.plots.attitude_data()
     rocket_flight.plots.angular_kinematics_data()
@@ -293,7 +291,7 @@ rocket_flight.info()
 # ------------------------------------------
 # extract mass over time value as .csv
 
-# mass_data = Atlas.total_mass.source
+# mass_data = FRED.total_mass.source
 
 # df = pd.DataFrame(mass_data, columns=["time", "mass"])
 # df.to_csv(BASE_DIR / "mass_analysis/mass/mass_time_rpy/insertfilename.csv", index=False) 
@@ -302,7 +300,7 @@ rocket_flight.info()
 # extract cg position over time value as .csv
 # the relative position is expressed from the nose tip
 
-# cg_data = Atlas.center_of_mass.source
+# cg_data = FRED.center_of_mass.source
 
 # df_cg = pd.DataFrame(cg_data, columns=["time", "CG"])
 # df_cg.to_csv(BASE_DIR / "mass_analysis/CG/CG_rpy/insertfilename.csv", index=False)
