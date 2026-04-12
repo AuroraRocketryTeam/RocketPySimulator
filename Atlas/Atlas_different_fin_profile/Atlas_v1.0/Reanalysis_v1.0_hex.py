@@ -238,7 +238,7 @@ Pro75_9977M2245 = SolidMotor(
 
     # densità stimata assumendo corrette le misure dei grain e la variazione di massa fornita da openrocket.
     # sapendo che la variazione di massa avviene solo per via del consumo di propellente si può stimare la densità.
-    grain_density=1877,
+    grain_density=1876.3,
     grain_outer_radius= 35.9/ 1000,
     grain_initial_inner_radius=18.1/ 1000,
     grain_initial_height=156.17 / 1000,
