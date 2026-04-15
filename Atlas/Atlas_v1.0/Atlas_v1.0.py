@@ -148,11 +148,14 @@ analysis_parameters = {
     "ensemble_member": list(range(10)),
 
     # === Parachute Details ===
+    # To compute the projected area: S=pi*(Diameter in meters/2)^2
 
     # Drag coefficient times reference area for the rocket drogue chute (m^2)
-    "cd_s_drogue": (0.97 * 0.9144,0.006),         #rocketman 3ft without spillout
+    #"cd_s_drogue": (0.97 * 0.6567, 0.006),         #rocketman 3ft without spillout
+    "cd_s_drogue": (0.97 * 1.1675, 0.006),         #rocketman 4ft without spillout
     # Drag coefficient times reference area for the rocket main chute (m^2)
-    "cd_s_main": (0.97 * 14.3013, 0.277),          #rocketman 16ft without spillout
+    #"cd_s_main": (0.97 * 14.3013, 0.277),          #rocketman 14ft without spillout
+    "cd_s_main": (0.97 * 18.6272, 0.277),          #rocketman 16ft without spillout
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
     "lag_rec": (1.73, 0.1),
 
@@ -412,6 +415,24 @@ def controller_function(time, sampling_rate, state, state_history, observed_vari
         air_brakes.deployment_level,
         air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number),
     )
+
+# PARACHUTE ANALYSIS FUNCTIONS 
+
+rho = 1.225  # air density [kg/m^3]
+g = 9.81
+
+
+def terminal_velocity(mass, cd_s):
+    # Steady-state descent velocity under parachute.
+    return np.sqrt((2 * mass * g) / (rho * cd_s))
+
+
+def opening_shock(mass, pre_opening_velocity, cd_s_main):
+    # Estimates opening shock force and equivalent g-load at main parachute deployment.
+    F = 0.5 * rho * cd_s_main * pre_opening_velocity**2
+    a_g = (F / mass) / g
+    return F, a_g
+
 #--------------------------------------------------------------------------------------------------------
 
 
@@ -643,16 +664,16 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
 
     # Define the drag curve that will be used
     if fin_type == 'hex':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_power_on.csv")
 
     elif fin_type == 'hex_blunt':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_blunt_base_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_blunt_base_power_on.csv")
 
     elif fin_type == 'square':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/square_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/square_power_on.csv")
 
 
 # Now create the Rocket
@@ -1132,10 +1153,59 @@ print("- Santa Margarida launch site graph saved successfully")
 if show_graph:
     plt.show()
 plt.close('all')
-#--------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------- EuRoC PARACHUTE, MASS & SHOCK ANALYSIS
 
 
+print("\n\n--- EuRoC PARACHUTE and MASS VALIDATION ---")
 
+# nominal CdS values
+cd_s_drogue = analysis_parameters["cd_s_drogue"][0]
+cd_s_main = analysis_parameters["cd_s_main"][0]
+
+masses = np.linspace(
+    analysis_parameters["rocket_dry_mass"][0],
+    35.0,
+    200
+)
+
+# terminal velocities
+main_v = np.array([terminal_velocity(m, cd_s_main) for m in masses])
+drogue_v = np.array([terminal_velocity(m, cd_s_drogue) for m in masses])
+
+# EuRoC-LV-RQT-0380: Main deployment event descent velocity (page 30 of System requirements document):
+# The main deployment event shall result in a descent velocity of less than 9 m/s.
+print("EuRoC-LV-RQT-0380: Main deployment event descent velocity (page 30 of System requirements document):")
+print("The main deployment event shall result in a descent velocity of less than 9 m/s.")
+valid_main = main_v <= 9.0
+
+if np.any(valid_main):
+    m_min = masses[valid_main][0]
+    m_max = masses[valid_main][-1]
+    
+    print(f"\nValid mass range s.t. v is less than 9 m/s: {m_min:.2f} – {m_max:.2f} kg")
+    print(f"Corresponding descent velocity range: {main_v[valid_main][0]:.2f} – {main_v[valid_main][-1]:.2f} m/s")
+
+    # shock estimate at worst case (max mass)
+    v_pre = terminal_velocity(m_max, cd_s_drogue)
+    F, g_load = opening_shock(m_max, v_pre, cd_s_main)
+
+    print("\nMAIN DEPLOYMENT SHOCK ESTIMATE (worst case, with maximum mass)")
+    print(f"- Pre-deployment velocity (drogue): {v_pre:.2f} m/s")
+    print(f"- Opening force: {F:.0f} N")
+    print(f"- Equivalent load: {g_load:.1f} g")
+
+else:
+    print("\nNO MASS RANGE satisfies EuRoC main parachute constraint (≤ 9 m/s)")
+
+# Opening shock is estimated using a quasi-steady aerodynamic model at deployment velocity,
+# assuming instantaneous transition to fully inflated parachute.
+#
+# This does not model parachute inflation dynamics or transient load overshoot, and therefore
+# represents an equivalent steady-state aerodynamic load rather than the true peak opening shock.
+#
+# A physically accurate peak load estimate would require additional manufacturer data,
+# including: inflation time scale, evolution of Cd*S during deployment
+# and experimentally derived opening load factors or peak load curves vs deployment velocity.
 
 
 #-------------------------------------------------------------------------------------------------------- SENSITIVITY ANALYSIS
