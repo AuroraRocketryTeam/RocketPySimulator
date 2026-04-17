@@ -14,14 +14,15 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 show_graph = False
-use_airbrake = True
-fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
+ballistic = True
 
-latitude = 39.389700
-longitude = -8.288964
-elevation = 160.0
-date_of_launch = (2024, 10, 11, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
+ballast = 1600 / 1000
+
+latitude = 44.290583
+longitude = 12.027111
+elevation = 18
+date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
+weather_data: Literal['c','e','f','i'] = 'e'        #(Custom, Ensemble, Forecast, Isa)
 
 # Definition of global variables, to be used inside and outside parachute functions
 global last_negative_time, apogee_detected, sampling_rate, parachute_timer
@@ -72,11 +73,6 @@ def check_apogee(vertical_velocity, current_time, threshold=0.1):
 
 # The following function is a Python representation of the C code that will be used on the rocket to detect the main parachute opening condition. In the code, the height is determined by filtering barometer readings with a Kalman filter
  
-
-def main_parachute_opening(apogee_detected:bool, altitude:float) -> bool:
-    return apogee_detected and altitude <= 450.0 # meters 
-
-
 # Set up parachute trigger for the drogue chute
 def simulator_check_drogue_opening(p, h, y):
     global last_negative_time, apogee_detected, parachute_stopwatch, sampling_rate
@@ -96,62 +92,6 @@ def simulator_check_drogue_opening(p, h, y):
         now,  
     )
     return apogee_detected
-
-# Set up parachute trigger for the main chute
-def simulator_check_main_opening(p, h, y):
-    global last_negative_time, apogee_detected
-    altitude = h
-
-    # Call parachute activation algorythm and return its output value
-    return main_parachute_opening(apogee_detected, altitude)
-
-#Airbrake
-def controller_function(time, sampling_rate, state, state_history, observed_variables, air_brakes):
-    # state = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
-    altitude_ASL = state[2]
-    altitude_AGL = altitude_ASL - Env.elevation
-    vx, vy, vz = state[3], state[4], state[5]
-
-    # Get winds in x and y directions
-    wind_x, wind_y = Env.wind_velocity_x(altitude_ASL), Env.wind_velocity_y(altitude_ASL)
-
-    # Calculate Mach number
-    free_stream_speed = (
-        (wind_x - vx) ** 2 + (wind_y - vy) ** 2 + (vz) ** 2
-        ) ** 0.5
-    mach_number = free_stream_speed / Env.speed_of_sound(altitude_ASL)
-
-    # Get previous state from state_history
-    previous_state = state_history[-1]
-    previous_vz = previous_state[5]
-
-    # If we wanted to we could get the returned values from observed_variables:
-    # returned_time, deployment_level, drag_coefficient = observed_variables[-1]
-
-    # Check if the rocket has reached burnout
-    if time < Pro75_9977M2245.burn_out_time:
-        return None
-
-    # If below 1500 meters above ground level, air_brakes are not deployed
-    if altitude_ASL < 1500:  # or vz<0:
-        air_brakes.deployment_level = 0
-
-    # Else calculate the deployment level
-    else:
-        air_brakes.deployment_level = 0.7
-
-    # Return variables of interest to be saved in the observed_variables list
-    
-    # print(f'{round(time,1)}\t{air_brakes.deployment_level}\t{air_brakes.reference_area}\t
-    # {air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number)}\t
-    # {round(free_stream_speed,0)}\t{altitude_ASL}\t{vz}\t{mach_number}')
-    #print(f'{round(time,1)}\t{vz}')
-
-    return (
-        time,
-        air_brakes.deployment_level,
-        air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number),
-    )
 #--------------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------------------- ENVIRONMENT
@@ -194,8 +134,8 @@ elif weather_data=='e':
     # Select a date during the EuRoC week: October 10th-15th from 2005 to 2024 (change the date in the 
     # environment definition), in this case the weather data will match the date chosen by the user.
     Env.set_atmospheric_model(
-        type="Ensemble",                                                                                                  
-        file=str(BASE_DIR/"simulation_inputs/environment_data/SantaMargarida_Ensemble_09to16oct2010to2024.nc"),                                        
+        type="Ensemble",                                                                                           
+        file=str(BASE_DIR/"simulation_inputs/environment_data/Villafranca_ensemble_5to11may2020to2026.nc"),                                     
         # This section creates an updated dictionary to read the NetCDF4 files,                                           
         # as the built-in ECMWF dictionary inside RocketPy is outdated and can't read NetCDF4 
         # files in the new format     
@@ -229,124 +169,107 @@ elif weather_data!='i':
 #---------------------------------------------------------------------------------------------------------
 ## DEFINE THE ROCKET PARTS
 
-Pro75_9977M2245 = SolidMotor(
-    thrust_source=str(BASE_DIR/"simulation_inputs/propulsion_data/Cesaroni_9977_M2245.csv"),
-    dry_mass=0,
-    dry_inertia=(0, 0, 0),
-    nozzle_radius=29 / 1000,
-    grain_number=6,
+#   SRAD motor info v1.1
+impulse = 213
+t_burnout = 1.49
+grain_external_radius = 0.035 / 2
+grain_internal_radius = 0.012 / 2 
+grain_length = 0.125
+grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
+grain_mass = 0.190
+grain_dens = grain_mass / grain_volume
+thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/Brico-H141-noFe.csv")
 
-    # densità stimata assumendo corrette le misure dei grain e la variazione di massa fornita da openrocket.
-    # sapendo che la variazione di massa avviene solo per via del consumo di propellente si può stimare la densità.
-    grain_density=1877,
-    grain_outer_radius= 35.9/ 1000,
-    grain_initial_inner_radius=18.1/ 1000,
-    grain_initial_height=156.17 / 1000,
-    grain_separation=3 / 1000,
-    grains_center_of_mass_position=0.5125,
-    center_of_dry_mass_position=0,
+solid_motor = SolidMotor(
+    burn_time=t_burnout,
+    thrust_source = thrust_curve,
+    reshape_thrust_curve=(t_burnout, impulse), 
+    grain_number=1,
+    #   DRY PARAMETERS
+    dry_mass= 0,
+    dry_inertia= (0, 0, 0),
+    center_of_dry_mass_position= 0,
+    #   GRAIN PARAMETERS
+    grain_density= grain_dens,
+    grain_outer_radius= grain_external_radius,
+    grain_initial_inner_radius= grain_internal_radius,
+    grain_initial_height= grain_length,
+    grain_separation= 3 / 1000,
+    #   NOZZLE PARAMETERS
+    nozzle_radius= 29 / 1000,
     nozzle_position=0,
-    burn_time=(0, 4.3),
-    throat_radius=20/ 1000,
+    throat_radius= 20/ 1000,
+    #   POSITIONING PARAMETERS
+    grains_center_of_mass_position= 119.5 / 1000,
     coordinate_system_orientation="nozzle_to_combustion_chamber",
 )
 
-# Define the drag curve that will be used
-if fin_type == 'hex':
-    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
-    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
+power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_power_off.csv")
+power_on_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_power_on.csv")
 
-elif fin_type == 'hex_blunt':
-    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
-    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
-
-elif fin_type == 'square':
-    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
-    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
-
-Atlas = Rocket(
-    radius=75 / 1000,
-    mass=25.590,
-    inertia=(14.631,14.631,0.075),
+FRED = Rocket(
+    radius= 42.5 / 1000,
+    mass= 2199.647 / 1000 + ballast,
+    inertia=(0.149,0.149,0.002),
     power_off_drag=power_off_drag, # use the prevoius defined drag curve^
     power_on_drag=power_on_drag, # use the prevoius defined drag curve 
-    center_of_mass_without_motor=1.61919,
+    center_of_mass_without_motor= 432.2 / 1000,
     coordinate_system_orientation="nose_to_tail",
 )
-Atlas.add_motor(Pro75_9977M2245, position=3.08)
+FRED.add_motor(solid_motor, position=0.814)
 
-Rail_Buttons = Atlas.set_rail_buttons(
-    upper_button_position=0.57,
-    lower_button_position=2.14,
+Rail_Buttons = FRED.set_rail_buttons(
+    upper_button_position= 424 / 1000,
+    lower_button_position= 625 / 1000,
     angular_position=0,
 )
 
-nose_cone = Atlas.add_nose(
-    length=0.43, 
-    kind="vonKarman", 
+nose_cone = FRED.add_nose(
+    length=0.14, 
+    kind="elliptical", 
     position=0
 )
 
-fin_set = Atlas.add_trapezoidal_fins(
+fin_set = FRED.add_trapezoidal_fins(
     n=3,
-    root_chord=0.28,
-    tip_chord=0.06,
-    span=0.142,
-    position=2.71,
+    root_chord=0.12,
+    tip_chord=0.03,
+    span=0.12,
+    position=0.675,
     cant_angle=0,
-    sweep_angle=58.2,
+    sweep_angle=30.3,
 )
 
-tail = Atlas.add_tail(
-    top_radius=0.075, bottom_radius=0.05, length=0.075, position=3.005,
+tail = FRED.add_tail(
+    top_radius= 42.5 / 1000,
+    bottom_radius= 33.5 / 1000,
+    length=0.047,
+    position=0.795,
 )
-
-Main = Atlas.add_parachute(
-    "Main",
-    cd_s=0.97*10.5070863,
-    trigger=simulator_check_main_opening,
-    sampling_rate=105,
-    lag=1.73,
-    noise=(0, 6.5, 0.3),
-)
-
-Drogue = Atlas.add_parachute(
-    "Drogue",
-    cd_s=0.97*0.6566929,
-    trigger=simulator_check_drogue_opening,
-    sampling_rate=105,
-    lag=1.73,
-    noise=(0, 6.5, 0.3),
-)
-
-# If activated, define airbrake
-if use_airbrake:
-    air_brakes = Atlas.add_air_brakes(
-        drag_coefficient_curve = str(BASE_DIR/"simulation_inputs/aerodynamic_data/air_brakes_cd.csv"),
-        controller_function = controller_function,
-        sampling_rate = 10,
-        reference_area = 0.0125,
-        clamp = False,
-        initial_observed_variables = [0, 0, 0],
-        override_rocket_drag = False,
-        name = "Air Brakes",
+if not ballistic:
+    Main = FRED.add_parachute(
+        "Main",
+        cd_s=0.97*1.168,
+        trigger=simulator_check_drogue_opening,
+        sampling_rate=105,
+        lag=1.73,
+        noise=(0, 6.5, 0.3),
     )
 
 
 # Simulate the flight
 rocket_flight = Flight(
-    rocket=Atlas,
+    rocket=FRED,
     environment=Env,
-    rail_length=12,
+    rail_length=2,
     inclination=84,
-    heading=144,
-    time_overshoot = not use_airbrake
+    heading=160,
 )
 
 # if activated, shows graphs 
 if show_graph:
-    Atlas.draw()
-    Atlas.plots.total_mass()
+    FRED.draw()
+    FRED.plots.total_mass()
     rocket_flight.plots.linear_kinematics_data()
     rocket_flight.plots.attitude_data()
     rocket_flight.plots.angular_kinematics_data()
@@ -357,23 +280,29 @@ if show_graph:
     rocket_flight.plots.rail_buttons_forces()
 
 # print rocket flight info
-# rocket_flight.info()
+rocket_flight.info()
 
 # plot speed and acceleration
 # rocket_flight.speed()
 # rocket_flight.acceleration()
 
-# save trajectory, .kml can be open in google earth
-rocket_flight.export_kml(
-    file_name=str(BASE_DIR/"reanalysis_output/trajectory.kml"),
-    extrude=True,
-    altitude_mode="relative_to_ground",
-)
-
+#save trajectory, .kml can be open in google earth
+if ballistic:
+    rocket_flight.export_kml(
+        file_name=str(BASE_DIR/"reanalysis_output/ballistic/trajectory.kml"),
+        extrude=True,
+        altitude_mode="relative_to_ground",
+    )
+else:
+    rocket_flight.export_kml(
+        file_name=str(BASE_DIR/"reanalysis_output/nominal/trajectory.kml"),
+        extrude=True,
+        altitude_mode="relative_to_ground",
+    )
 # ------------------------------------------
 # extract mass over time value as .csv
 
-# mass_data = Atlas.total_mass.source
+# mass_data = FRED.total_mass.source
 
 # df = pd.DataFrame(mass_data, columns=["time", "mass"])
 # df.to_csv(BASE_DIR / "mass_analysis/mass/mass_time_rpy/insertfilename.csv", index=False) 
@@ -382,7 +311,7 @@ rocket_flight.export_kml(
 # extract cg position over time value as .csv
 # the relative position is expressed from the nose tip
 
-# cg_data = Atlas.center_of_mass.source
+# cg_data = FRED.center_of_mass.source
 
 # df_cg = pd.DataFrame(cg_data, columns=["time", "CG"])
 # df_cg.to_csv(BASE_DIR / "mass_analysis/CG/CG_rpy/insertfilename.csv", index=False)
