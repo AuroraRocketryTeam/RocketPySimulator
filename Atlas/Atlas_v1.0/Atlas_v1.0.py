@@ -647,6 +647,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     #    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
 
     #elif fin_type == 'hex_blunt':
+    
     #    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
     #    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
 
@@ -673,7 +674,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         power_off_drag=power_off_drag,
         power_on_drag=power_on_drag,
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
-        center_of_mass_without_motor=1.61919,
+        center_of_mass_without_motor=1.99,
         coordinate_system_orientation="nose_to_tail",
     )
 
