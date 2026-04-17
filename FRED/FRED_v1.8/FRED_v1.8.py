@@ -39,8 +39,8 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_v1.8_nominal_11-4-2016'
-number_of_simulations = 150
+output_dir_name = 'FRED_v1.8_with_new_BRICO_50_final'
+number_of_simulations = 75
 ballistic = False
 
 show_graph = False
@@ -53,26 +53,26 @@ date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
 weather_data: Literal['c','e','f','i'] = 'e'        #(Custom, Ensemble, Forecast, Isa)
 
 #   SRAD motor info v1.1
-impulse = 213
-t_burnout = 1.49
-grain_external_radius = 0.035 / 2
-grain_internal_radius = 0.012 / 2 
-grain_length = 0.125
+impulse = 227.942
+t_burnout = 0.777
+grain_external_radius = 0.033 / 2
+grain_internal_radius = 0.013 / 2 
+grain_length = 0.147
 grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
-grain_mass = 0.190
+grain_mass = 0.19694
 grain_dens = grain_mass / grain_volume
-thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/Brico-H141-noFe.csv")
+thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/Brico-50-final.csv")
 
 CG_position_from_nose = 432.2 / 1000
 
-ballast = 1350 / 1000
+ballast = 1750 / 1000
 
 analysis_parameters = {
     
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (2199.647 / 1000 + ballast, 0.03),
+    "rocket_dry_mass": (2205 / 1000 + ballast, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
     "rocket_dry_inertia_11": (0.149, 0.00187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
@@ -1101,6 +1101,3 @@ if sensitivity_analysis:
 
     print("- Sensitivity analysis graphs saved successfully")
 #-------------------------------------------------------------------------------------------------------
-
-Solid_motor.info()
-FRED.all_info()
