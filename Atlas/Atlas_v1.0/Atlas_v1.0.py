@@ -110,29 +110,29 @@ analysis_parameters = {
     # Multiplier for rocket's power on drag curve to introduce uncertainty
     "power_on_drag_corr": (1.0, 0.001),
     # Rocket's nose cone length (m)
-    "nose_length": (0.43, 0.001),
+    "nose_length": (0.60, 0.001),
     # Power of the function that describes the shape of the nose cone
     "nose_pwr" : (0.0, 0.001),
     # Axial distance from the tip of the nose (m)
-    "tail_position": (3.005, 0.001),
+    "tail_position": (2.990, 0.001),
     # The origin of the coordinate system (m)
     "nose_position": (0, 0),
     # Number of fins
     "fin_number" : (3, 0), 
     # Fin span (m)
-    "fin_span": (0.142, 0.0005), 
+    "fin_span": (0.170, 0.0005), 
     # Fin root chord (m)
-    "fin_root_chord": (0.28, 0.0005), 
+    "fin_root_chord": (0.15, 0.0005), 
     # Fin tip chord (m)
-    "fin_tip_chord": (0.06, 0.0005), 
+    "fin_tip_chord": (0.0338, 0.0005), 
     # Axial distance between rocket's tip and nearest point in its fin (m)
-    "fin_position": (2.71, 0.005), 
+    "fin_position": (2.99, 0.005), 
     # Fin sweep angle (degrees)
-    "fin_sweep_angle": (58.2, 0.005), 
+    "fin_sweep_angle": (43.2, 0.005), 
     # Tail length (m)
-    "tail_length": (0.075, 0.001), 
+    "tail_length": (0.326, 0.001), 
     # Tail bottom radius (m)
-    "tail_bottom_radius": (0.05, 0.001), 
+    "tail_bottom_radius": (0.045, 0.001), 
     # Tail top radius (m)
     "tail_top_radius": (0.075, 0.001), 
 
@@ -642,18 +642,22 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define the drag curve that will be used
-    if fin_type == 'hex':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
+    #if fin_type == 'hex':
+    #    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
+    #    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
 
-    elif fin_type == 'hex_blunt':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
+    #elif fin_type == 'hex_blunt':
+    #    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
+    #    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
 
-    elif fin_type == 'square':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
+    #elif fin_type == 'square':
+    #    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
+    #    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
 
+    
+    # Drag curve for Atlas v1.2 configuration
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.2/CD_power_off_v1.2.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.2/CD_power_on_v1.2.csv")
 
 # Now create the Rocket
 
