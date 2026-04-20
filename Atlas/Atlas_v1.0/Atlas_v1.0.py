@@ -64,11 +64,11 @@ analysis_parameters = {
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (25.590, 0.3),
+    "rocket_dry_mass": (26.100, 0.3),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
-    "rocket_dry_inertia_11": (14.631, 0.187),
+    "rocket_dry_inertia_11": (15.644, 0.187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
-    "rocket_dry_inertia_33": (0.075, 0.00122),
+    "rocket_dry_inertia_33": (0.081, 0.00122),
     # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation). The weight of the motor structure is included in the rocket dry mass
     "motor_dry_mass": (0.0001, 0.0001),
     # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
@@ -116,29 +116,29 @@ analysis_parameters = {
     # Multiplier for rocket's power on drag curve to introduce uncertainty
     "power_on_drag_corr": (1.0, 0.001),
     # Rocket's nose cone length (m)
-    "nose_length": (0.43, 0.001),
+    "nose_length": (0.60, 0.001),
     # Power of the function that describes the shape of the nose cone
     "nose_pwr" : (0.0, 0.001),
     # Axial distance from the tip of the nose (m)
-    "tail_position": (3.005, 0.001),
+    "tail_position": (2.990, 0.001),
     # The origin of the coordinate system (m)
     "nose_position": (0, 0),
     # Number of fins
     "fin_number" : (3, 0), 
     # Fin span (m)
-    "fin_span": (0.142, 0.0005), 
+    "fin_span": (0.170, 0.0005), 
     # Fin root chord (m)
-    "fin_root_chord": (0.28, 0.0005), 
+    "fin_root_chord": (0.15, 0.0005), 
     # Fin tip chord (m)
-    "fin_tip_chord": (0.06, 0.0005), 
+    "fin_tip_chord": (0.0338, 0.0005), 
     # Axial distance between rocket's tip and nearest point in its fin (m)
-    "fin_position": (2.71, 0.005), 
+    "fin_position": (2.99, 0.005), 
     # Fin sweep angle (degrees)
-    "fin_sweep_angle": (58.2, 0.005), 
+    "fin_sweep_angle": (43.2, 0.005), 
     # Tail length (m)
-    "tail_length": (0.075, 0.001), 
+    "tail_length": (0.326, 0.001), 
     # Tail bottom radius (m)
-    "tail_bottom_radius": (0.05, 0.001), 
+    "tail_bottom_radius": (0.045, 0.001), 
     # Tail top radius (m)
     "tail_top_radius": (0.075, 0.001), 
 
@@ -672,19 +672,20 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     )
 
     # Define the drag curve that will be used
-    if fin_type == 'hex':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
+    # if fin_type == 'hex':
+    #     power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_power_off.csv")
+    #     power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_power_on.csv")
 
-    elif fin_type == 'hex_blunt':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
+    # elif fin_type == 'hex_blunt':
+    #     power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_blunt_base_power_off.csv")
+    #     power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_blunt_base_power_on.csv")
 
-    elif fin_type == 'square':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
+    # elif fin_type == 'square':
+    #     power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/square_power_off.csv")
+    #     power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/square_power_on.csv")
 
-
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.2/CD_power_off_v1.2.csv")
+    power_on_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.2/CD_power_on_v1.2.csv")
 # Now create the Rocket
 
     # Create rocket
@@ -699,7 +700,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         power_off_drag=power_off_drag,
         power_on_drag=power_on_drag,
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
-        center_of_mass_without_motor=1.61919,
+        center_of_mass_without_motor=1.82921,
         coordinate_system_orientation="nose_to_tail",
     )
 
@@ -713,7 +714,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Add the motor to the rocket assembly
     # sets the motor's CDM on the rocket's CDM.
     # The "grain center of mass position" parameter will handle the position of the actual motor
-    Atlas.add_motor(Pro75_9977M2245, position=3.08)   
+    Atlas.add_motor(Pro75_9977M2245, position=3.32)   
 
     # Add uncertainty to the drag curves, by multiplying them by a small, random corrective factor
     Atlas.power_off_drag *= setting["power_off_drag_corr"]
@@ -814,6 +815,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         iteration=i,
         )
 
+Atlas.draw()
 # jump a row to not overwrite loading bar
 print('\n')
 
