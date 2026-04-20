@@ -1,11 +1,15 @@
+#added sensor implementation and plots of the results
 
+import matplotlib.pyplot as plt
 from pathlib import Path
 from rocketpy import Environment, Flight, Rocket, SolidMotor 
 import json
 import numpy as np
 import pandas as pd
 from typing import Literal
+from rocketpy import Environment, Flight, Rocket, SolidMotor
 
+from rocketpy import Accelerometer, Barometer # IMPORT AGGIUNTO PER I SENSORI
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -39,7 +43,6 @@ sampling_rate = 105
 parachute_stopwatch = 0
 
 # The following function is a Python representation of the C code that will be used on the rocket to detect the apogee condition. In the actual code, detection of negative velocity is achieved thanks to the readings from the IMU sensor
-
 
 def check_apogee(vertical_velocity, current_time, threshold=0.1):
 
@@ -259,6 +262,76 @@ if not ballistic:
         noise=(0, 6.5, 0.3),
     )
 
+# --- IMPLEMENTATION OF SENSORS ---
+
+# Posizione sensori: posizionati temporaneamente al baricentro del razzo (sistema nose_to_tail)
+sensor_position = FRED.center_of_mass_without_motor
+
+# Accelerometer with noise and biases
+accel_noisy = Accelerometer(
+    sampling_rate=105,
+    consider_gravity=True,
+    orientation=(0,0,0),
+    measurement_range=100,
+    resolution=0.25,
+    noise_density=0.02,
+    random_walk_density=0.005,
+    constant_bias=1.0,
+    temperature_bias=0.05,
+    operating_temperature=25,
+    cross_axis_sensitivity=0.02,
+    name="Accelerometer",
+)
+
+# Accelerometer ideal
+accel_clean = Accelerometer(
+    sampling_rate=105,
+    consider_gravity=True,
+    orientation=(0,0,0),
+    measurement_range=100,
+    resolution=0.0,
+    noise_density=0.0,
+    random_walk_density=0.0,
+    constant_bias=0.0,
+    operating_temperature=25,
+    temperature_bias=0.0,
+    cross_axis_sensitivity=0.0,
+    name="Clean Accelerometer",
+)
+
+FRED.add_sensor(accel_noisy, sensor_position)
+FRED.add_sensor(accel_clean, sensor_position)
+
+
+# Barometer with noise and biases
+barom_noisy = Barometer(
+    sampling_rate=50,
+    measurement_range=200000,
+    resolution=0.1,
+    noise_density=15.0,
+    noise_variance=15.0,
+    random_walk_density=0.01,
+    constant_bias=1.5,
+    operating_temperature=25,
+    temperature_bias=0.03,
+    temperature_scale_factor=0.02,
+    name="Noisy Barometer",
+)
+
+# Barometer ideal
+barom_clean = Barometer(
+    sampling_rate=50,
+    measurement_range=200000,
+    resolution=0.0,
+    noise_density=0.0,
+    constant_bias=0.0,
+    operating_temperature=25,
+    temperature_bias=0.0,
+    name="Clean Barometer",
+)
+
+FRED.add_sensor(barom_noisy, sensor_position)
+FRED.add_sensor(barom_clean, sensor_position)
 
 # Simulate the flight
 rocket_flight = Flight(
@@ -318,3 +391,86 @@ else:
 
 # df_cg = pd.DataFrame(cg_data, columns=["time", "CG"])
 # df_cg.to_csv(BASE_DIR / "mass_analysis/CG/CG_rpy/insertfilename.csv", index=False)
+
+# --- EXPORT & PLOTTING SENSOR DATA ---
+
+# Exporting and saving sensors data in csv format
+accel_noisy.export_measured_data("exported_noisy_accelerometer_data.csv")
+accel_clean.export_measured_data("exported_clean_accelerometer_data.csv")
+barom_noisy.export_measured_data("exported_noisy_barometer_data.csv")
+barom_clean.export_measured_data("exported_clean_barometer_data.csv")
+
+
+def save_acceleration_plots(accel_noisy, accel_clean, outdir=BASE_DIR/"sensors output", show=False):
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    time1, ax, ay, az = zip(*accel_noisy.measured_data)
+    time2, bx, by, bz = zip(*accel_clean.measured_data)
+
+    for axis_name, data1, data2 in zip(['ax', 'ay', 'az'], [ax, ay, az], [bx, by, bz]):
+        plt.figure()
+        plt.plot(time1, data1, label="Noisy Accelerometer")
+        plt.plot(time2, data2, label="Clean Accelerometer")
+        plt.xlabel("Time (s)")
+        plt.ylabel(f"Acceleration {axis_name} (m/s^2)")
+        plt.legend()
+        plt.grid()
+        plt.title(f"Acceleration comparison - {axis_name}")
+        path = outdir / f"acceleration_{axis_name}.png"
+        plt.savefig(path, dpi=200, bbox_inches="tight")
+        print(f"Saved acceleration plot: {path}")
+        if show: plt.show()
+        plt.close()
+
+    # Total acceleration
+    abs_a = (np.array(ax) ** 2 + np.array(ay) ** 2 + np.array(az) ** 2) ** 0.5
+    abs_b = (np.array(bx) ** 2 + np.array(by) ** 2 + np.array(bz) ** 2) ** 0.5
+
+    plt.figure()
+    plt.plot(time2, abs_b, label="clean")
+    plt.plot(time1, abs_a, label="noisy")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Acceleration (m/s^2)")
+    plt.legend()
+    plt.grid()
+    plt.title("Acceleration")
+    path = outdir / "acceleration_total.png"
+    plt.savefig(path, dpi=200, bbox_inches="tight")
+    print(f"Saved acceleration plot: {path}")
+    if show: plt.show()
+    plt.close()
+
+
+def save_barometer_plot(barom_noisy, barom_clean, test_flight, outdir=BASE_DIR/"sensors output", show=False):
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    time_barometer, pressure_barometer = zip(*barom_clean.measured_data)
+    time_barometer_noisy, pressure_barometer_noisy = zip(*barom_noisy.measured_data)
+    rocket_pressure = test_flight.pressure.y_array
+    rocket_time = test_flight.pressure.x_array
+
+    plt.figure()
+    plt.plot(rocket_time, rocket_pressure, label="Rocket")
+    plt.plot(time_barometer, pressure_barometer, label="Clean Barometer")
+    plt.plot(time_barometer_noisy, pressure_barometer_noisy, label="Noisy Barometer")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Pressure (Pa)")
+    plt.title("Pressure comparison")
+    plt.grid()
+    plt.legend()
+    path = outdir / "barometer_pressure.png"
+    plt.savefig(path, dpi=200, bbox_inches="tight")
+    print(f"Saved barometer plot: {path}")
+    if show: plt.show()
+    plt.close()
+
+
+def save_all_plots(accel_noisy, accel_clean, barom_noisy, barom_clean, test_flight, outdir=BASE_DIR/"sensors output", show=False):
+    save_acceleration_plots(accel_noisy, accel_clean, outdir=outdir, show=False)
+    save_barometer_plot(barom_noisy, barom_clean, test_flight, outdir=outdir, show=show)
+
+# Genera e salva tutti i grafici nella cartella 'sensors output'
+
+save_all_plots(accel_noisy, accel_clean, barom_noisy, barom_clean, rocket_flight, outdir=BASE_DIR/"sensors output", show=False)
