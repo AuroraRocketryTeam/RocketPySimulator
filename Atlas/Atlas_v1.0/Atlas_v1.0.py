@@ -2,6 +2,7 @@ print("importing libraries...", end='\r')
 # Plotting and visualization
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
+from matplotlib.figure import Figure
 
 # RocketPy core classes
 from rocketpy import Environment, SolidMotor, Rocket, Flight, CompareFlights
@@ -24,12 +25,14 @@ from pathlib import Path
 # Data serialization and storage
 import json
 import pickle
+# import importlib
+from compare_plot_saver import save_compare_plots
 
 # Image loading
 from imageio.v2 import imread
 
-# 
-from typing import Literal
+# options selection
+from typing import Literal, Any
 
 # set path
 BASE_DIR = Path(__file__).resolve().parent
@@ -40,12 +43,12 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'prova'
-number_of_simulations = 50
+number_of_simulations = 10
 
 # OPTIONS:
-show_graph = False 
+show_graph = False
 use_airbrake = False
-parachute_analysis = True
+parachute_analysis = False
 sensitivity_analysis = False
 fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
 
@@ -424,8 +427,11 @@ def controller_function(time, sampling_rate, state, state_history, observed_vari
 rho = 1.225  # air density [kg/m^3]
 g = 9.81
 
+def terminal_velocity_drogue(mass, cd_s, air_density):
+    # Steady-state descent velocity under parachute.
+    return np.sqrt((2 * mass * g) / (air_density * cd_s))
 
-def terminal_velocity(mass, cd_s):
+def terminal_velocity_main(mass, cd_s):
     # Steady-state descent velocity under parachute.
     return np.sqrt((2 * mass * g) / (rho * cd_s))
 
@@ -900,20 +906,29 @@ if show_graph:
     comparison.angular_velocities()
     comparison.trajectories_3d()
     comparison.rail_buttons_forces()
-    #comparison.stability_margin()
+    comparison.stability_margin()
+#--------------------------------saves comparison graphs as .svg and as .pickle
 
-comparison.velocities(filename=str(output_comparison/"velocities.svg"),legend=False)
-comparison.accelerations(filename=str(output_comparison/"accelerations.svg"),legend=False)
-comparison.attitude_angles(filename=str(output_comparison/"attitude_angles.svg"),legend=False)
-comparison.euler_angles(filename=str(output_comparison/"euler_angles.svg"),legend=False)
-#comparison.attitude_frequency(filename=str(output_comparison/"attitude_frequency.svg"),legend=False)
-comparison.aerodynamic_forces(filename=str(output_comparison/"aerodynamic_forces.svg"),legend=False)
-comparison.aerodynamic_moments(filename=str(output_comparison/"aerodynamic_moments.svg"),legend=False)
-comparison.angular_velocities(filename=str(output_comparison/"angular_velocities.svg"),legend=False)
-comparison.trajectories_3d(filename=str(output_comparison/"trajectories_3d.svg"))
-comparison.rail_buttons_forces(filename=str(output_comparison/"rail_buttons_forces.svg"),legend=False)
-#comparison.stability_margin(filename=str(output_comparison/"stability_margin.svg"), legend=False)
-plt.close('all')
+plots_to_save = [
+    ("velocities", {"legend": False}),
+    ("accelerations", {"legend": False}),
+    ("attitude_angles", {"legend": False}),
+    ("euler_angles", {"legend": False}),
+    # ("attitude_frequency", {"legend": False}),
+    ("aerodynamic_forces", {"legend": False}),
+    ("aerodynamic_moments", {"legend": False}),
+    ("angular_velocities", {"legend": False}),
+    ("trajectories_3d", {}),
+    ("rail_buttons_forces", {"legend": False}),
+    ("stability_margin", {"legend": False}),
+]
+
+save_compare_plots(
+    comparison_object=comparison,
+    plots=plots_to_save,
+    output_dir=output_comparison,
+    formats=["svg", "pickle"],
+)
 #--------------------------------------------------------------------------------------------------------
 
 
@@ -1162,8 +1177,7 @@ plt.close('all')
 
 #--------------------------------------------------------------------------------- EuRoC PARACHUTE, MASS & SHOCK ANALYSIS
 if parachute_analysis: 
-    print("\n\n--- EuRoC PARACHUTE and MASS VALIDATION ---")
-
+    print(colored('\n\nEuRoC PARACHUTE and MASS VALIDATION:'))
     # nominal CdS values
     cd_s_drogue = analysis_parameters["cd_s_drogue"][0]
     cd_s_main = analysis_parameters["cd_s_main"][0]
@@ -1175,12 +1189,44 @@ if parachute_analysis:
     )
 
     # terminal velocities
-    main_v = np.array([terminal_velocity(m, cd_s_main) for m in masses])
-    drogue_v = np.array([terminal_velocity(m, cd_s_drogue) for m in masses])
+    main_v = np.array([terminal_velocity_main(m, cd_s_main) for m in masses])
 
-    # EuRoC-LV-RQT-0380: Main deployment event descent velocity (page 30 of System requirements document):
+    air_density = 1 # kg/m^3    
+    drogue_v = np.array([terminal_velocity_drogue(m, cd_s_drogue, air_density) for m in masses])
+
+    # page 30 of System requirements document:
+
+    # EuRoC-LV-RQT-0360: Initial deployment velocity
+    # The initial deployment event shall result in a descent velocity between 23 and 46 m/s.
+    print(colored('\nDrogue:'))
+    print("EuRoC-LV-RQT-0360: Initial deployment velocity")
+    print("The initial deployment event shall result in a descent velocity between 23 and 46 m/s.")
+    valid_drogue = (drogue_v >= 23) & (drogue_v <= 46)
+
+    if np.any(valid_drogue):
+        m_min = masses[valid_drogue][0]
+        m_max = masses[valid_drogue][-1]
+        
+        print(f"\nValid mass range s.t.v is more than 23 m/s and less than 46 m/s: {m_min:.2f} – {m_max:.2f} kg")
+        print(f"Corresponding descent velocity range: {drogue_v[valid_drogue][0]:.2f} – {drogue_v[valid_drogue][-1]:.2f} m/s")
+
+        # shock estimate at worst case (max mass)
+        # assuming an instantanuous fully inflation 'n' seconds after the apogee with g = 9.81 m/s^2
+        seconds_after_apogee = 2
+        v_pre = g*seconds_after_apogee
+        F, g_load = opening_shock(m_max, v_pre, cd_s_drogue)
+
+        print(colored('\nDROGUE DEPLOYMENT SHOCK ESTIMATE (worst case, with maximum mass)'))
+        print(f"- Pre-deployment velocity ({seconds_after_apogee:.2f} seconds after apogee): {v_pre:.2f} m/s")
+        print(f"- Opening force: {F:.0f} N")
+        print(f"- Equivalent load: {g_load:.1f} g")
+    else:
+        print("\nNO MASS RANGE satisfies EuRoC drogue parachute constraint (≥ 23 m/s and ≤ 46 m/s)")
+
+    # EuRoC-LV-RQT-0380: Main deployment event descent velocity
     # The main deployment event shall result in a descent velocity of less than 9 m/s.
-    print("EuRoC-LV-RQT-0380: Main deployment event descent velocity (page 30 of System requirements document):")
+    print(colored('\nMain:'))
+    print("EuRoC-LV-RQT-0380: Main deployment event descent velocity")
     print("The main deployment event shall result in a descent velocity of less than 9 m/s.")
     valid_main = main_v <= 9.0
 
@@ -1192,10 +1238,10 @@ if parachute_analysis:
         print(f"Corresponding descent velocity range: {main_v[valid_main][0]:.2f} – {main_v[valid_main][-1]:.2f} m/s")
 
         # shock estimate at worst case (max mass)
-        v_pre = terminal_velocity(m_max, cd_s_drogue)
+        v_pre = terminal_velocity_drogue(m_max, cd_s_drogue, air_density)
         F, g_load = opening_shock(m_max, v_pre, cd_s_main)
 
-        print("\nMAIN DEPLOYMENT SHOCK ESTIMATE (worst case, with maximum mass)")
+        print(colored('\nMAIN DEPLOYMENT SHOCK ESTIMATE (worst case, with maximum mass)'))
         print(f"- Pre-deployment velocity (drogue): {v_pre:.2f} m/s")
         print(f"- Opening force: {F:.0f} N")
         print(f"- Equivalent load: {g_load:.1f} g")
