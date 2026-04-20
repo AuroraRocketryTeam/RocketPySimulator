@@ -2,6 +2,7 @@ print("importing libraries...", end='\r')
 # Plotting and visualization
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
+from matplotlib.figure import Figure
 
 # RocketPy core classes
 from rocketpy import Environment, SolidMotor, Rocket, Flight, CompareFlights
@@ -24,12 +25,14 @@ from pathlib import Path
 # Data serialization and storage
 import json
 import pickle
+# import importlib
+from compare_plot_saver import save_compare_plots
 
 # Image loading
 from imageio.v2 import imread
 
-# 
-from typing import Literal
+# options selection
+from typing import Literal, Any
 
 # set path
 BASE_DIR = Path(__file__).resolve().parent
@@ -40,13 +43,16 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'prova'
-number_of_simulations = 5
+number_of_simulations = 10
 
+# OPTIONS:
 show_graph = False
 use_airbrake = False
+parachute_analysis = False
 sensitivity_analysis = False
-# fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
+fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
 
+# ENVIRONMENTAL PARAMETERS
 latitude = 39.389700
 longitude = -8.288964
 elevation = 160.0
@@ -148,11 +154,14 @@ analysis_parameters = {
     "ensemble_member": list(range(10)),
 
     # === Parachute Details ===
+    # To compute the projected area: S=pi*(Diameter in meters/2)^2
 
     # Drag coefficient times reference area for the rocket drogue chute (m^2)
-    "cd_s_drogue": (0.97 * 0.9144,0.006),         #rocketman 3ft without spillout
+    "cd_s_drogue": (0.97 * 0.6567, 0.006),         #rocketman 3ft without spillout
+    # "cd_s_drogue": (0.97 * 1.1675, 0.006),         #rocketman 4ft without spillout
     # Drag coefficient times reference area for the rocket main chute (m^2)
-    "cd_s_main": (0.97 * 14.3013, 0.277),          #rocketman 16ft without spillout
+    "cd_s_main": (0.97 * 14.3013, 0.277),          #rocketman 14ft without spillout
+    # "cd_s_main": (0.97 * 18.6272, 0.277),          #rocketman 16ft without spillout
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
     "lag_rec": (1.73, 0.1),
 
@@ -412,6 +421,27 @@ def controller_function(time, sampling_rate, state, state_history, observed_vari
         air_brakes.deployment_level,
         air_brakes.drag_coefficient(air_brakes.deployment_level, mach_number),
     )
+
+# PARACHUTE ANALYSIS FUNCTIONS 
+
+rho = 1.225  # air density [kg/m^3]
+g = 9.81
+
+def terminal_velocity_drogue(mass, cd_s, air_density):
+    # Steady-state descent velocity under parachute.
+    return np.sqrt((2 * mass * g) / (air_density * cd_s))
+
+def terminal_velocity_main(mass, cd_s):
+    # Steady-state descent velocity under parachute.
+    return np.sqrt((2 * mass * g) / (rho * cd_s))
+
+
+def opening_shock(mass, pre_opening_velocity, cd_s_main):
+    # Estimates opening shock force and equivalent g-load at main parachute deployment.
+    F = 0.5 * rho * cd_s_main * pre_opening_velocity**2
+    a_g = (F / mass) / g
+    return F, a_g
+
 #--------------------------------------------------------------------------------------------------------
 
 
@@ -878,20 +908,29 @@ if show_graph:
     comparison.angular_velocities()
     comparison.trajectories_3d()
     comparison.rail_buttons_forces()
-    #comparison.stability_margin()
+    comparison.stability_margin()
+#--------------------------------saves comparison graphs as .svg and as .pickle
 
-comparison.velocities(filename=str(output_comparison/"velocities.svg"),legend=False)
-comparison.accelerations(filename=str(output_comparison/"accelerations.svg"),legend=False)
-comparison.attitude_angles(filename=str(output_comparison/"attitude_angles.svg"),legend=False)
-comparison.euler_angles(filename=str(output_comparison/"euler_angles.svg"),legend=False)
-#comparison.attitude_frequency(filename=str(output_comparison/"attitude_frequency.svg"),legend=False)
-comparison.aerodynamic_forces(filename=str(output_comparison/"aerodynamic_forces.svg"),legend=False)
-comparison.aerodynamic_moments(filename=str(output_comparison/"aerodynamic_moments.svg"),legend=False)
-comparison.angular_velocities(filename=str(output_comparison/"angular_velocities.svg"),legend=False)
-comparison.trajectories_3d(filename=str(output_comparison/"trajectories_3d.svg"))
-comparison.rail_buttons_forces(filename=str(output_comparison/"rail_buttons_forces.svg"),legend=False)
-#comparison.stability_margin(filename=str(output_comparison/"stability_margin.svg"), legend=False)
-plt.close('all')
+plots_to_save = [
+    ("velocities", {"legend": False}),
+    ("accelerations", {"legend": False}),
+    ("attitude_angles", {"legend": False}),
+    ("euler_angles", {"legend": False}),
+    # ("attitude_frequency", {"legend": False}),
+    ("aerodynamic_forces", {"legend": False}),
+    ("aerodynamic_moments", {"legend": False}),
+    ("angular_velocities", {"legend": False}),
+    ("trajectories_3d", {}),
+    ("rail_buttons_forces", {"legend": False}),
+    ("stability_margin", {"legend": False}),
+]
+
+save_compare_plots(
+    comparison_object=comparison,
+    plots=plots_to_save,
+    output_dir=output_comparison,
+    formats=["svg", "pickle"],
+)
 #--------------------------------------------------------------------------------------------------------
 
 
@@ -1137,6 +1176,91 @@ plt.close('all')
 #--------------------------------------------------------------------------------------------------------
 
 
+
+#--------------------------------------------------------------------------------- EuRoC PARACHUTE, MASS & SHOCK ANALYSIS
+if parachute_analysis: 
+    print(colored('\n\nEuRoC PARACHUTE and MASS VALIDATION:'))
+    # nominal CdS values
+    cd_s_drogue = analysis_parameters["cd_s_drogue"][0]
+    cd_s_main = analysis_parameters["cd_s_main"][0]
+
+    masses = np.linspace(
+        analysis_parameters["rocket_dry_mass"][0],
+        35.0,
+        200
+    )
+
+    # terminal velocities
+    main_v = np.array([terminal_velocity_main(m, cd_s_main) for m in masses])
+
+    air_density = 1 # kg/m^3    
+    drogue_v = np.array([terminal_velocity_drogue(m, cd_s_drogue, air_density) for m in masses])
+
+    # page 30 of System requirements document:
+
+    # EuRoC-LV-RQT-0360: Initial deployment velocity
+    # The initial deployment event shall result in a descent velocity between 23 and 46 m/s.
+    print(colored('\nDrogue:'))
+    print("EuRoC-LV-RQT-0360: Initial deployment velocity")
+    print("The initial deployment event shall result in a descent velocity between 23 and 46 m/s.")
+    valid_drogue = (drogue_v >= 23) & (drogue_v <= 46)
+
+    if np.any(valid_drogue):
+        m_min = masses[valid_drogue][0]
+        m_max = masses[valid_drogue][-1]
+        
+        print(f"\nValid mass range s.t.v is more than 23 m/s and less than 46 m/s: {m_min:.2f} – {m_max:.2f} kg")
+        print(f"Corresponding descent velocity range: {drogue_v[valid_drogue][0]:.2f} – {drogue_v[valid_drogue][-1]:.2f} m/s")
+
+        # shock estimate at worst case (max mass)
+        # assuming an instantanuous fully inflation 'n' seconds after the apogee with g = 9.81 m/s^2
+        seconds_after_apogee = 2
+        v_pre = g*seconds_after_apogee
+        F, g_load = opening_shock(m_max, v_pre, cd_s_drogue)
+
+        print(colored('\nDROGUE DEPLOYMENT SHOCK ESTIMATE (worst case, with maximum mass)'))
+        print(f"- Pre-deployment velocity ({seconds_after_apogee:.2f} seconds after apogee): {v_pre:.2f} m/s")
+        print(f"- Opening force: {F:.0f} N")
+        print(f"- Equivalent load: {g_load:.1f} g")
+    else:
+        print("\nNO MASS RANGE satisfies EuRoC drogue parachute constraint (≥ 23 m/s and ≤ 46 m/s)")
+
+    # EuRoC-LV-RQT-0380: Main deployment event descent velocity
+    # The main deployment event shall result in a descent velocity of less than 9 m/s.
+    print(colored('\nMain:'))
+    print("EuRoC-LV-RQT-0380: Main deployment event descent velocity")
+    print("The main deployment event shall result in a descent velocity of less than 9 m/s.")
+    valid_main = main_v <= 9.0
+
+    if np.any(valid_main):
+        m_min = masses[valid_main][0]
+        m_max = masses[valid_main][-1]
+        
+        print(f"\nValid mass range s.t. v is less than 9 m/s: {m_min:.2f} – {m_max:.2f} kg")
+        print(f"Corresponding descent velocity range: {main_v[valid_main][0]:.2f} – {main_v[valid_main][-1]:.2f} m/s")
+
+        # shock estimate at worst case (max mass)
+        v_pre = terminal_velocity_drogue(m_max, cd_s_drogue, air_density)
+        F, g_load = opening_shock(m_max, v_pre, cd_s_main)
+
+        print(colored('\nMAIN DEPLOYMENT SHOCK ESTIMATE (worst case, with maximum mass)'))
+        print(f"- Pre-deployment velocity (drogue): {v_pre:.2f} m/s")
+        print(f"- Opening force: {F:.0f} N")
+        print(f"- Equivalent load: {g_load:.1f} g")
+
+    else:
+        print("\nNO MASS RANGE satisfies EuRoC main parachute constraint (≤ 9 m/s)")
+
+    # Opening shock is estimated using a quasi-steady aerodynamic model at deployment velocity,
+    # assuming instantaneous transition to fully inflated parachute.
+    #
+    # This does not model parachute inflation dynamics or transient load overshoot, and therefore
+    # represents an equivalent steady-state aerodynamic load rather than the true peak opening shock.
+    #
+    # A physically accurate peak load estimate would require additional manufacturer data,
+    # including: inflation time scale, evolution of Cd*S during deployment
+    # and experimentally derived opening load factors or peak load curves vs deployment velocity.
+#--------------------------------------------------------------------------------------------------------
 
 
 
