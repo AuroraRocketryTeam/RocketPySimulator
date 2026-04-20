@@ -673,16 +673,16 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
 
     # Define the drag curve that will be used
     if fin_type == 'hex':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_power_on.csv")
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_power_on.csv")
 
     elif fin_type == 'hex_blunt':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_blunt_base_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/Hexagonal_blunt_base_power_on.csv")
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/Hexagonal_blunt_base_power_on.csv")
 
     elif fin_type == 'square':
-        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/square_power_off.csv")
-        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/square_power_on.csv")
+        power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_off.csv")
+        power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/square_power_on.csv")
 
 
 # Now create the Rocket
