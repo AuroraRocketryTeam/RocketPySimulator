@@ -43,10 +43,12 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'prova'
-number_of_simulations = 10
+number_of_simulations = 100
 
 # OPTIONS:
-show_graph = False
+show_dispersion_graph = False
+show_compare_graph = True
+save_compare_graph = False
 use_airbrake = False
 parachute_analysis = False
 sensitivity_analysis = False
@@ -57,7 +59,7 @@ latitude = 39.389700
 longitude = -8.288964
 elevation = 160.0
 date_of_launch = (2024, 10, 11, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i'] = 'c'        #(Custom, Ensemble, Forecast, Isa)
+weather_data: Literal['c','e','f','i'] = 'i'        #(Custom, Ensemble, Forecast, Isa)
 
 analysis_parameters = {
     
@@ -120,8 +122,8 @@ analysis_parameters = {
     # Power of the function that describes the shape of the nose cone
     "nose_pwr" : (0.0, 0.001),
     # Axial distance from the tip of the nose (m)
-    "tail_position": (2.990, 0.001),
-    # The origin of the coordinate system (m)
+    "tail_position": (2.990, 0.001), 
+    # Axial distance from the tip of the nose (m)
     "nose_position": (0, 0),
     # Number of fins
     "fin_number" : (3, 0), 
@@ -136,7 +138,7 @@ analysis_parameters = {
     # Fin sweep angle (degrees)
     "fin_sweep_angle": (43.2, 0.005), 
     # Tail length (m)
-    "tail_length": (0.326, 0.001), 
+    "tail_length": (0.326, 0.001),
     # Tail bottom radius (m)
     "tail_bottom_radius": (0.045, 0.001), 
     # Tail top radius (m)
@@ -897,12 +899,12 @@ dispersion_output_file.close()
 print(colored('\n\nComparison graphs:'))
 comparison = CompareFlights(flights)
 
-if show_graph:
+if show_compare_graph:
     comparison.velocities()
     comparison.accelerations()
     comparison.attitude_angles()
     comparison.euler_angles()
-    #comparison.attitude_frequency()
+    comparison.attitude_frequency()
     comparison.aerodynamic_forces()
     comparison.aerodynamic_moments()
     comparison.angular_velocities()
@@ -922,15 +924,16 @@ plots_to_save = [
     ("angular_velocities", {"legend": False}),
     ("trajectories_3d", {}),
     ("rail_buttons_forces", {"legend": False}),
-    ("stability_margin", {"legend": False}),
+    ("stability_margin", {"legend": False})
 ]
 
-save_compare_plots(
-    comparison_object=comparison,
-    plots=plots_to_save,
-    output_dir=output_comparison,
-    formats=["svg", "pickle"],
-)
+if save_compare_graph:
+    save_compare_plots(
+        comparison_object=comparison,
+        plots=plots_to_save,
+        output_dir=output_comparison,
+        formats=["svg", "pickle"],
+    )
 #--------------------------------------------------------------------------------------------------------
 
 
@@ -1024,7 +1027,7 @@ def plot_graph(dispersion_result, x_label ,title, unit_of_measure):
     with open(pickle_file, "wb") as f:
         pickle.dump(s, f)
 
-    if show_graph:
+    if show_dispersion_graph:
         plt.show()
 
     plt.close(s)    # Stop automatic printing of images
@@ -1170,7 +1173,7 @@ with open(pickle_file, "wb") as f:
 
 print("- Santa Margarida launch site graph saved successfully")
 
-if show_graph:
+if show_dispersion_graph:
     plt.show()
 plt.close('all')
 #--------------------------------------------------------------------------------------------------------
@@ -1317,7 +1320,7 @@ if sensitivity_analysis:
         svg_file = f"{str(output_sensitivity)}/sensitivity_{target_variables[target]}.svg"
         sens_fig.savefig(svg_file, dpi=300)
 
-    if show_graph:
+    if show_dispersion_graph:
         plt.pause(99999) # that's a lot of damag...time.
 
     plt.close("all")
