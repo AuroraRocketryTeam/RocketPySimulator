@@ -8,6 +8,12 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from rocketpy import Environment, SolidMotor, Rocket, Flight
 
+# File and directory management
+from pathlib import Path
+
+# set path
+BASE_DIR = Path(__file__).resolve().parent
+
 """**FUNCTIONS**"""
 
 def get_pe_over_p0_from_AeAt(AeAt, gamma):
@@ -52,7 +58,6 @@ def solve_Ma(area_ratio_target, gamma, Ma_guess):
     return Ma_solution[0]
 
 """**INPUT PARAMETERS**"""
-
 # rocket
 Mdry = 1.700  # [kg] empty mass
 rocket_radius = 0.085/2  # [m] exteral diameter of the rocket
@@ -76,14 +81,14 @@ rho_phenolic = 1500     # [kg/m^3] Thermal protection density (Phenolic - bachel
 # nozzle
 exp_ratio = 6.8                   #   6.8  5
 D_throat = 0.007                  # [m] diameter of the throat section
-conv_angle = np.deg2rad(30)  # convergent angle
-div_angle  = np.deg2rad(10)  # divergent angle
+conv_angle = np.deg2rad(30.0)  # convergent angle
+div_angle  = np.deg2rad(10.0)  # divergent angle
 rho_nozzle_mat = 7850    # [kg/m^3] Nozzle density (C45)
-L_nozzle_ring = 0        # [m]
+L_nozzle_ring = 0.0        # [m]
 nozzle_housing_length = 0.031   # [m]
 th_nozzle_exit = 0.002   # [m] thickness of the thin wall of the divergent of the nozzle
 convergent_nozzle_thickness_to_wall = 0.001  #[m]
-casing_residual = 0          # [m]
+casing_residual = 0.0          # [m]
 K_erosion_nozzle = 0   # [mm/sec * mm^02 / bar 0.8] constant for throat erosion   0.05
 
 # bulkhead and nozzle oring
@@ -759,9 +764,10 @@ print("Grain external diameter = ", D_ext)
 print("Grain internal diameter = ", D_int)                        
 print("Grain length = ", L_single_grain)
 print("Grain mass = ", M_pr)
+print("Total mass of motor at burnout (kg): ",M_nozzle_ring+M_nozzle+M_tp+M_casing)
 
 thrust_curve = np.column_stack((time[:index_burnout], T[:index_burnout]))
 
-with open('SRAD_thrustcurve.csv', 'w', newline='', encoding='utf-8') as file:
+with open(str(BASE_DIR/'SRAD_thrustcurve.csv'), 'w', newline='', encoding='utf-8') as file:
     writer = csv.writer(file)
     writer.writerows(thrust_curve)

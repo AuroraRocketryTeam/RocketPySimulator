@@ -40,11 +40,11 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'FRED_v1.8_with_BRICO_45_7mm'
-number_of_simulations = 75
-ballistic = False
+number_of_simulations = 15
+ballistic = True
 
 show_graph = False
-sensitivity_analysis = True
+sensitivity_analysis = False
 
 latitude = 44.290583
 longitude = 12.027111
@@ -53,19 +53,20 @@ date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
 weather_data: Literal['c','e','f','i'] = 'e'        #(Custom, Ensemble, Forecast, Isa)
 
 #   SRAD motor info BRICO 45 7mm
-impulse = 238.4970043091982
-t_burnout = 0.6910000000000001
+impulse = 243.96
+t_burnout = 0.640
 grain_external_radius = 0.033 / 2
 grain_internal_radius = 0.013 / 2 
 grain_length = 0.147
 grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
 grain_mass = 0.19694061309132402
 grain_dens = grain_mass / grain_volume
+srad_motor_dry_mass = 0.7871568876139587
 thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_BRICO_45_7mm.csv")
 
-CG_position_from_nose = 432.2 / 1000
+CG_position_from_nose = 335 / 1000
 
-ballast =  0# 1750 / 1000                   # kg
+ballast =  0    # 1750 / 1000                   # kg
 
 analysis_parameters = {
     
@@ -78,7 +79,7 @@ analysis_parameters = {
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
     "rocket_dry_inertia_33": (0.002, 0.000122),
     # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation). The weight of the motor structure is included in the rocket dry mass
-    "motor_dry_mass": (637.18 / 1000, 0.0001),                                                                      # 7 mm nozzle
+    "motor_dry_mass": (srad_motor_dry_mass, 0.0001),                                                                         # 7 mm nozzle
     # "motor_dry_mass": (620.48 / 1000, 0.0001),                                                                      # 8 mm nozzle
     # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
     "motor_inertia_11": (0.00019173, 0),                                                                            # 7 and 8 mm nozzle
@@ -1103,3 +1104,7 @@ if sensitivity_analysis:
 
     print("- Sensitivity analysis graphs saved successfully")
 #-------------------------------------------------------------------------------------------------------
+
+FRED.draw()
+
+Solid_motor.draw()
