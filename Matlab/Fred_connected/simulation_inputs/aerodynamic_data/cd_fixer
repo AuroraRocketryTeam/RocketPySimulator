@@ -1,0 +1,35 @@
+
+import csv
+from pathlib import Path
+
+# set path
+BASE_DIR = Path(__file__).resolve().parent
+
+# Nome del file originale e del file di output
+input_file = str(BASE_DIR / "FRED_v1.8_CD_power_on.csv")
+output_file = str(BASE_DIR / "FRED_v1.8_CD_power_on_diocane.csv")
+
+try:
+    with open(input_file, 'r', encoding='utf-8') as f_in:
+        # Il lettore CSV gestisce automaticamente le virgolette
+        reader = csv.reader(f_in)
+        
+        with open(output_file, 'w', newline='', encoding='utf-8') as f_out:
+            writer = csv.writer(f_out)
+            
+            # Scriviamo l'intestazione (opzionale)
+            writer.writerow(['Tempo', 'Valore'])
+            
+            for row in reader:
+                # row[0] contiene la stringa "0.01,0.4017..."
+                # La dividiamo in due basandoci sulla virgola interna
+                if row:
+                    data = row[0].split(',')
+                    writer.writerow(data)
+
+    print(f"File elaborato con successo! Creato: {output_file}")
+
+except FileNotFoundError:
+    print(f"Errore: Il file '{input_file}' non è stato trovato.")
+except Exception as e:
+    print(f"Si è verificato un errore: {e}")
