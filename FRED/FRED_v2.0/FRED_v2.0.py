@@ -64,7 +64,7 @@ grain_dens = grain_mass / grain_volume
 srad_motor_dry_mass = 0.7871568876139587
 thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_BRICO_45_7mm.csv")
 
-CG_position_from_nose = 357 / 1000                          # (m)
+CG_position_from_nose = 373 / 1000                          # (m)
 
 ballast = 0     #1750 / 1000         #   (kg)
 
@@ -73,24 +73,24 @@ analysis_parameters = {
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (2703 / 1000 + ballast, 0.03),
+    "rocket_dry_mass": (2595 / 1000 + ballast, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
-    "rocket_dry_inertia_11": (0.149, 0.00187),                                                          # Needs Update
+    "rocket_dry_inertia_11": (1.49, 0.00187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
-    "rocket_dry_inertia_33": (0.002, 0.000122),                                                         # Needs Update
+    "rocket_dry_inertia_33": (0.01, 0.000122),
 
     # === Propulsion Details ===
 
     # Dry Motor Mass
 
-    # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation). The weight of the motor structure is included in the rocket dry mass
+    # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation).
     "motor_dry_mass": (srad_motor_dry_mass, 0.0001),                                                        # 7 mm
     # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
-    "motor_inertia_11": (0.00019173, 0.00001),                                                                    # 7 mm
+    "motor_inertia_11": (0.66, 0.00001),                                                                    # 7 mm
     # Motor's dry inertia moment relative to its axis (kg*m^2)
-    "motor_inertia_33": (0.0037284, 0.00001),                                                                   # 7 mm
+    "motor_inertia_33": (0.00001, 0.00001),                                                                   # 7 mm
     # Distance between the origin of the referential system and motor's center of dry mass (m)
-    "motor_dry_mass_position": (101.83 / 1000, 0.001),                                                             # 7 mm
+    "motor_dry_mass_position": (99.41 / 1000, 0.001),                                                             # 7 mm
     # "motor_dry_mass_position": (98.86 / 1000, 0.001),                                                            # 8 mm
 
     # Performance
@@ -100,9 +100,11 @@ analysis_parameters = {
     # Motor burn out time (s)
     "burn_time": (t_burnout, 0.01),
     # Motor's nozzle radius (m)                                                         # both nozzle dimesions are taken from Borealis
-    "nozzle_radius": (13.71 / 1000, 1 / 1000),                          # UPDATE
+    "nozzle_radius": (13.71 / 1000, 1 / 1000),
     # Motor's nozzle throat radius (m)
-    "throat_radius": (9.50 / 1000, 1 / 1000),                           # UPDATE
+    "throat_radius": (9.50 / 1000, 1 / 1000),
+    # Origin of the motor coordinate system
+    "nozzle_position": (0, 0.001),
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
@@ -113,15 +115,13 @@ analysis_parameters = {
     "grain_initial_inner_radius": (grain_internal_radius, 0.001),
     # Motor's grain height (m)
     "grain_initial_height": (grain_length, 0.001),
+    # Distance between the origin of the referential system and center of propellant mass (m) 
+    "grains_center_of_mass_position": (125 / 1000, 0.001), 
 
     # === Aerodynamic Details ===
     
     # Rocket's radius (m)
     "radius": (42.5 / 1000, 0.001),
-    # Origin of the motor coordinate system
-    "nozzle_position": (0, 0.001),
-    # Distance between the origin of the referential system and center of propellant mass (m) 
-    "grains_center_of_mass_position": (107 / 1000, 0.001), 
     # Multiplier for rocket's power off drag curve to introduce uncertainty
     "power_off_drag_corr": (1.0, 0.001),
     # Multiplier for rocket's power on drag curve to introduce uncertainty
