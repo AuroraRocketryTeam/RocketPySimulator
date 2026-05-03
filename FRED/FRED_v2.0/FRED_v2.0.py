@@ -39,8 +39,8 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_v2.0_test'
-number_of_simulations = 15
+output_dir_name = 'FRED_v2.0_Hed_180'
+number_of_simulations = 50
 ballistic = False
 
 show_graph = False
@@ -165,9 +165,9 @@ analysis_parameters = {
     # === Launch and Environment Details ===
 
     # Launch rail inclination angle relative to the horizontal plane (degrees)
-    "inclination": (84, 0.5),
+    "inclination": (80, 3),
     # Launch rail heading relative to north (degrees)
-    "heading": (160, 1),
+    "heading": (180, 15),
     # Launch rail length (m)
     "rail_length": (2, 0.005),
     # Members of the ensemble forecast to be used
