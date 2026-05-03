@@ -31,6 +31,9 @@ from imageio.v2 import imread
 # 
 from typing import Literal
 
+# General math usage 
+import math
+
 # set path
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -50,7 +53,7 @@ latitude = 44.290583
 longitude = 12.027111
 elevation = 18
 date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i'] = 'e'        #(Custom, Ensemble, Forecast, Isa)
+weather_data: Literal['c','e','f','i','m'] = 'm'        #(Custom, Ensemble, Forecast, Isa, Manual)
 
 #   SRAD motor info BRICO 45 7mm
 impulse = 243.96
@@ -66,7 +69,7 @@ thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_B
 
 CG_position_from_nose = 373 / 1000                          # (m)
 
-ballast = 0     #1750 / 1000         #   (kg)
+ballast = 750 / 1000         #   (kg)
 
 analysis_parameters = {
     
@@ -165,9 +168,9 @@ analysis_parameters = {
     # === Launch and Environment Details ===
 
     # Launch rail inclination angle relative to the horizontal plane (degrees)
-    "inclination": (80, 3),
+    "inclination": (75, 3),
     # Launch rail heading relative to north (degrees)
-    "heading": (180, 15),
+    "heading": (305, 5),
     # Launch rail length (m)
     "rail_length": (2, 0.005),
     # Members of the ensemble forecast to be used
@@ -537,10 +540,57 @@ elif weather_data=='f':
         type="Forecast",
         file="GFS"
     )
+elif weather_data == 'm':
+    # Manual setting of the wind
+
+    # Wind magnitude on the ground in (m/s)
+    wind_magnitude_ground = 8.7                          # m/s, EuRoC limit is 8.7m/s on the ground
+    # Heading of the wind from North in degrees
+    wind_heading = 315                                  # degrees from North
+
+    # CAREFUL:  Heading of the wind means where it is goind
+    #           Direction means where it comes from
+    #               If you want to set a wind from North going South set 180 because it heads South and South is 180 deg from North
+
+    wind_heading_r = math.radians(wind_heading)         # tranforms into radians
+    s_heading = math.sin(wind_heading_r)                # sin of the wind profile
+    c_heading = math.cos(wind_heading_r)                # cos of the wind profile
+
+    # Creates an array of values to generate a wind profile
+    custom_wind_u = [
+        ( 0 , wind_magnitude_ground * s_heading),
+        ( 50 , 1.05 * wind_magnitude_ground * s_heading),
+        ( 100 , 1.1 * wind_magnitude_ground * s_heading),
+        ( 150 , 1.15 * wind_magnitude_ground * s_heading),
+        ( 200 , 1.2 * wind_magnitude_ground * s_heading),
+        ( 250 , 1.25 * wind_magnitude_ground * s_heading),
+        ( 300 , 1.3 * wind_magnitude_ground * s_heading),
+    ]
+
+    custom_wind_v = [
+        ( 0 , wind_magnitude_ground * c_heading),
+        ( 50 , 1.05 * wind_magnitude_ground * c_heading),
+        ( 100 , 1.1 * wind_magnitude_ground * c_heading),
+        ( 150 , 1.15 * wind_magnitude_ground * c_heading),
+        ( 200 , 1.2 * wind_magnitude_ground * c_heading),
+        ( 250 , 1.25 * wind_magnitude_ground * c_heading),
+        ( 300 , 1.3 * wind_magnitude_ground * c_heading),
+    ]
+
+    Env.set_atmospheric_model(
+    type="custom_atmosphere",
+    wind_u=custom_wind_u,
+    wind_v=custom_wind_v,
+    )
+
+    # Check if the wind profiles are accurate
+    Env.all_info()
+
 elif weather_data!='i':
     # The default weather data type is the International Standard Atmosphere (ISA).
     # If none of the previously listed options is selected, this model will be applied automatically.
     print('<!> International Standard Atmosphere (ISA) as defined by ISO 2533 is initialized as weather data <!>')
+
 #---------------------------------------------------------------------------------------------------------
 
 
