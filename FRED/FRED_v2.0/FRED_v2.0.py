@@ -31,6 +31,9 @@ from imageio.v2 import imread
 # 
 from typing import Literal
 
+# General math usage 
+import math
+
 # set path
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -39,18 +42,18 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_v1.8_with_BRICO_45_7mm'
-number_of_simulations = 15
-ballistic = True
+output_dir_name = 'FRED_v2.0_Hed_180'
+number_of_simulations = 50
+ballistic = False
 
 show_graph = False
-sensitivity_analysis = False
+sensitivity_analysis = True
 
 latitude = 44.290583
 longitude = 12.027111
 elevation = 18
 date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i'] = 'e'        #(Custom, Ensemble, Forecast, Isa)
+weather_data: Literal['c','e','f','i','m'] = 'm'        #(Custom, Ensemble, Forecast, Isa, Manual)
 
 #   SRAD motor info BRICO 45 7mm
 impulse = 243.96
@@ -58,52 +61,53 @@ t_burnout = 0.640
 grain_external_radius = 0.033 / 2
 grain_internal_radius = 0.013 / 2 
 grain_length = 0.147
-grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
+grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
 grain_mass = 0.19694061309132402
 grain_dens = grain_mass / grain_volume
 srad_motor_dry_mass = 0.7871568876139587
 thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_BRICO_45_7mm.csv")
 
-CG_position_from_nose = 335 / 1000
+CG_position_from_nose = 373 / 1000                          # (m)
 
-ballast =  0    # 1750 / 1000                   # kg
+ballast = 750 / 1000         #   (kg)
 
 analysis_parameters = {
     
     # === Mass Details ===
     
-    # Rocket's dry mass without solid motor (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (2703 / 1000 + ballast, 0.03),
+    # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
+    "rocket_dry_mass": (2595 / 1000 + ballast, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
-    "rocket_dry_inertia_11": (0.149, 0.00187),                                                                  # NEEDS TO BE UPDATED
+    "rocket_dry_inertia_11": (1.49, 0.00187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
-    "rocket_dry_inertia_33": (0.002, 0.000122),                                                                 # NEEDS TO BE UPDATED
-    # Distance between the origin of the referential system and center of propellant mass (m) 
-    "grains_center_of_mass_position": (107 / 1000, 0.001), 
-    
-    # === Dry Motor Mass Details ===
-
-    # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation). The weight of the motor structure is included in the rocket dry mass
-    "motor_dry_mass": (srad_motor_dry_mass, 0.0001),                                                                         # 7 mm nozzle
-    # "motor_dry_mass": (620.48 / 1000, 0.0001),                                                                      # 8 mm nozzle
-    # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
-    "motor_inertia_11": (0.00019173, 0),                                                                            # 7 and 8 mm nozzle
-    # Motor's dry inertia moment relative to its axis (kg*m^2)
-    "motor_inertia_33": (0.0037284, 0.0),                                                                           # 7 and 8 mm nozzle
-    # Distance between the origin of the referential system and motor's center of dry mass (m)
-    "motor_dry_mass_position": (101.83 / 1000, 0.001),                                                              # 7 mm nozzle
-    # "motor_dry_mass_position": (98.86 / 1000, 0.001),                                                               # 8 mm nozzle
+    "rocket_dry_inertia_33": (0.01, 0.000122),
 
     # === Propulsion Details ===
+
+    # Dry Motor Mass
+
+    # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation).
+    "motor_dry_mass": (srad_motor_dry_mass, 0.0001),                                                        # 7 mm
+    # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
+    "motor_inertia_11": (0.66, 0.00001),                                                                    # 7 mm
+    # Motor's dry inertia moment relative to its axis (kg*m^2)
+    "motor_inertia_33": (0.00001, 0.00001),                                                                   # 7 mm
+    # Distance between the origin of the referential system and motor's center of dry mass (m)
+    "motor_dry_mass_position": (99.41 / 1000, 0.001),                                                             # 7 mm
+    # "motor_dry_mass_position": (98.86 / 1000, 0.001),                                                            # 8 mm
+
+    # Performance
 
     # Motor total impulse (N*s)
     "impulse": (impulse, 1),
     # Motor burn out time (s)
     "burn_time": (t_burnout, 0.01),
     # Motor's nozzle radius (m)                                                         # both nozzle dimesions are taken from Borealis
-    "nozzle_radius": (13.71 / 1000, 1 / 1000),                          # UPDATE
+    "nozzle_radius": (13.71 / 1000, 1 / 1000),
     # Motor's nozzle throat radius (m)
-    "throat_radius": (9.50 / 1000, 1 / 1000),                           # UPDATE
+    "throat_radius": (9.50 / 1000, 1 / 1000),
+    # Origin of the motor coordinate system
+    "nozzle_position": (0, 0.001),
     # Motor's grain separation (axial distance between two grains) (m)
     "grain_separation": (3 / 1000, 0.1 / 1000),
     # Motor's grain density (kg/m^3)
@@ -114,8 +118,8 @@ analysis_parameters = {
     "grain_initial_inner_radius": (grain_internal_radius, 0.001),
     # Motor's grain height (m)
     "grain_initial_height": (grain_length, 0.001),
-    # Origin of the motor coordinate system
-    "nozzle_position": (0, 0.001),
+    # Distance between the origin of the referential system and center of propellant mass (m) 
+    "grains_center_of_mass_position": (125 / 1000, 0.001), 
 
     # === Aerodynamic Details ===
     
@@ -125,11 +129,11 @@ analysis_parameters = {
     "power_off_drag_corr": (1.0, 0.001),
     # Multiplier for rocket's power on drag curve to introduce uncertainty
     "power_on_drag_corr": (1.0, 0.001),
-
-    # Nosecone
-
     # Rocket's nose cone length (m)
-    "nose_length": ( 140 / 1000 , 0.001),
+
+    # Nose
+
+    "nose_length": (0.14, 0.001),
     # Power of the function that describes the shape of the nose cone
     "nose_pwr" : (0.4, 0.001),
     # The origin of the coordinate system (m)
@@ -146,14 +150,14 @@ analysis_parameters = {
     # Fin tip chord (m)
     "fin_tip_chord": (0.03, 0.0005), 
     # Axial distance between rocket's tip and nearest point in its fin (m)
-    "fin_position": ( 686 / 1000, 0.005), 
+    "fin_position": (0.686, 0.005), 
     # Fin sweep angle (degrees)
     "fin_sweep_angle": (30.3, 0.005),
 
     # Tail
 
     # Axial distance from the tip of the nose (m)
-    "tail_position": ( 810 / 1000, 0.001),
+    "tail_position": (810 / 1000, 0.001),
     # Tail length (m)
     "tail_length": (43 / 1000, 0.001), 
     # Tail bottom radius (m)
@@ -164,9 +168,9 @@ analysis_parameters = {
     # === Launch and Environment Details ===
 
     # Launch rail inclination angle relative to the horizontal plane (degrees)
-    "inclination": (84, 0.5),
+    "inclination": (75, 3),
     # Launch rail heading relative to north (degrees)
-    "heading": (160, 1),
+    "heading": (305, 5),
     # Launch rail length (m)
     "rail_length": (2, 0.005),
     # Members of the ensemble forecast to be used
@@ -175,10 +179,10 @@ analysis_parameters = {
     # === Parachute Details ===
 
     # Drag coefficient times reference area for the rocket main chute (m^2)
-    "cd_s_main": (0.97 * 1.168, 0.0277),
+    "cd_s_main": (0.97 * 1.168, 0.0277),                                                        # 4ft rocketman without spillout
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
-    "lag_rec": (2, 0.5),                                                                            # more conservative, previous was (1.73 , 0.2)
-
+    "lag_rec": (2, 0.5),                                                                        # more conservative, previous was (1.73 , 0.2)
+    
     # === Rail buttons Details ===
     
     # Position of the rail button closer to the tip of the rocket (m)
@@ -536,10 +540,57 @@ elif weather_data=='f':
         type="Forecast",
         file="GFS"
     )
+elif weather_data == 'm':
+    # Manual setting of the wind
+
+    # Wind magnitude on the ground in (m/s)
+    wind_magnitude_ground = 8.7                          # m/s, EuRoC limit is 8.7m/s on the ground
+    # Heading of the wind from North in degrees
+    wind_heading = 315                                  # degrees from North
+
+    # CAREFUL:  Heading of the wind means where it is goind
+    #           Direction means where it comes from
+    #               If you want to set a wind from North going South set 180 because it heads South and South is 180 deg from North
+
+    wind_heading_r = math.radians(wind_heading)         # tranforms into radians
+    s_heading = math.sin(wind_heading_r)                # sin of the wind profile
+    c_heading = math.cos(wind_heading_r)                # cos of the wind profile
+
+    # Creates an array of values to generate a wind profile
+    custom_wind_u = [
+        ( 0 , wind_magnitude_ground * s_heading),
+        ( 50 , 1.05 * wind_magnitude_ground * s_heading),
+        ( 100 , 1.1 * wind_magnitude_ground * s_heading),
+        ( 150 , 1.15 * wind_magnitude_ground * s_heading),
+        ( 200 , 1.2 * wind_magnitude_ground * s_heading),
+        ( 250 , 1.25 * wind_magnitude_ground * s_heading),
+        ( 300 , 1.3 * wind_magnitude_ground * s_heading),
+    ]
+
+    custom_wind_v = [
+        ( 0 , wind_magnitude_ground * c_heading),
+        ( 50 , 1.05 * wind_magnitude_ground * c_heading),
+        ( 100 , 1.1 * wind_magnitude_ground * c_heading),
+        ( 150 , 1.15 * wind_magnitude_ground * c_heading),
+        ( 200 , 1.2 * wind_magnitude_ground * c_heading),
+        ( 250 , 1.25 * wind_magnitude_ground * c_heading),
+        ( 300 , 1.3 * wind_magnitude_ground * c_heading),
+    ]
+
+    Env.set_atmospheric_model(
+    type="custom_atmosphere",
+    wind_u=custom_wind_u,
+    wind_v=custom_wind_v,
+    )
+
+    # Check if the wind profiles are accurate
+    Env.all_info()
+
 elif weather_data!='i':
     # The default weather data type is the International Standard Atmosphere (ISA).
     # If none of the previously listed options is selected, this model will be applied automatically.
     print('<!> International Standard Atmosphere (ISA) as defined by ISO 2533 is initialized as weather data <!>')
+
 #---------------------------------------------------------------------------------------------------------
 
 
@@ -597,8 +648,8 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         coordinate_system_orientation = "nozzle_to_combustion_chamber",
     )
 
-    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_power_off.csv")
-    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_power_on.csv")
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v2.0_CD_power_off.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v2.0_CD_power_on.csv")
 
 
 # Now create the Rocket
@@ -1116,7 +1167,3 @@ if sensitivity_analysis:
 
     print("- Sensitivity analysis graphs saved successfully")
 #-------------------------------------------------------------------------------------------------------
-
-FRED.draw()
-
-Solid_motor.draw()

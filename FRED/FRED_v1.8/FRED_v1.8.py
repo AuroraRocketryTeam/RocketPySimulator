@@ -160,10 +160,10 @@ analysis_parameters = {
     # === Parachute Details ===
 
     # Drag coefficient times reference area for the rocket main chute (m^2)
-    "cd_s_main": (0.97 * 1.168, 0.0277),
+    "cd_s_main": (0.97 * 1.168, 0.0277), # 4ft rocketman without spillout
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
-    "lag_rec": (2, 0.5),                                                                            # more conservative, previous was (1.73 , 0.2)
-
+    "lag_rec": (2, 0.5),    # more conservative, previous was (1.73 , 0.2)
+    
     # === Rail buttons Details ===
     
     # Position of the rail button closer to the tip of the rocket (m)
