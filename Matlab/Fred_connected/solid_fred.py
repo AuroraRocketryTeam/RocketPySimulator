@@ -217,91 +217,91 @@ cea = CEA_Obj(
     thermal_cond_units   = 'mcal/cm-K-s'
     )
 
-"""**MOTOR DIMENSIONS**"""
+# """**MOTOR DIMENSIONS**"""
 
-print(f"-------------------PROPELLANT MASS------------------------")
-print("\n")
-print(f"Theoretical Propellant mass = {M_mix:.4f} [kg]")
-print(f"Real propellant mass = {M_pr:.4f} [kg]")
-print(f"Density ratio = {rho_quality:.4f}     (if less then 0.9 it is not good)")
-print("\n")
-print(f"------------------PROPELLANT MIX--------------------------")
-print("\n")
-print(f"Theoretical mass +5% = {M_mix*1.05:.4f} [kg]            Total mass of propellant for the casting")
-print(f"Theoretical SORBITOL mass +5% = {M_mix*1.05*w[0]:.4f} [kg]   Total mass of SORBITOL for the casting")
-print(f"Theoretical KNO3 mass +5% = {M_mix*1.05*w[1]:.4f} [kg]       Total mass of KNO3 for the casting")
-print(f"Theoretical Fe2O3 mass +5% = {M_mix*1.05*w[2]:.4f}  [kg]      Total mass of Fe2O3 for the casting")
-print("\n")
-print("--------------------GRAIN GEOMETRY-------------------------")
-print("\n")
-print(f"Number of grains = {n_grains:.2f}")
-print(f"Length of the single grain = {L_single_grain:.4f} [m]")
-print(f"External diameter of the grain = {D_ext:.4f}  [m]")
-print(f"Internal diameter of the grain = {D_int:.4f}  [m]")
-print(f"Distance between the grains = {grains_distance:.4f} [m]")
-print("\n")
-print("----------------------CASING GEOMETRY---------------------")
-print("\n")
-print(f"Length of the casing = {L_cc:.4f} [m]")
-print(f"Internal diameter of the casing = {D_cc:.4f}  [m]")
-print(f"External diameter of the casing = {D_cc_outer:.4f}  [m]")
-print(f"Thickness of the casing = {th_casing:.4f} [m]")
-print(f"Length of the bulkhead = {L_bulkhead:.4f} [m]")
-print(f"Length of the bulkhead fillet = {th_bulkhead_fillet:.4f} [m]")
-# --- ADDED: CASING WEIGHT PRINT --- #
-print(f"Est. Casing Weight = {M_casing:.3f} [kg]")
-# ---------------------------------- #
-print("\n")
-print(f"-------------------THERMAL PROTECTION--------------------")
-print("\n")
-print(f"External diameter of the thermal protection = {D_cc:.4f} [m]")
-print(f"Internal diameter of the thermal protection = {D_cc-2*tp_thickness:.4f} [m]")
-print(f"Thermal protection thickness = {tp_thickness:.4f} [m]")
-print(f"Thermal protection length = {L_tp:.4f} [m]")
-# --- ADDED: TP WEIGHT PRINT --- #
-print(f"Est. Thermal Protection Weight = {M_tp:.3f} [kg]")
-# ------------------------------ #
-print("\n")
-print(f"-------------------NOZZLE GEOMETRY-----------------------")
-print("\n")
-print(f"Throat diameter = {D_throat:.4f}  [m]")
-print(f"Exit diameter = {D_exit:.4f}  [m]")
-print(f"Convergent diameter = {D_conv:.4f} [m]")
-print(f"Aspect ratio = {exp_ratio}")
-print(f"Convergent angle = {np.rad2deg(conv_angle):.2f} [deg]")
-print(f"Divergent angle = {np.rad2deg(div_angle):.2f} [deg]")
-print(f"Convergent length = {L_conv:.4f} [m]")
-print(f"Divergent length =  {L_div:.4f} [m]")
-print(f"Total length = {L_total:.4f} [m]")
-print(f"Nozzle ring length = {L_nozzle_ring:.4f} [m]")
-print(f"Nozzle ring thickness = {th_nozzle_ring:.4f} [m]")
-print(f"Nozzle ring internal diameter = {D_exit + 0.002:.4f} [m]")
-print(f"Nozzle ring mass = {M_nozzle_ring:.4f} [kg]")
-print(f"Nozzle housing length = {nozzle_housing_length:.4f} [m]")
-print(f"\"Nozzle throat radius\" = {D_throat/2:.4f} [m]")
-# --- ADDED: NOZZLE WEIGHT PRINT --- #
-print(f"Est. Nozzle Mass (Rough) = {M_nozzle:.3f} [kg]")
-# ---------------------------------- #
-print("\n")
-print(f"-------------------MASSES OF THE MOTOR-----------------------")
-print("\n")
-print(f"Total mass of the motor (with grain) = {M_nozzle_ring+M_pr+M_nozzle+M_tp+M_casing:.3f} [kg]")
-print(f"Total mass of the motor (burnout) = {M_nozzle_ring+M_nozzle+M_tp+M_casing:.3f} [kg]")
-print("\n")
-print(f"-------------------MASSES OF THE ROCKET-----------------------")
-print("\n")
-print(f"Total mass of the rocket = {M_nozzle_ring+Mdry + M_pr+M_nozzle+M_tp+M_casing:.3f} [kg]")
-print(f"Empty mass of the rocket (burnout) = {M_nozzle_ring+Mdry + M_nozzle+M_tp+M_casing:.3f} [kg]")
-print(f"Mass of the rocket without the whole motor = {Mdry:.3} [kg]")
+# print(f"-------------------PROPELLANT MASS------------------------")
+# print("\n")
+# print(f"Theoretical Propellant mass = {M_mix:.4f} [kg]")
+# print(f"Real propellant mass = {M_pr:.4f} [kg]")
+# print(f"Density ratio = {rho_quality:.4f}     (if less then 0.9 it is not good)")
+# print("\n")
+# print(f"------------------PROPELLANT MIX--------------------------")
+# print("\n")
+# print(f"Theoretical mass +5% = {M_mix*1.05:.4f} [kg]            Total mass of propellant for the casting")
+# print(f"Theoretical SORBITOL mass +5% = {M_mix*1.05*w[0]:.4f} [kg]   Total mass of SORBITOL for the casting")
+# print(f"Theoretical KNO3 mass +5% = {M_mix*1.05*w[1]:.4f} [kg]       Total mass of KNO3 for the casting")
+# print(f"Theoretical Fe2O3 mass +5% = {M_mix*1.05*w[2]:.4f}  [kg]      Total mass of Fe2O3 for the casting")
+# print("\n")
+# print("--------------------GRAIN GEOMETRY-------------------------")
+# print("\n")
+# print(f"Number of grains = {n_grains:.2f}")
+# print(f"Length of the single grain = {L_single_grain:.4f} [m]")
+# print(f"External diameter of the grain = {D_ext:.4f}  [m]")
+# print(f"Internal diameter of the grain = {D_int:.4f}  [m]")
+# print(f"Distance between the grains = {grains_distance:.4f} [m]")
+# print("\n")
+# print("----------------------CASING GEOMETRY---------------------")
+# print("\n")
+# print(f"Length of the casing = {L_cc:.4f} [m]")
+# print(f"Internal diameter of the casing = {D_cc:.4f}  [m]")
+# print(f"External diameter of the casing = {D_cc_outer:.4f}  [m]")
+# print(f"Thickness of the casing = {th_casing:.4f} [m]")
+# print(f"Length of the bulkhead = {L_bulkhead:.4f} [m]")
+# print(f"Length of the bulkhead fillet = {th_bulkhead_fillet:.4f} [m]")
+# # --- ADDED: CASING WEIGHT PRINT --- #
+# print(f"Est. Casing Weight = {M_casing:.3f} [kg]")
+# # ---------------------------------- #
+# print("\n")
+# print(f"-------------------THERMAL PROTECTION--------------------")
+# print("\n")
+# print(f"External diameter of the thermal protection = {D_cc:.4f} [m]")
+# print(f"Internal diameter of the thermal protection = {D_cc-2*tp_thickness:.4f} [m]")
+# print(f"Thermal protection thickness = {tp_thickness:.4f} [m]")
+# print(f"Thermal protection length = {L_tp:.4f} [m]")
+# # --- ADDED: TP WEIGHT PRINT --- #
+# print(f"Est. Thermal Protection Weight = {M_tp:.3f} [kg]")
+# # ------------------------------ #
+# print("\n")
+# print(f"-------------------NOZZLE GEOMETRY-----------------------")
+# print("\n")
+# print(f"Throat diameter = {D_throat:.4f}  [m]")
+# print(f"Exit diameter = {D_exit:.4f}  [m]")
+# print(f"Convergent diameter = {D_conv:.4f} [m]")
+# print(f"Aspect ratio = {exp_ratio}")
+# print(f"Convergent angle = {np.rad2deg(conv_angle):.2f} [deg]")
+# print(f"Divergent angle = {np.rad2deg(div_angle):.2f} [deg]")
+# print(f"Convergent length = {L_conv:.4f} [m]")
+# print(f"Divergent length =  {L_div:.4f} [m]")
+# print(f"Total length = {L_total:.4f} [m]")
+# print(f"Nozzle ring length = {L_nozzle_ring:.4f} [m]")
+# print(f"Nozzle ring thickness = {th_nozzle_ring:.4f} [m]")
+# print(f"Nozzle ring internal diameter = {D_exit + 0.002:.4f} [m]")
+# print(f"Nozzle ring mass = {M_nozzle_ring:.4f} [kg]")
+# print(f"Nozzle housing length = {nozzle_housing_length:.4f} [m]")
+# print(f"\"Nozzle throat radius\" = {D_throat/2:.4f} [m]")
+# # --- ADDED: NOZZLE WEIGHT PRINT --- #
+# print(f"Est. Nozzle Mass (Rough) = {M_nozzle:.3f} [kg]")
+# # ---------------------------------- #
+# print("\n")
+# print(f"-------------------MASSES OF THE MOTOR-----------------------")
+# print("\n")
+# print(f"Total mass of the motor (with grain) = {M_nozzle_ring+M_pr+M_nozzle+M_tp+M_casing:.3f} [kg]")
+# print(f"Total mass of the motor (burnout) = {M_nozzle_ring+M_nozzle+M_tp+M_casing:.3f} [kg]")
+# print("\n")
+# print(f"-------------------MASSES OF THE ROCKET-----------------------")
+# print("\n")
+# print(f"Total mass of the rocket = {M_nozzle_ring+Mdry + M_pr+M_nozzle+M_tp+M_casing:.3f} [kg]")
+# print(f"Empty mass of the rocket (burnout) = {M_nozzle_ring+Mdry + M_nozzle+M_tp+M_casing:.3f} [kg]")
+# print(f"Mass of the rocket without the whole motor = {Mdry:.3} [kg]")
 
-"""**PRE-SIMULATION VERIFICATIONS**"""
+# """**PRE-SIMULATION VERIFICATIONS**"""
 
-core_area = np.pi * D_int * L_single_grain
-base_area = 2 * np.pi * ((D_ext/2)**2 - (D_int/2)**2)
-Ab_check= n_grains * (core_area + base_area)
+# core_area = np.pi * D_int * L_single_grain
+# base_area = 2 * np.pi * ((D_ext/2)**2 - (D_int/2)**2)
+# Ab_check= n_grains * (core_area + base_area)
 
-Kn_initial = Ab_check / (np.pi * (D_throat/2)**2)
-print(f"initial Kn = {Kn_initial:.4f} ")
+# Kn_initial = Ab_check / (np.pi * (D_throat/2)**2)
+# print(f"initial Kn = {Kn_initial:.4f} ")
 
 """**INTERNAL BALLISTICS SIMULATION**"""
 
@@ -452,207 +452,207 @@ I_sp_final = I_total / (M_pr*g)
 T_avg = np.mean(T[:index_burnout])
 
 
-print(f"TOTAL IMPULSE = {I_total:.2f} [N·s]")
-print(f"SPECIFIC IMPULSE = {I_sp_final:.2f} [sec]")
-print(f"AVERAGE THRUST = {T_avg:.2f} [N]")
-print(f"MAX THRUST = {np.max(T):.3f} [N]")
-print("\n")
-print(f"Residual core diameter = {D_ext-D_int_array[index_burnout]:.4f} [m]")
-print(f"Residual single grain length = {L_single_grain_array[index_burnout]:.4f} [m]")
-print(f"Residual propellant mass = {M_pr_array[index_burnout]:.4f} [m]")
+# print(f"TOTAL IMPULSE = {I_total:.2f} [N·s]")
+# print(f"SPECIFIC IMPULSE = {I_sp_final:.2f} [sec]")
+# print(f"AVERAGE THRUST = {T_avg:.2f} [N]")
+# print(f"MAX THRUST = {np.max(T):.3f} [N]")
+# print("\n")
+# print(f"Residual core diameter = {D_ext-D_int_array[index_burnout]:.4f} [m]")
+# print(f"Residual single grain length = {L_single_grain_array[index_burnout]:.4f} [m]")
+# print(f"Residual propellant mass = {M_pr_array[index_burnout]:.4f} [m]")
 
-"""**VERIFICATION**"""
+# """**VERIFICATION**"""
 
-max_p0 = np.max(P0[:index_burnout])
-req_casing_th = (max_p0 * (D_cc+2*th_casing) / (2 * yield_casing_mat)) * SF_casing
+# max_p0 = np.max(P0[:index_burnout])
+# req_casing_th = (max_p0 * (D_cc+2*th_casing) / (2 * yield_casing_mat)) * SF_casing
 
-print(f"Max Chamber Pressure = {max_p0/1e5:.2f} [bar]")
-print(f"Required Casing Thickness = {req_casing_th:.4f} [m] (including SF = {SF_casing})")
-print(f"Current Casing Thickness = {th_casing:.4f} [m]")
+# print(f"Max Chamber Pressure = {max_p0/1e5:.2f} [bar]")
+# print(f"Required Casing Thickness = {req_casing_th:.4f} [m] (including SF = {SF_casing})")
+# print(f"Current Casing Thickness = {th_casing:.4f} [m]")
 
-req_tp_thickness = recession_rate * t_burnout
-print(f"Required TP Thickness (at {recession_rate*1000} mm/s) = {req_tp_thickness:.4f} [m]")
-print(f"Residual TP Thickness = {(tp_thickness - req_tp_thickness)*1000:.2f} [mm]")
+# req_tp_thickness = recession_rate * t_burnout
+# print(f"Required TP Thickness (at {recession_rate*1000} mm/s) = {req_tp_thickness:.4f} [m]")
+# print(f"Residual TP Thickness = {(tp_thickness - req_tp_thickness)*1000:.2f} [mm]")
 
-# casing verification
-if th_casing >= req_casing_th:
-    print("\n WARNING: Casing thickness: VERIFIED")
-else:
-    print("\n WARNING: Casing thickness: NOT VERIFIED")
+# # casing verification
+# if th_casing >= req_casing_th:
+#     print("\n WARNING: Casing thickness: VERIFIED")
+# else:
+#     print("\n WARNING: Casing thickness: NOT VERIFIED")
 
-# thermal protection verification
-if tp_thickness >= req_tp_thickness:
-    print("WARNING: Thermal protection: VERIFIED")
-else:
-    print("WARNING: Thermal protection: NOT VERIFIED")
+# # thermal protection verification
+# if tp_thickness >= req_tp_thickness:
+#     print("WARNING: Thermal protection: VERIFIED")
+# else:
+#     print("WARNING: Thermal protection: NOT VERIFIED")
 
-"""**PLOTS**"""
+# """**PLOTS**"""
 
-def show_graphics():
-    fig = make_subplots(rows=6, cols=3,
-                        subplot_titles=("Thrust","CC pressure","c_star","Burn rate","Burning surface",
-                                        "Mass flow rate","Propellant mass","CF","Pe and Pamb","gamma","Exit Mach","Temperatures","Throat diameter","Expansion ratio",
-                "Nozzle angles","eta CF"))
+# def show_graphics():
+#     fig = make_subplots(rows=6, cols=3,
+#                         subplot_titles=("Thrust","CC pressure","c_star","Burn rate","Burning surface",
+#                                         "Mass flow rate","Propellant mass","CF","Pe and Pamb","gamma","Exit Mach","Temperatures","Throat diameter","Expansion ratio",
+#                 "Nozzle angles","eta CF"))
 
-    fig.add_trace(go.Scatter(x=time, y=T, showlegend=False,line=dict(color='red')), row=1, col=1)
-    fig.add_trace(go.Scatter(x=time, y=P0/1e5, showlegend=False,line=dict(color='blue')), row=1, col=2)
-    fig.add_trace(go.Scatter(x=time, y=c_star, showlegend=False,line=dict(color='yellow')), row=1, col=3)
-    fig.add_trace(go.Scatter(x=time, y=r, showlegend=False,line=dict(color='red')), row=2, col=1)
-    fig.add_trace(go.Scatter(x=time, y=Ab, showlegend=False,line=dict(color='orange')), row=2, col=2)
-    fig.add_trace(go.Scatter(x=time, y=mdot, showlegend=False,line=dict(color='orange')), row=2, col=3)
-    fig.add_trace(go.Scatter(x=time, y=M_pr_array, showlegend=False,line=dict(color='orange')), row=3, col=1)
-    fig.add_trace(go.Scatter(x=time, y=CF, showlegend=False,line=dict(color='red')), row=3, col=2)
-    fig.add_trace(go.Scatter(x=time, y=Pe/1e5, name="Pe",line=dict(color='blue')), row=3, col=3)
-    fig.add_trace(go.Scatter(x=time, y=Pe_cea/1e5, name="Pe cea",line=dict(color='yellow')), row=3, col=3)
-    fig.add_trace(go.Scatter(x=time, y=np.full_like(time, P_amb/1e5), name="Pamb (sea level)",line=dict(color='red')), row=3, col=3)
-    fig.add_trace(go.Scatter(x=time, y=gamma_nozzle_exit, name = "Exit",showlegend=False,line=dict(color='red')), row=4, col=1)
-    fig.add_trace(go.Scatter(x=time, y=gamma_chamber, name = "Chamber",showlegend=False,line=dict(color='blue')), row=4, col=1)
-    fig.add_trace(go.Scatter(x=time, y=gamma_throat, name = "Throat",showlegend=False,line=dict(color='green')), row=4, col=1)
-    fig.add_trace(go.Scatter(x=time, y=M_e, showlegend=False,line=dict(color='blue')), row=4, col=2)
+#     fig.add_trace(go.Scatter(x=time, y=T, showlegend=False,line=dict(color='red')), row=1, col=1)
+#     fig.add_trace(go.Scatter(x=time, y=P0/1e5, showlegend=False,line=dict(color='blue')), row=1, col=2)
+#     fig.add_trace(go.Scatter(x=time, y=c_star, showlegend=False,line=dict(color='yellow')), row=1, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=r, showlegend=False,line=dict(color='red')), row=2, col=1)
+#     fig.add_trace(go.Scatter(x=time, y=Ab, showlegend=False,line=dict(color='orange')), row=2, col=2)
+#     fig.add_trace(go.Scatter(x=time, y=mdot, showlegend=False,line=dict(color='orange')), row=2, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=M_pr_array, showlegend=False,line=dict(color='orange')), row=3, col=1)
+#     fig.add_trace(go.Scatter(x=time, y=CF, showlegend=False,line=dict(color='red')), row=3, col=2)
+#     fig.add_trace(go.Scatter(x=time, y=Pe/1e5, name="Pe",line=dict(color='blue')), row=3, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=Pe_cea/1e5, name="Pe cea",line=dict(color='yellow')), row=3, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=np.full_like(time, P_amb/1e5), name="Pamb (sea level)",line=dict(color='red')), row=3, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=gamma_nozzle_exit, name = "Exit",showlegend=False,line=dict(color='red')), row=4, col=1)
+#     fig.add_trace(go.Scatter(x=time, y=gamma_chamber, name = "Chamber",showlegend=False,line=dict(color='blue')), row=4, col=1)
+#     fig.add_trace(go.Scatter(x=time, y=gamma_throat, name = "Throat",showlegend=False,line=dict(color='green')), row=4, col=1)
+#     fig.add_trace(go.Scatter(x=time, y=M_e, showlegend=False,line=dict(color='blue')), row=4, col=2)
 
-    fig.add_trace(go.Scatter(x=time, y=T_matrix[:,0], name="T_chamber", line=dict(color='red')), row=4, col=3)
-    fig.add_trace(go.Scatter(x=time, y=T_matrix[:,1], name="T_throat", line=dict(color='green')), row=4, col=3)
-    fig.add_trace(go.Scatter(x=time, y=T_matrix[:,2], name="T_exit", line=dict(color='blue')), row=4, col=3)
-    fig.add_trace(go.Scatter(x=time, y=T_comb, name="T_comb", line=dict(color='orange', dash='dash')), row=4, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=T_matrix[:,0], name="T_chamber", line=dict(color='red')), row=4, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=T_matrix[:,1], name="T_throat", line=dict(color='green')), row=4, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=T_matrix[:,2], name="T_exit", line=dict(color='blue')), row=4, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=T_comb, name="T_comb", line=dict(color='orange', dash='dash')), row=4, col=3)
 
-    fig.add_trace(go.Scatter(x=time, y=D_throat_array*100, showlegend=False,line=dict(color='red')), row=5, col=1)
-    fig.add_trace(go.Scatter(x=time, y=exp_ratio_array, showlegend=False,line=dict(color='green')), row=5, col=2)
-    fig.add_trace(go.Scatter(x=time, y=np.degrees(dive_angle_array), name="Divergent", showlegend=False,line=dict(color='orange')), row=5, col=3)
-    fig.add_trace(go.Scatter(x=time, y=np.degrees(conv_angle_array), name="Convergent", showlegend=False,line=dict(color='blue')), row=5, col=3)
-    fig.add_trace(go.Scatter(x=time, y=eta_CF_array, showlegend=False,line=dict(color='purple')), row=6, col=1)
-
-
-    fig.update_xaxes(title_text="Time [s]", row=1, col=1)
-    fig.update_xaxes(title_text="Time [s]", row=1, col=2)
-    fig.update_xaxes(title_text="Time [s]", row=1, col=3)
-    fig.update_xaxes(title_text="Time [s]", row=2, col=1)
-    fig.update_xaxes(title_text="Time [s]", row=2, col=2)
-    fig.update_xaxes(title_text="Time [s]", row=2, col=3)
-    fig.update_xaxes(title_text="Time [s]", row=3, col=1)
-    fig.update_xaxes(title_text="Time [s]", row=3, col=2)
-    fig.update_xaxes(title_text="Time [s]", row=3, col=3)
-    fig.update_xaxes(title_text="Time [s]", row=4, col=1)
-    fig.update_xaxes(title_text="Time [s]", row=4, col=2)
-    fig.update_xaxes(title_text="Time [s]", row=4, col=3)
-    fig.update_xaxes(title_text="Time [s]", row=5, col=1)
-    fig.update_xaxes(title_text="Time [s]", row=5, col=2)
-    fig.update_xaxes(title_text="Time [s]", row=5, col=3)
-    fig.update_xaxes(title_text="Time [s]", row=6, col=1)
-
-    fig.update_yaxes(title_text="Thrust [N]", row=1, col=1)
-    fig.update_yaxes(title_text="CC Pressure [bar]", row=1, col=2)
-    fig.update_yaxes(title_text="c_star [m/s]", row=1, col=3)
-    fig.update_yaxes(title_text="Burn rate [m/s]", row=2, col=1)
-    fig.update_yaxes(title_text="Burning surface [m²]", row=2, col=2)
-    fig.update_yaxes(title_text="Mass flow rate [kg/s]", row=2, col=3)
-    fig.update_yaxes(title_text="Propellant mass [kg]", row=3, col=1)
-    fig.update_yaxes(title_text="CF []", row=3, col=2)
-    fig.update_yaxes(title_text="Pressure [bar]", row=3, col=3)
-    fig.update_yaxes(title_text="gamma", row=4, col=1)
-    fig.update_yaxes(title_text="Exit Mach", row=4, col=2)
-    fig.update_yaxes(title_text="Temperatures K]", row=4, col=3)
-
-    fig.update_yaxes(title_text="Throat diameter [cm]", row=5, col=1)
-    fig.update_yaxes(title_text="Expansion ratio ", row=5, col=2)
-
-    fig.update_yaxes(title_text="Divergent angle [deg]", row=5, col=3)
-    fig.update_yaxes(title_text="eta CF", row=6, col=1)
-
-    fig.update_layout(title_text="Internal Ballistics Results", height=1100)
-    fig.show()
-
-show_graphics()
-
-"""**Kn AND MASS FLUX VERIFICATION**"""
-
-# kn factor
-P_arr = np.linspace(P_amb, 100 * P_amb, 10000)
-Kn_computed = (P_arr**(1-n)) / (rho_pr * a * c_star[50])
-
-# mass flux normalized (mdot/port area)
-m_flux = mdot[:index_burnout] / (np.pi * (D_int_array[:index_burnout]/2)**2)   # [kg/sec / m^2]
-fig = make_subplots(rows=2, cols=2,
-                        subplot_titles=("Kn (burn surface/throat surface)", "Normalized mass flux", "Chamber Mach vs contr. ratio","Chamber Mach vs time"))
-
-fig.add_trace(go.Scatter(x=Kn_computed, y=P_arr/1e5, name = "Theoretical Kn",line=dict(color='blue')), row=1, col=1)
-fig.add_trace(go.Scatter(x=Kn_geometry[:index_burnout], y=P0[:index_burnout]/1e5, name = "Geometrical Kn",line=dict(color='red')), row=1, col=1)
-fig.add_trace(go.Scatter(x=time[:index_burnout] , y = m_flux, name = "Normalized mass flux",line=dict(color='green')), row=1, col=2)
-fig.add_hline(y=1406.5, line=dict(color='red', dash='dash'),annotation_text="1406.5",annotation_position="top left", row=1, col=2)
-fig.add_hline(y=1898, line=dict(color='red', dash='dash'),annotation_text="1898",annotation_position="top left", row=1, col=2)
-fig.add_trace(go.Scatter(x=fac_CR[:index_burnout], y=M_cc[:index_burnout], name="CEA",showlegend=False,line=dict(color='blue')), row=2, col=1)
-fig.add_trace(go.Scatter(x=fac_CR[:index_burnout], y=Mach_cc[:index_burnout], name="mine",showlegend=False,line=dict(color='green')), row=2, col=1)
-fig.add_hline(y=0.7, line=dict(color='red', dash='dash'),annotation_text="0.7",annotation_position="top left", row=2, col=1)
-fig.add_trace(go.Scatter(x=time[:index_burnout], y=M_cc[:index_burnout], name="CEA",showlegend=False,line=dict(color='blue')), row=2, col=2)
-fig.add_trace(go.Scatter(x=time[:index_burnout], y=Mach_cc[:index_burnout], name="mine",showlegend=False,line=dict(color='green')), row=2, col=2)
-fig.add_hline(y=0.7, line=dict(color='red', dash='dash'),annotation_text="0.7",annotation_position="top left", row=2, col=2)
+#     fig.add_trace(go.Scatter(x=time, y=D_throat_array*100, showlegend=False,line=dict(color='red')), row=5, col=1)
+#     fig.add_trace(go.Scatter(x=time, y=exp_ratio_array, showlegend=False,line=dict(color='green')), row=5, col=2)
+#     fig.add_trace(go.Scatter(x=time, y=np.degrees(dive_angle_array), name="Divergent", showlegend=False,line=dict(color='orange')), row=5, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=np.degrees(conv_angle_array), name="Convergent", showlegend=False,line=dict(color='blue')), row=5, col=3)
+#     fig.add_trace(go.Scatter(x=time, y=eta_CF_array, showlegend=False,line=dict(color='purple')), row=6, col=1)
 
 
-fig.update_xaxes(title_text="Kn []", row=1, col=1)
-fig.update_yaxes(title_text="P0 [bar]", row=1, col=1)
-fig.update_xaxes(title_text="mdot [kg/sec]", row=1, col=2)
-fig.update_yaxes(title_text="Mass Flux [kg/m^2/sec]", row=1, col=2)
-fig.update_xaxes(title_text="Contr. ratio []", row=2, col=1)
-fig.update_yaxes(title_text="Mach", row=2, col=1)
-fig.update_xaxes(title_text="Time [sec]", row=2, col=2)
-fig.update_yaxes(title_text="Mach", row=2, col=2)
+#     fig.update_xaxes(title_text="Time [s]", row=1, col=1)
+#     fig.update_xaxes(title_text="Time [s]", row=1, col=2)
+#     fig.update_xaxes(title_text="Time [s]", row=1, col=3)
+#     fig.update_xaxes(title_text="Time [s]", row=2, col=1)
+#     fig.update_xaxes(title_text="Time [s]", row=2, col=2)
+#     fig.update_xaxes(title_text="Time [s]", row=2, col=3)
+#     fig.update_xaxes(title_text="Time [s]", row=3, col=1)
+#     fig.update_xaxes(title_text="Time [s]", row=3, col=2)
+#     fig.update_xaxes(title_text="Time [s]", row=3, col=3)
+#     fig.update_xaxes(title_text="Time [s]", row=4, col=1)
+#     fig.update_xaxes(title_text="Time [s]", row=4, col=2)
+#     fig.update_xaxes(title_text="Time [s]", row=4, col=3)
+#     fig.update_xaxes(title_text="Time [s]", row=5, col=1)
+#     fig.update_xaxes(title_text="Time [s]", row=5, col=2)
+#     fig.update_xaxes(title_text="Time [s]", row=5, col=3)
+#     fig.update_xaxes(title_text="Time [s]", row=6, col=1)
 
-fig.update_layout(title_text="Grain geometry verification", height=900)
-fig.show()
+#     fig.update_yaxes(title_text="Thrust [N]", row=1, col=1)
+#     fig.update_yaxes(title_text="CC Pressure [bar]", row=1, col=2)
+#     fig.update_yaxes(title_text="c_star [m/s]", row=1, col=3)
+#     fig.update_yaxes(title_text="Burn rate [m/s]", row=2, col=1)
+#     fig.update_yaxes(title_text="Burning surface [m²]", row=2, col=2)
+#     fig.update_yaxes(title_text="Mass flow rate [kg/s]", row=2, col=3)
+#     fig.update_yaxes(title_text="Propellant mass [kg]", row=3, col=1)
+#     fig.update_yaxes(title_text="CF []", row=3, col=2)
+#     fig.update_yaxes(title_text="Pressure [bar]", row=3, col=3)
+#     fig.update_yaxes(title_text="gamma", row=4, col=1)
+#     fig.update_yaxes(title_text="Exit Mach", row=4, col=2)
+#     fig.update_yaxes(title_text="Temperatures K]", row=4, col=3)
 
-port_throat = D_int**2 / D_throat**2
-print(f"\n Initial Port to throat ratio = {port_throat:.4f}, expected  >= 2")
+#     fig.update_yaxes(title_text="Throat diameter [cm]", row=5, col=1)
+#     fig.update_yaxes(title_text="Expansion ratio ", row=5, col=2)
 
-"""**NOZZLE EXPANSION VERIFICATION**"""
+#     fig.update_yaxes(title_text="Divergent angle [deg]", row=5, col=3)
+#     fig.update_yaxes(title_text="eta CF", row=6, col=1)
 
-pe_active = Pe[:index_burnout]
-cf_active = CF[:index_burnout]
-Pt = P0 * (2/(gamma_throat+1))**(gamma_throat/(gamma_throat-1))
+#     fig.update_layout(title_text="Internal Ballistics Results", height=1100)
+#     fig.show()
 
-# 1. Check if Pe = P_amb crosses at least once
-crosses_pamb = np.any(np.isclose(pe_active, P_amb, atol=2000)) or (np.max(pe_active) >= P_amb and np.min(pe_active) <= P_amb)
-print("\n----------------NOZZLE END OF SCRIPT CHECKS-----------------\n")
-print(f"Does Pe equal P_amb (sea level) at least once during fire? {'Yes' if crosses_pamb else 'No'} \n")
+# show_graphics()
 
-# 2. Print logic request
-#if np.all(pe_active > P_amb):
- #   print("WARNING: Expansion ratio is too small \n")
-if np.sum(pe_active < P_amb) > 0.5 * len(pe_active): # at least 50% of the fire
-    print("WARNING: Expansion ratio is too big \n")
+# """**Kn AND MASS FLUX VERIFICATION**"""
 
-# 3. Add Custom Plots
-def show_custom_plots():
+# # kn factor
+# P_arr = np.linspace(P_amb, 100 * P_amb, 10000)
+# Kn_computed = (P_arr**(1-n)) / (rho_pr * a * c_star[50])
+
+# # mass flux normalized (mdot/port area)
+# m_flux = mdot[:index_burnout] / (np.pi * (D_int_array[:index_burnout]/2)**2)   # [kg/sec / m^2]
+# fig = make_subplots(rows=2, cols=2,
+#                         subplot_titles=("Kn (burn surface/throat surface)", "Normalized mass flux", "Chamber Mach vs contr. ratio","Chamber Mach vs time"))
+
+# fig.add_trace(go.Scatter(x=Kn_computed, y=P_arr/1e5, name = "Theoretical Kn",line=dict(color='blue')), row=1, col=1)
+# fig.add_trace(go.Scatter(x=Kn_geometry[:index_burnout], y=P0[:index_burnout]/1e5, name = "Geometrical Kn",line=dict(color='red')), row=1, col=1)
+# fig.add_trace(go.Scatter(x=time[:index_burnout] , y = m_flux, name = "Normalized mass flux",line=dict(color='green')), row=1, col=2)
+# fig.add_hline(y=1406.5, line=dict(color='red', dash='dash'),annotation_text="1406.5",annotation_position="top left", row=1, col=2)
+# fig.add_hline(y=1898, line=dict(color='red', dash='dash'),annotation_text="1898",annotation_position="top left", row=1, col=2)
+# fig.add_trace(go.Scatter(x=fac_CR[:index_burnout], y=M_cc[:index_burnout], name="CEA",showlegend=False,line=dict(color='blue')), row=2, col=1)
+# fig.add_trace(go.Scatter(x=fac_CR[:index_burnout], y=Mach_cc[:index_burnout], name="mine",showlegend=False,line=dict(color='green')), row=2, col=1)
+# fig.add_hline(y=0.7, line=dict(color='red', dash='dash'),annotation_text="0.7",annotation_position="top left", row=2, col=1)
+# fig.add_trace(go.Scatter(x=time[:index_burnout], y=M_cc[:index_burnout], name="CEA",showlegend=False,line=dict(color='blue')), row=2, col=2)
+# fig.add_trace(go.Scatter(x=time[:index_burnout], y=Mach_cc[:index_burnout], name="mine",showlegend=False,line=dict(color='green')), row=2, col=2)
+# fig.add_hline(y=0.7, line=dict(color='red', dash='dash'),annotation_text="0.7",annotation_position="top left", row=2, col=2)
 
 
-    fig2 = make_subplots(rows=1, cols=3, subplot_titles=("Pressure","Temperatures","Velocities"))
+# fig.update_xaxes(title_text="Kn []", row=1, col=1)
+# fig.update_yaxes(title_text="P0 [bar]", row=1, col=1)
+# fig.update_xaxes(title_text="mdot [kg/sec]", row=1, col=2)
+# fig.update_yaxes(title_text="Mass Flux [kg/m^2/sec]", row=1, col=2)
+# fig.update_xaxes(title_text="Contr. ratio []", row=2, col=1)
+# fig.update_yaxes(title_text="Mach", row=2, col=1)
+# fig.update_xaxes(title_text="Time [sec]", row=2, col=2)
+# fig.update_yaxes(title_text="Mach", row=2, col=2)
+
+# fig.update_layout(title_text="Grain geometry verification", height=900)
+# fig.show()
+
+# port_throat = D_int**2 / D_throat**2
+# print(f"\n Initial Port to throat ratio = {port_throat:.4f}, expected  >= 2")
+
+# """**NOZZLE EXPANSION VERIFICATION**"""
+
+# pe_active = Pe[:index_burnout]
+# cf_active = CF[:index_burnout]
+# Pt = P0 * (2/(gamma_throat+1))**(gamma_throat/(gamma_throat-1))
+
+# # 1. Check if Pe = P_amb crosses at least once
+# crosses_pamb = np.any(np.isclose(pe_active, P_amb, atol=2000)) or (np.max(pe_active) >= P_amb and np.min(pe_active) <= P_amb)
+# print("\n----------------NOZZLE END OF SCRIPT CHECKS-----------------\n")
+# print(f"Does Pe equal P_amb (sea level) at least once during fire? {'Yes' if crosses_pamb else 'No'} \n")
+
+# # 2. Print logic request
+# #if np.all(pe_active > P_amb):
+#  #   print("WARNING: Expansion ratio is too small \n")
+# if np.sum(pe_active < P_amb) > 0.5 * len(pe_active): # at least 50% of the fire
+#     print("WARNING: Expansion ratio is too big \n")
+
+# # 3. Add Custom Plots
+# def show_custom_plots():
+
+
+#     fig2 = make_subplots(rows=1, cols=3, subplot_titles=("Pressure","Temperatures","Velocities"))
 
 
 
-    fig2.add_trace(go.Scatter(x=time[:index_burnout], y=P0[:index_burnout]/1e5, name='P0 (chamber)', line=dict(color='blue')), row=1, col=1)
-    fig2.add_trace(go.Scatter(x=time[:index_burnout], y=Pe[:index_burnout]/1e5, name='Pe (exit)', line=dict(color='green')), row=1, col=1)
-    fig2.add_trace(go.Scatter(x=time[:index_burnout], y=Pt[:index_burnout]/1e5, name='Pt (throat)', line=dict(color='red')), row=1, col=1)
+#     fig2.add_trace(go.Scatter(x=time[:index_burnout], y=P0[:index_burnout]/1e5, name='P0 (chamber)', line=dict(color='blue')), row=1, col=1)
+#     fig2.add_trace(go.Scatter(x=time[:index_burnout], y=Pe[:index_burnout]/1e5, name='Pe (exit)', line=dict(color='green')), row=1, col=1)
+#     fig2.add_trace(go.Scatter(x=time[:index_burnout], y=Pt[:index_burnout]/1e5, name='Pt (throat)', line=dict(color='red')), row=1, col=1)
 
-    fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,0]-273.15, name="T_chamber",showlegend=False, line=dict(color='blue')), row=1, col=2)
-    fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,1]-273.15, name="T_throat",showlegend=False, line=dict(color='red')), row=1, col=2)
-    fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,2]-273.15, name="T_exit",showlegend=False, line=dict(color='green')), row=1, col=2)
+#     fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,0]-273.15, name="T_chamber",showlegend=False, line=dict(color='blue')), row=1, col=2)
+#     fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,1]-273.15, name="T_throat",showlegend=False, line=dict(color='red')), row=1, col=2)
+#     fig2.add_trace(go.Scatter(x=time, y=T_matrix[:,2]-273.15, name="T_exit",showlegend=False, line=dict(color='green')), row=1, col=2)
 
-    fig2.add_trace(go.Scatter(x=time, y=M_e * sonic_exit, line=dict(color='green'), name="Exit", showlegend=False), row=1, col=3)
-    fig2.add_trace(go.Scatter(x=time, y=M_cc * sonic_chamber, line=dict(color='blue'), name="Chamber", showlegend=False), row=1, col=3)
-    M_t = np.zeros(N)+1
-    fig2.add_trace(go.Scatter(x=time, y=M_t * sonic_throat, line=dict(color='red'), name="Throat", showlegend=False), row=1, col=3)
+#     fig2.add_trace(go.Scatter(x=time, y=M_e * sonic_exit, line=dict(color='green'), name="Exit", showlegend=False), row=1, col=3)
+#     fig2.add_trace(go.Scatter(x=time, y=M_cc * sonic_chamber, line=dict(color='blue'), name="Chamber", showlegend=False), row=1, col=3)
+#     M_t = np.zeros(N)+1
+#     fig2.add_trace(go.Scatter(x=time, y=M_t * sonic_throat, line=dict(color='red'), name="Throat", showlegend=False), row=1, col=3)
 
-    fig2.update_xaxes(title_text="Time [sec]", row=1, col=1)
-    fig2.update_yaxes(title_text="Pressure [bar]", row=1, col=1)
+#     fig2.update_xaxes(title_text="Time [sec]", row=1, col=1)
+#     fig2.update_yaxes(title_text="Pressure [bar]", row=1, col=1)
 
-    fig2.update_xaxes(title_text="Time [sec]", row=1, col=2)
-    fig2.update_yaxes(title_text="Temperature [°C]", row=1, col=2)
+#     fig2.update_xaxes(title_text="Time [sec]", row=1, col=2)
+#     fig2.update_yaxes(title_text="Temperature [°C]", row=1, col=2)
 
-    fig2.update_xaxes(title_text="Time [sec]", row=1, col=3)
-    fig2.update_yaxes(title_text="Velocity [m/sec]", row=1, col=3)
+#     fig2.update_xaxes(title_text="Time [sec]", row=1, col=3)
+#     fig2.update_yaxes(title_text="Velocity [m/sec]", row=1, col=3)
 
-    fig2.update_layout(height=500, title_text="Nozzle Analytics")
-    fig2.show()
+#     fig2.update_layout(height=500, title_text="Nozzle Analytics")
+#     fig2.show()
 
-show_custom_plots()
+# show_custom_plots()
 
 # ------------------ CF vs EXPANSION RATIO (visible) ------------------
 
@@ -707,78 +707,78 @@ idx_max = np.argmax(cf_curve)
 eps_opt = eps_range[idx_max]
 cf_opt = cf_curve[idx_max]
 
-# --- Create subplots ---
-fig = make_subplots(rows=1, cols=3, subplot_titles=("Expansion Ratio vs. Mach Number","CF vs Expansion Ratio", "Normalized CF vs Expansion Ratio"))
+# # --- Create subplots ---
+# fig = make_subplots(rows=1, cols=3, subplot_titles=("Expansion Ratio vs. Mach Number","CF vs Expansion Ratio", "Normalized CF vs Expansion Ratio"))
 
-# Plot real CF
-fig.add_trace(go.Scatter(x=eps_range, y=cf_curve, line=dict(color='blue'), name="CF ambient", showlegend=False), row=1, col=2)
-fig.add_trace(go.Scatter(x=eps_range, y=cf_curve_vac, line=dict(color='green', dash='dash'), name="CF vacuum", showlegend=False), row=1, col=2)
-fig.add_trace(go.Scatter(x=[exp_ratio], y=[cf_design_lift_off], mode='markers', marker=dict(color='red', size=10), name="Design"), row=1, col=2)
-fig.add_trace(go.Scatter(x=[eps_opt], y=[cf_opt], mode='markers', marker=dict(color='black', size=10), name="Optimal"), row=1, col=2)
+# # Plot real CF
+# fig.add_trace(go.Scatter(x=eps_range, y=cf_curve, line=dict(color='blue'), name="CF ambient", showlegend=False), row=1, col=2)
+# fig.add_trace(go.Scatter(x=eps_range, y=cf_curve_vac, line=dict(color='green', dash='dash'), name="CF vacuum", showlegend=False), row=1, col=2)
+# fig.add_trace(go.Scatter(x=[exp_ratio], y=[cf_design_lift_off], mode='markers', marker=dict(color='red', size=10), name="Design"), row=1, col=2)
+# fig.add_trace(go.Scatter(x=[eps_opt], y=[cf_opt], mode='markers', marker=dict(color='black', size=10), name="Optimal"), row=1, col=2)
 
-# Plot normalized CF
-fig.add_trace(go.Scatter(x=eps_range, y=cf_norm, line=dict(color='blue'), name="CF / CF convergent", showlegend=False), row=1, col=3)
-fig.add_trace(go.Scatter(x=eps_range, y=cf_norm_vac, line=dict(color='green', dash='dash'), name="CF vacuum / CF convergent", showlegend=False), row=1, col=3)
-fig.add_trace(go.Scatter(x=[exp_ratio], y=[cf_design_lift_off / cf_conv], mode='markers', marker=dict(color='red', size=10), showlegend=False), row=1, col=3)
-fig.add_trace(go.Scatter(x=[eps_opt], y=[cf_opt / cf_conv], mode='markers', marker=dict(color='black', size=10), showlegend=False), row=1, col=3)
+# # Plot normalized CF
+# fig.add_trace(go.Scatter(x=eps_range, y=cf_norm, line=dict(color='blue'), name="CF / CF convergent", showlegend=False), row=1, col=3)
+# fig.add_trace(go.Scatter(x=eps_range, y=cf_norm_vac, line=dict(color='green', dash='dash'), name="CF vacuum / CF convergent", showlegend=False), row=1, col=3)
+# fig.add_trace(go.Scatter(x=[exp_ratio], y=[cf_design_lift_off / cf_conv], mode='markers', marker=dict(color='red', size=10), showlegend=False), row=1, col=3)
+# fig.add_trace(go.Scatter(x=[eps_opt], y=[cf_opt / cf_conv], mode='markers', marker=dict(color='black', size=10), showlegend=False), row=1, col=3)
 
-# --- Add dashed lines for DESIGN and OPTIMAL points ---
+# # --- Add dashed lines for DESIGN and OPTIMAL points ---
 
-# DESIGN lines
-fig.add_shape(type="line", x0=exp_ratio, x1=exp_ratio, y0=min(cf_curve), y1=cf_design_lift_off, line=dict(color="red", dash="dot"), row=1, col=2)
-fig.add_shape(type="line", x0=1, x1=exp_ratio, y0=cf_design_lift_off, y1=cf_design_lift_off, line=dict(color="red", dash="dot"), row=1, col=2)
+# # DESIGN lines
+# fig.add_shape(type="line", x0=exp_ratio, x1=exp_ratio, y0=min(cf_curve), y1=cf_design_lift_off, line=dict(color="red", dash="dot"), row=1, col=2)
+# fig.add_shape(type="line", x0=1, x1=exp_ratio, y0=cf_design_lift_off, y1=cf_design_lift_off, line=dict(color="red", dash="dot"), row=1, col=2)
 
-fig.add_shape(type="line", x0=exp_ratio, x1=exp_ratio, y0=min(cf_curve / cf_conv), y1=cf_design_lift_off / cf_conv, line=dict(color="red", dash="dot"), row=1, col=3)
-fig.add_shape(type="line", x0=1, x1=exp_ratio, y0=cf_design_lift_off / cf_conv, y1=cf_design_lift_off / cf_conv, line=dict(color="red", dash="dot"), row=1, col=3)
+# fig.add_shape(type="line", x0=exp_ratio, x1=exp_ratio, y0=min(cf_curve / cf_conv), y1=cf_design_lift_off / cf_conv, line=dict(color="red", dash="dot"), row=1, col=3)
+# fig.add_shape(type="line", x0=1, x1=exp_ratio, y0=cf_design_lift_off / cf_conv, y1=cf_design_lift_off / cf_conv, line=dict(color="red", dash="dot"), row=1, col=3)
 
-# OPTIMAL lines
-fig.add_shape(type="line", x0=eps_opt, x1=eps_opt, y0=min(cf_curve), y1=cf_opt, line=dict(color="black", dash="dot"), row=1, col=2)
-fig.add_shape(type="line", x0=1, x1=eps_opt, y0=cf_opt, y1=cf_opt, line=dict(color="black", dash="dot"), row=1, col=2)
+# # OPTIMAL lines
+# fig.add_shape(type="line", x0=eps_opt, x1=eps_opt, y0=min(cf_curve), y1=cf_opt, line=dict(color="black", dash="dot"), row=1, col=2)
+# fig.add_shape(type="line", x0=1, x1=eps_opt, y0=cf_opt, y1=cf_opt, line=dict(color="black", dash="dot"), row=1, col=2)
 
-fig.add_shape(type="line", x0=eps_opt, x1=eps_opt, y0=min(cf_curve / cf_conv), y1=cf_opt / cf_conv, line=dict(color="black", dash="dot"), row=1, col=3)
-fig.add_shape(type="line", x0=1, x1=eps_opt, y0=cf_opt / cf_conv, y1=cf_opt / cf_conv, line=dict(color="black", dash="dot"), row=1, col=3)
+# fig.add_shape(type="line", x0=eps_opt, x1=eps_opt, y0=min(cf_curve / cf_conv), y1=cf_opt / cf_conv, line=dict(color="black", dash="dot"), row=1, col=3)
+# fig.add_shape(type="line", x0=1, x1=eps_opt, y0=cf_opt / cf_conv, y1=cf_opt / cf_conv, line=dict(color="black", dash="dot"), row=1, col=3)
 
-# Axes
-fig.update_xaxes(type="log", title="Expansion ratio ε", row=1, col=2)
-fig.update_xaxes(type="log", title="Expansion ratio ε", row=1, col=3)
-
-
-fig.update_yaxes(title="CF", row=1, col=2, range=[cf_curve.min() * 0.95, cf_curve.max() * 1.05])
-fig.update_yaxes(title="CF / CF convergent", row=1, col=3, range=[cf_norm.min() * 0.95, cf_norm.max() * 1.05])
-
- # Plot 1: Expansion Ratio vs Mach
-fig.add_trace(go.Scatter(x=m_vals, y=eps_vals, name='Exp Ratio', showlegend=False, line=dict(color='blue')), row=1, col=1)
-# Add Points & Dashed lines for design points
-m_design_lift_off = M_e[1]
-#cf_design = np.mean(CF[:index_burnout])
-fig.add_trace(go.Scatter(x=[m_design_lift_off], y=[exp_ratio_array[1]], mode='markers', name='Design Point', marker=dict(color='red', size=8)), row=1, col=1)
-fig.add_shape(type="line", x0=m_design_lift_off, y0=0, x1=m_design_lift_off, y1=exp_ratio_array[1], line=dict(color="red", dash="dot"), row=1, col=1)
-fig.add_shape(type="line", x0=0, y0=exp_ratio_array[1], x1=m_design_lift_off, y1=exp_ratio_array[1], line=dict(color="red", dash="dot"), row=1, col=1)
-fig.update_xaxes(title_text="Mach Number M", row=1, col=1, range=[0, 4])
-fig.update_yaxes(title_text="Expansion Ratio eps", row=1, col=1, range=[0, 12])
+# # Axes
+# fig.update_xaxes(type="log", title="Expansion ratio ε", row=1, col=2)
+# fig.update_xaxes(type="log", title="Expansion ratio ε", row=1, col=3)
 
 
-fig.update_layout(title="Nozzle Performance Analysis", height=500)
-fig.show()
+# fig.update_yaxes(title="CF", row=1, col=2, range=[cf_curve.min() * 0.95, cf_curve.max() * 1.05])
+# fig.update_yaxes(title="CF / CF convergent", row=1, col=3, range=[cf_norm.min() * 0.95, cf_norm.max() * 1.05])
 
-# Check if design point is close to maximum CF
-is_close_to_max = np.isclose(exp_ratio_array[1], eps_opt, rtol=0.15)
+#  # Plot 1: Expansion Ratio vs Mach
+# fig.add_trace(go.Scatter(x=m_vals, y=eps_vals, name='Exp Ratio', showlegend=False, line=dict(color='blue')), row=1, col=1)
+# # Add Points & Dashed lines for design points
+# m_design_lift_off = M_e[1]
+# #cf_design = np.mean(CF[:index_burnout])
+# fig.add_trace(go.Scatter(x=[m_design_lift_off], y=[exp_ratio_array[1]], mode='markers', name='Design Point', marker=dict(color='red', size=8)), row=1, col=1)
+# fig.add_shape(type="line", x0=m_design_lift_off, y0=0, x1=m_design_lift_off, y1=exp_ratio_array[1], line=dict(color="red", dash="dot"), row=1, col=1)
+# fig.add_shape(type="line", x0=0, y0=exp_ratio_array[1], x1=m_design_lift_off, y1=exp_ratio_array[1], line=dict(color="red", dash="dot"), row=1, col=1)
+# fig.update_xaxes(title_text="Mach Number M", row=1, col=1, range=[0, 4])
+# fig.update_yaxes(title_text="Expansion Ratio eps", row=1, col=1, range=[0, 12])
 
-print(f"\n----------------- DESIGN POINT VS CF MAX CHECK -----------------")
-print(f"Design point ε = {exp_ratio_array[1]:.3f} (CF = {cf_design_lift_off:.3f})")
-print(f"Maximum CF at ε = {eps_opt:.3f} (CF = {cf_opt:.3f})")
-print(f"Is the design point close to the CF maximum? {'Yes' if is_close_to_max else 'No'}")
-print(f"(You are at ε = {exp_ratio_array[1]:.2f}, Max is at ε ≈ {eps_opt:.2f})\n")
 
-# --- ENVIRONMENT ---
-Env = Environment(
-    date=(2026, 5, 24, 12),
-    latitude=44.2220,
-    longitude=12.0400,
-    elevation=34
-)
+# fig.update_layout(title="Nozzle Performance Analysis", height=500)
+# fig.show()
 
-Env.set_atmospheric_model(type="standard_atmosphere")
+# # Check if design point is close to maximum CF
+# is_close_to_max = np.isclose(exp_ratio_array[1], eps_opt, rtol=0.15)
+
+# print(f"\n----------------- DESIGN POINT VS CF MAX CHECK -----------------")
+# print(f"Design point ε = {exp_ratio_array[1]:.3f} (CF = {cf_design_lift_off:.3f})")
+# print(f"Maximum CF at ε = {eps_opt:.3f} (CF = {cf_opt:.3f})")
+# print(f"Is the design point close to the CF maximum? {'Yes' if is_close_to_max else 'No'}")
+# print(f"(You are at ε = {exp_ratio_array[1]:.2f}, Max is at ε ≈ {eps_opt:.2f})\n")
+
+# # --- ENVIRONMENT ---
+# Env = Environment(
+#     date=(2026, 5, 24, 12),
+#     latitude=44.2220,
+#     longitude=12.0400,
+#     elevation=34
+# )
+
+# Env.set_atmospheric_model(type="standard_atmosphere")
 
 # --- THRUST
 thrust_curve = np.column_stack((time[:index_burnout], T[:index_burnout]))
