@@ -65,7 +65,7 @@ grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_
 grain_mass = 0.19694061309132402
 grain_dens = grain_mass / grain_volume
 srad_motor_dry_mass = 0.7871568876139587
-thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_BRICO_45_7mm.csv")
+thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve.csv")
 
 CG_position_from_nose = 373 / 1000                          # (m)
 
