@@ -1,10 +1,10 @@
-
 from pathlib import Path
 from rocketpy import Environment, Flight, Rocket, SolidMotor 
 import json
 import numpy as np
 import pandas as pd
 from typing import Literal
+import math
 
 # set path
 BASE_DIR = Path(__file__).resolve().parent
@@ -14,15 +14,15 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 show_graph = False
-ballistic = True
+ballistic = False
 
-ballast = 1600 / 1000
+ballast = 0 #1600 / 1000            # kg
 
 latitude = 44.290583
 longitude = 12.027111
 elevation = 18
 date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i'] = 'e'        #(Custom, Ensemble, Forecast, Isa)
+weather_data: Literal['c','e','f','i','m'] = 'm'        #(Custom, Ensemble, Forecast, Isa, Manual)
 
 # Definition of global variables, to be used inside and outside parachute functions
 global last_negative_time, apogee_detected, sampling_rate, parachute_timer
@@ -100,7 +100,7 @@ Env = Environment(
     longitude = longitude,
     latitude = latitude,
     elevation = elevation,
-    max_expected_height = 4500
+    max_expected_height = 1500
 )
 
 # There are 4 possible choices of weather data:
@@ -160,6 +160,51 @@ elif weather_data=='f':
         type="Forecast",
         file="GFS"
     )
+elif weather_data == 'm':
+    # Manual setting of the wind
+
+    # Wind magnitude on the ground in (m/s)
+    wind_magnitude_ground = 8.7                          # m/s, EuRoC limit is 8.7m/s on the ground
+    # Heading of the wind from North in degrees
+    wind_heading = 315                                  # degrees from North
+
+    # CAREFUL:  Heading of the wind means where it is goind
+    #           Direction means where it comes from
+    #               If you want to set a wind from North going South set 180 because it heads South and South is 180 deg from North
+
+    wind_heading_r = math.radians(wind_heading)         # tranforms into radians
+    s_heading = math.sin(wind_heading_r)                # sin of the wind profile
+    c_heading = math.cos(wind_heading_r)                # cos of the wind profile
+
+    # Creates an array of values to generate a wind profile
+    custom_wind_u = [
+        ( 0 , wind_magnitude_ground * s_heading),
+        ( 50 , 1.05 * wind_magnitude_ground * s_heading),
+        ( 100 , 1.1 * wind_magnitude_ground * s_heading),
+        ( 150 , 1.15 * wind_magnitude_ground * s_heading),
+        ( 200 , 1.2 * wind_magnitude_ground * s_heading),
+        ( 250 , 1.25 * wind_magnitude_ground * s_heading),
+        ( 300 , 1.3 * wind_magnitude_ground * s_heading),
+    ]
+
+    custom_wind_v = [
+        ( 0 , wind_magnitude_ground * c_heading),
+        ( 50 , 1.05 * wind_magnitude_ground * c_heading),
+        ( 100 , 1.1 * wind_magnitude_ground * c_heading),
+        ( 150 , 1.15 * wind_magnitude_ground * c_heading),
+        ( 200 , 1.2 * wind_magnitude_ground * c_heading),
+        ( 250 , 1.25 * wind_magnitude_ground * c_heading),
+        ( 300 , 1.3 * wind_magnitude_ground * c_heading),
+    ]
+
+    Env.set_atmospheric_model(
+    type="custom_atmosphere",
+    wind_u=custom_wind_u,
+    wind_v=custom_wind_v,
+    )
+
+    # Check if the wind profiles are accurate
+    Env.all_info()
 elif weather_data!='i':
     # The default weather data type is the International Standard Atmosphere (ISA).
     # If none of the previously listed options is selected, this model will be applied automatically.
@@ -169,16 +214,17 @@ elif weather_data!='i':
 #---------------------------------------------------------------------------------------------------------
 ## DEFINE THE ROCKET PARTS
 
-#   SRAD motor info v1.1
-impulse = 213
-t_burnout = 1.49
-grain_external_radius = 0.035 / 2
-grain_internal_radius = 0.012 / 2 
-grain_length = 0.125
-grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
-grain_mass = 0.190
+#   SRAD motor info BRICO 45 7mm
+impulse = 243.96
+t_burnout = 0.640
+grain_external_radius = 0.033 / 2
+grain_internal_radius = 0.013 / 2 
+grain_length = 0.147
+grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+grain_mass = 0.19694061309132402
 grain_dens = grain_mass / grain_volume
-thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/Brico-H141-noFe.csv")
+srad_motor_dry_mass = 0.7871568876139587
+thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_BRICO_45_7mm.csv")
 
 solid_motor = SolidMotor(
     burn_time=t_burnout,
@@ -186,9 +232,9 @@ solid_motor = SolidMotor(
     reshape_thrust_curve=(t_burnout, impulse), 
     grain_number=1,
     #   DRY PARAMETERS
-    dry_mass= 0,
-    dry_inertia= (0, 0, 0),
-    center_of_dry_mass_position= 0,
+    dry_mass= srad_motor_dry_mass,
+    dry_inertia= (0.66, 0.66, 0.00001),
+    center_of_dry_mass_position= 99.41 / 1000,
     #   GRAIN PARAMETERS
     grain_density= grain_dens,
     grain_outer_radius= grain_external_radius,
@@ -200,7 +246,7 @@ solid_motor = SolidMotor(
     nozzle_position=0,
     throat_radius= 20/ 1000,
     #   POSITIONING PARAMETERS
-    grains_center_of_mass_position= 119.5 / 1000,
+    grains_center_of_mass_position= 125 / 1000,
     coordinate_system_orientation="nozzle_to_combustion_chamber",
 )
 
@@ -209,11 +255,11 @@ power_on_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_
 
 FRED = Rocket(
     radius= 42.5 / 1000,
-    mass= 2199.647 / 1000 + ballast,
-    inertia=(0.149,0.149,0.002),
+    mass= 2595 / 1000 + ballast,
+    inertia=(1.49, 1.49, 0.01),
     power_off_drag=power_off_drag, # use the prevoius defined drag curve^
     power_on_drag=power_on_drag, # use the prevoius defined drag curve 
-    center_of_mass_without_motor= 432.2 / 1000,
+    center_of_mass_without_motor= 373 / 1000,
     coordinate_system_orientation="nose_to_tail",
 )
 FRED.add_motor(solid_motor, position=0.814)
@@ -235,21 +281,21 @@ fin_set = FRED.add_trapezoidal_fins(
     root_chord=0.12,
     tip_chord=0.03,
     span=0.12,
-    position=0.675,
+    position=0.686,
     cant_angle=0,
     sweep_angle=30.3,
 )
 
 tail = FRED.add_tail(
     top_radius= 42.5 / 1000,
-    bottom_radius= 33.5 / 1000,
-    length=0.047,
-    position=0.795,
+    bottom_radius= 30 / 1000,
+    length= 43 / 1000,
+    position= 810 / 1000,
 )
 if not ballistic:
     Main = FRED.add_parachute(
         "Main",
-        cd_s=0.97*1.168,
+        cd_s= 0.97 * 1.168,
         trigger=simulator_check_drogue_opening,
         sampling_rate=105,
         lag=1.73,
