@@ -52,8 +52,8 @@ sensitivity_analysis = True
 latitude = 44.290583
 longitude = 12.027111
 elevation = 18
-date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i','m'] = 'm'        #(Custom, Ensemble, Forecast, Isa, Manual)
+date_of_launch = (2025, 5, 9, 12)                           #(Year, Month, Day, Hour UTC)
+weather_data: Literal['c','e','f','i','m'] = 'm'            #(Custom, Ensemble, Forecast, Isa, Manual)
 
 #   SRAD motor info BRICO 45 7mm
 impulse = 243.96
