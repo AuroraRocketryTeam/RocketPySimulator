@@ -42,12 +42,12 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_v2.0_Hed_180'
-number_of_simulations = 50
+output_dir_name = 'FRED_chute_ejection_30meters'
+number_of_simulations = 200
 ballistic = False
 
-show_graph = False
-sensitivity_analysis = True
+show_graph = True
+sensitivity_analysis = False
 
 latitude = 44.290583
 longitude = 12.027111
@@ -375,6 +375,24 @@ def simulator_check_chute_opening(p, h, y):
         now,  
     )
     return apogee_detected
+
+def test_main_timeout_opening(p, h ,y):
+
+    """
+    set the desired opening altitude (AGL)
+    to achieve this ensure that 'lag' is set '=0' in the parachute definition
+    """
+    # => OPENING ALTITUDE:
+    opening_altitude = 30
+
+    altitude = h    # altitude
+    vz = y[5]   # vertical velocity
+    
+    if vz < 0 and altitude <= opening_altitude:
+        return True
+    else:
+        return False
+
 #--------------------------------------------------------------------------------------------------------
 
 
@@ -717,11 +735,14 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Define and add the Main parachute
     if not ballistic:
         Main = FRED.add_parachute(
-            "Main",
+            name = "Main",
             cd_s=setting["cd_s_main"],
-            trigger=simulator_check_chute_opening,
-            sampling_rate= sampling_rate,
-            lag=setting["lag_rec"] + setting["lag_se"],
+            # trigger=test_main_timeout_opening,
+            # trigger = "apogee",
+            trigger = simulator_check_chute_opening,
+            sampling_rate=sampling_rate,
+            lag=setting["lag_se"] + setting["lag_rec"],
+            # lag = 0.001,
             noise=(
                 setting["noise_mean"],
                 setting["noise_p_stdev"],
@@ -836,20 +857,20 @@ comparison = CompareFlights(flights)
 if show_graph:
     comparison.velocities()
     comparison.accelerations()
-    comparison.attitude_angles()
-    comparison.euler_angles()
+    # comparison.attitude_angles()
+    # comparison.euler_angles()
     #comparison.attitude_frequency()
     comparison.aerodynamic_forces()
-    comparison.aerodynamic_moments()
-    comparison.angular_velocities()
-    comparison.trajectories_3d()
-    comparison.rail_buttons_forces()
+    # comparison.aerodynamic_moments()
+    # comparison.angular_velocities()
+    # comparison.trajectories_3d()
+    # comparison.rail_buttons_forces()
     #comparison.stability_margin()
 
 comparison.velocities(filename=str(output_comparison/"velocities.svg"),legend=False)
 comparison.accelerations(filename=str(output_comparison/"accelerations.svg"),legend=False)
 comparison.attitude_angles(filename=str(output_comparison/"attitude_angles.svg"),legend=False)
-comparison.euler_angles(filename=str(output_comparison/"euler_angles.svg"),legend=False)
+#comparison.euler_angles(filename=str(output_comparison/"euler_angles.svg"),legend=False)
 #comparison.attitude_frequency(filename=str(output_comparison/"attitude_frequency.svg"),legend=False)
 comparison.aerodynamic_forces(filename=str(output_comparison/"aerodynamic_forces.svg"),legend=False)
 comparison.aerodynamic_moments(filename=str(output_comparison/"aerodynamic_moments.svg"),legend=False)
