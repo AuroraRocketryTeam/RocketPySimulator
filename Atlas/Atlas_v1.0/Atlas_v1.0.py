@@ -43,7 +43,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'prova'
-number_of_simulations = 100
+number_of_simulations = 50
 
 # OPTIONS:
 show_dispersion_graph = False
@@ -53,8 +53,10 @@ use_airbrake = False
 parachute_analysis = False
 sensitivity_analysis = False
 fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
+case_name = "CD_Test_45_square"
 
 # ENVIRONMENTAL PARAMETERS
+
 latitude = 39.389700
 longitude = -8.288964
 elevation = 160.0
@@ -66,11 +68,11 @@ analysis_parameters = {
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (26.100, 0.3),
+    "rocket_dry_mass": (26.470, 0.3),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
-    "rocket_dry_inertia_11": (15.644, 0.187),
+    "rocket_dry_inertia_11": (16.305, 0.187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
-    "rocket_dry_inertia_33": (0.081, 0.00122),
+    "rocket_dry_inertia_33": (0.087, 0.00122),
     # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation). The weight of the motor structure is included in the rocket dry mass
     "motor_dry_mass": (0.0001, 0.0001),
     # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
@@ -128,15 +130,15 @@ analysis_parameters = {
     # Number of fins
     "fin_number" : (3, 0), 
     # Fin span (m)
-    "fin_span": (0.170, 0.0005), 
+    "fin_span": (0.145, 0.0005), 
     # Fin root chord (m)
-    "fin_root_chord": (0.15, 0.0005), 
+    "fin_root_chord": (0.20, 0.0005), 
     # Fin tip chord (m)
-    "fin_tip_chord": (0.0338, 0.0005), 
+    "fin_tip_chord": (0.10, 0.0005), 
     # Axial distance between rocket's tip and nearest point in its fin (m)
     "fin_position": (2.99, 0.005), 
     # Fin sweep angle (degrees)
-    "fin_sweep_angle": (43.2, 0.005), 
+    "fin_sweep_angle": (45.1, 0.005), 
     # Tail length (m)
     "tail_length": (0.326, 0.001),
     # Tail bottom radius (m)
@@ -151,7 +153,7 @@ analysis_parameters = {
     # Launch rail heading relative to north (degrees)
     "heading": (145, 1),
     # Launch rail length (m)
-    "rail_length": (11, 0.005),
+    "rail_length": (12, 0.005),
     # Members of the ensemble forecast to be used
     "ensemble_member": list(range(10)),
 
@@ -686,8 +688,8 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     #     power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/square_power_off.csv")
     #     power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.0/square_power_on.csv")
 
-    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.2/CD_power_off_v1.2.csv")
-    power_on_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/v1.2/CD_power_on_v1.2.csv")
+    power_off_drag = str(BASE_DIR / f"simulation_inputs/aerodynamic_data/v1.2_wedge/{case_name}_power_off.csv")
+    power_on_drag  = str(BASE_DIR / f"simulation_inputs/aerodynamic_data/v1.2_wedge/{case_name}_power_on.csv")
 # Now create the Rocket
 
     # Create rocket
@@ -702,7 +704,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         power_off_drag=power_off_drag,
         power_on_drag=power_on_drag,
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
-        center_of_mass_without_motor=1.82921,
+        center_of_mass_without_motor= 1.82921,
         coordinate_system_orientation="nose_to_tail",
     )
 
