@@ -52,7 +52,7 @@ save_compare_graph = False
 use_airbrake = False
 parachute_analysis = False
 sensitivity_analysis = False
-fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
+#fin_type: Literal['hex', 'hex_blunt', 'square'] = 'hex'
 case_name = "CD_Test_45_square"
 
 # ENVIRONMENTAL PARAMETERS
@@ -704,7 +704,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         power_off_drag=power_off_drag,
         power_on_drag=power_on_drag,
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
-        center_of_mass_without_motor= 1.82921,
+        center_of_mass_without_motor= 1.84789,
         coordinate_system_orientation="nose_to_tail",
     )
 
@@ -759,6 +759,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         trigger=simulator_check_drogue_opening,
         sampling_rate= sampling_rate,
         lag=setting["lag_rec"] + setting["lag_se"],
+        #lag = 8,
         noise=(
             setting["noise_mean"],
             setting["noise_p_stdev"],
