@@ -42,41 +42,56 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_chute_ejection_30meters'
-number_of_simulations = 200
-ballistic = False
+output_dir_name = 'FRED_v2.2_first'
+number_of_simulations = 50
+ballistic = True
 
-show_graph = True
+show_graph = False
 sensitivity_analysis = False
 
 latitude = 44.290583
 longitude = 12.027111
 elevation = 18
-date_of_launch = (2025, 5, 9, 12)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i','m'] = 'm'        #(Custom, Ensemble, Forecast, Isa, Manual)
+date_of_launch = (2025, 5, 10, 16)          #(Year, Month, Day, Hour UTC)
+weather_data: Literal['c','e','f','i','m'] = 'e'        #(Custom, Ensemble, Forecast, Isa, Manual)
 
-#   SRAD motor info BRICO 45 7mm
-impulse = 243.96
-t_burnout = 0.640
-grain_external_radius = 0.033 / 2
-grain_internal_radius = 0.013 / 2 
-grain_length = 0.147
-grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
-grain_mass = 0.19694061309132402
-grain_dens = grain_mass / grain_volume
-srad_motor_dry_mass = 0.7871568876139587
-thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve.csv")
+motore = 8
 
-CG_position_from_nose = 397 / 1000                          # (m)
+if motore == 8:
+    #   SRAD motor info BRICO 45 8mm
+    impulse = 234.43507869871195
+    t_burnout = 0.735
+    grain_external_radius = 0.033 / 2
+    grain_internal_radius = 0.013 / 2 
+    grain_length = 0.147
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+    grain_mass = 196.6 / 1000
+    grain_dens = grain_mass / grain_volume
+    srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
+    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
+elif motore == 7:
+    #   SRAD motor info BRICO 45 7mm
+    impulse = 243.96
+    t_burnout = 0.640
+    grain_external_radius = 0.033 / 2
+    grain_internal_radius = 0.013 / 2 
+    grain_length = 0.147
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+    grain_mass = 0.19694061309132402
+    grain_dens = grain_mass / grain_volume
+    srad_motor_dry_mass = 0.7871568876139587
+    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve.csv")
 
-ballast = 750 / 1000         #   (kg)
+CG_position_from_nose = 392/ 1000                          # (m)
+
+ballast =  0# 750 / 1000     #   (kg)
 
 analysis_parameters = {
     
     # === Mass Details ===
     
-    # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)
-    "rocket_dry_mass": (2374 / 1000 + ballast, 0.03),
+    # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)2130
+    "rocket_dry_mass": ( 2618 / 1000 + ballast, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
     "rocket_dry_inertia_11": (1.49, 0.00187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
@@ -168,11 +183,11 @@ analysis_parameters = {
     # === Launch and Environment Details ===
 
     # Launch rail inclination angle relative to the horizontal plane (degrees)
-    "inclination": (75, 3),
+    "inclination": (80, 3),
     # Launch rail heading relative to north (degrees)
-    "heading": (305, 5),
+    "heading": (180, 5),
     # Launch rail length (m)
-    "rail_length": (2, 0.005),
+    "rail_length": (1.5, 0.005),
     # Members of the ensemble forecast to be used
     "ensemble_member": list(range(10)),
 
@@ -1188,3 +1203,5 @@ if sensitivity_analysis:
 
     print("- Sensitivity analysis graphs saved successfully")
 #-------------------------------------------------------------------------------------------------------
+
+FRED.all_info()
