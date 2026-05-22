@@ -42,7 +42,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_v2.2_first'
+output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest'
 number_of_simulations = 50
 ballistic = True
 
@@ -52,15 +52,22 @@ sensitivity_analysis = False
 latitude = 44.290583
 longitude = 12.027111
 elevation = 18
-date_of_launch = (2025, 5, 10, 16)          #(Year, Month, Day, Hour UTC)
-weather_data: Literal['c','e','f','i','m'] = 'e'        #(Custom, Ensemble, Forecast, Isa, Manual)
+date_of_launch = (2025, 5, 24, 16)          #(Year, Month, Day, Hour UTC)
+weather_data: Literal['c','e','f','i','m'] = 'f'        #(Custom, Ensemble, Forecast, Isa, Manual)
 
-motore = 8
+#========================================================================================================= Parametri FRED
 
-if motore == 8:
+motore: Literal['nozzle 7mm sim','nozzle 8mm sim','nozzle 7mm test','nozzle 8mm test'] = 'nozzle 7mm test'
+
+configurazione: Literal['2x_barre_alte','4x_barre_alte'] = '2x_barre_alte'
+
+#=========================================================================================================
+
+if motore == 'nozzle 8mm test':
     #   SRAD motor info BRICO 45 8mm
     impulse = 234.43507869871195
-    t_burnout = 0.735
+    #t_burnout = 0.735                      # VALORE SIMULATO
+    t_burnout = 1.4563                      # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
@@ -68,11 +75,29 @@ if motore == 8:
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
-    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
-elif motore == 7:
+    #thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_8mm.csv")
+    thrust_curve = str(BASE_DIR/"si6mulation_inputs/propulsion_data/test_2026-05-21_20-44-20.csv")
+
+elif motore == 'nozzle 8mm sim':
+    #   SRAD motor info BRICO 45 8mm
+    impulse = 234.43507869871195
+    t_burnout = 0.735                       # VALORE SIMULATO
+    #t_burnout_test = 1.4563                # VALORE TEST
+    grain_external_radius = 0.033 / 2
+    grain_internal_radius = 0.013 / 2 
+    grain_length = 0.147
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+    grain_mass = 196.6 / 1000
+    grain_dens = grain_mass / grain_volume
+    srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
+    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_8mm.csv")
+    #thrust_curve_test=str(BASE_DIR/"si6mulation_inputs/propulsion_data/test_2026-05-21_20-44-20.csv")
+
+elif motore == 'nozzle 7mm test':
     #   SRAD motor info BRICO 45 7mm
     impulse = 243.96
-    t_burnout = 0.640
+    #t_burnout = 0.640                      # VALORE SIMULATO
+    t_burnout = 3.2193                      # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
@@ -80,9 +105,32 @@ elif motore == 7:
     grain_mass = 0.19694061309132402
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 0.7871568876139587
-    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve.csv")
+    #thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
+    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/test_2026-05-21_21-07-43.csv")
 
-CG_position_from_nose = 392/ 1000                          # (m)
+elif motore == 'nozzle 7mm sim':
+    #   SRAD motor info BRICO 45 7mm
+    impulse = 243.96
+    t_burnout = 0.640                       # VALORE SIMULATO
+    #t_burnout_test = 3.2193                # VALORE TEST
+    grain_external_radius = 0.033 / 2
+    grain_internal_radius = 0.013 / 2 
+    grain_length = 0.147
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+    grain_mass = 0.19694061309132402
+    grain_dens = grain_mass / grain_volume
+    srad_motor_dry_mass = 0.7871568876139587
+    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
+    #thrust_curve_test =str(BASE_DIR/"simulation_inputs/propulsion_data/test_2026-05-21_21-07-43.csv")
+
+if configurazione == "2x_barre_alte":
+    CG_position_from_nose = 397 / 1000          # mm
+    dry_mass = 2374 / 1000                      # g
+elif configurazione == "4x_barre_alte":
+    CG_position_from_nose = 391 / 1000          # mm
+    dry_mass =  2618 / 1000                     # g
+
+
 
 ballast =  0# 750 / 1000     #   (kg)
 
@@ -91,7 +139,7 @@ analysis_parameters = {
     # === Mass Details ===
     
     # Rocket's dry mass without grains' weight (kg) and its uncertainty (standard deviation)2130
-    "rocket_dry_mass": ( 2618 / 1000 + ballast, 0.03),
+    "rocket_dry_mass": ( dry_mass + ballast, 0.03),
     # Rocket's dry inertia moment perpendicular to its axis (kg*m^2)
     "rocket_dry_inertia_11": (1.49, 0.00187),
     # Rocket's dry inertia moment relative to its axis (kg*m^2)
@@ -570,7 +618,7 @@ elif weather_data=='f':
     # The Forecast: let the user simulate in the future by using the GFS (Global Forecast System) 
     # weather data, (change the date in the environment definition).
     Env.set_atmospheric_model(
-        type="Forecast",
+        type="Windy",
         file="GFS"
     )
 elif weather_data == 'm':
@@ -892,7 +940,7 @@ comparison.aerodynamic_moments(filename=str(output_comparison/"aerodynamic_momen
 comparison.angular_velocities(filename=str(output_comparison/"angular_velocities.svg"),legend=False)
 comparison.trajectories_3d(filename=str(output_comparison/"trajectories_3d.svg"))
 comparison.rail_buttons_forces(filename=str(output_comparison/"rail_buttons_forces.svg"),legend=False)
-#comparison.stability_margin(filename=str(output_comparison/"stability_margin.svg"), legend=False)
+comparison.stability_margin(filename=str(output_comparison/"stability_margin.svg"), legend=False)
 plt.close('all')
 #--------------------------------------------------------------------------------------------------------
 
@@ -1008,7 +1056,7 @@ all_plots = {
     "Final Static Margin":["final_static_margin","Static Margin", "c"],
     "Maximum Velocity":["max_velocity","Velocity", "m/s"],
     "Maximum Acceleration":["max_acceleration","Acceleration", "m/s^2"],
-    #"Maximum Load Factor":["max_load_factor","Load Factor","G"],
+    # "Maximum Load Factor":["max_load_factor","Load Factor","G"],
     "Maximum Aerodynamic Drag":["max_aerodynamic_drag","Drag Force","N"],
     "Maximum Aerodynamic Lift":["max_aerodynamic_lift","Lift Force", "N"],
     "Maximum Aerodynamic Spin Moment":["max_aerodynamic_spin_moment","Spin Moment", "N*m"],
@@ -1203,5 +1251,3 @@ if sensitivity_analysis:
 
     print("- Sensitivity analysis graphs saved successfully")
 #-------------------------------------------------------------------------------------------------------
-
-FRED.all_info()
