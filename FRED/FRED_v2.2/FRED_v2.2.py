@@ -66,8 +66,7 @@ configurazione: Literal['2x_barre_alte','4x_barre_alte'] = '2x_barre_alte'
 if motore == 'nozzle 8mm test':
     #   SRAD motor info BRICO 45 8mm
     impulse = 234.43507869871195
-    #t_burnout = 0.735                      # VALORE SIMULATO
-    t_burnout = 1.4563                      # VALORE TEST
+    t_burnout = 0.9                      # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
@@ -76,13 +75,12 @@ if motore == 'nozzle 8mm test':
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     #thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_8mm.csv")
-    thrust_curve = str(BASE_DIR/"si6mulation_inputs/propulsion_data/test_2026-05-21_20-44-20.csv")
+    thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_20-44-20.csv")
 
 elif motore == 'nozzle 8mm sim':
     #   SRAD motor info BRICO 45 8mm
     impulse = 234.43507869871195
     t_burnout = 0.735                       # VALORE SIMULATO
-    #t_burnout_test = 1.4563                # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
@@ -91,13 +89,12 @@ elif motore == 'nozzle 8mm sim':
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_8mm.csv")
-    #thrust_curve_test=str(BASE_DIR/"si6mulation_inputs/propulsion_data/test_2026-05-21_20-44-20.csv")
+    #thrust_curve_test=str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_20-44-20.csv")
 
 elif motore == 'nozzle 7mm test':
     #   SRAD motor info BRICO 45 7mm
     impulse = 243.96
-    #t_burnout = 0.640                      # VALORE SIMULATO
-    t_burnout = 3.2193                      # VALORE TEST
+    t_burnout = 2.37                      # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
@@ -106,7 +103,7 @@ elif motore == 'nozzle 7mm test':
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 0.7871568876139587
     #thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
-    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/test_2026-05-21_21-07-43.csv")
+    thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_21-07-43.csv")
 
 elif motore == 'nozzle 7mm sim':
     #   SRAD motor info BRICO 45 7mm
