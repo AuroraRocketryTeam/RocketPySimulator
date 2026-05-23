@@ -47,8 +47,8 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest'
-number_of_simulations = 50 # MODIFICARE era 200, usare magari 50 per velocizzare e poi 200 solo per i piu utili
-ballistic = True
+number_of_simulations = 60 # MODIFICARE era 150, usare magari 50 per velocizzare e poi 200 solo per i piu utili
+ballistic = False
 
 show_graph = False
 sensitivity_analysis = False
@@ -56,14 +56,14 @@ sensitivity_analysis = False
 latitude = 44.290583 # MODIFICARE SE SERVE, SONO LE COORDINATE
 longitude = 12.027111
 elevation = 18
-date_of_launch = (2025, 5, 24, 16)          #(Year, Month, Day, Hour UTC) MODIFICARE A DATA GIUSTA
+date_of_launch = (2025, 5, 24, 14)          #(Year, Month, Day, Hour UTC) MODIFICARE A DATA GIUSTA
 weather_data: Literal['c','e','f','i','m'] = 'f'        #(Custom, Ensemble, Forecast, Isa, Manual) MODIFICARE, 'm' per analisi a vento avverso, 'f' normalmente
 
 #========================================================================================================= Parametri FRED
 
 motore: Literal['nozzle 7mm sim','nozzle 8mm sim','nozzle 7mm test','nozzle 8mm test'] = 'nozzle 7mm test'
 
-configurazione: Literal['2x_barre_alte','4x_barre_alte'] = '2x_barre_alte'
+configurazione: Literal['2x_barre_alte','4x_barre_alte', 'v2.3'] = 'v2.3'
 
 #=========================================================================================================
 
@@ -112,7 +112,6 @@ elif motore == 'nozzle 7mm sim':
     #   SRAD motor info BRICO 45 7mm
     impulse = 243.96
     t_burnout = 0.640                       # VALORE SIMULATO
-    #t_burnout_test = 3.2193                # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
@@ -123,11 +122,15 @@ elif motore == 'nozzle 7mm sim':
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
 
 if configurazione == "2x_barre_alte":
+    
     CG_position_from_nose = 397 / 1000          # mm
     dry_mass = 2374 / 1000                      # g
+
 elif configurazione == "4x_barre_alte":
+
     CG_position_from_nose = 391 / 1000          # mm
     dry_mass =  2618 / 1000                     # g
+
 elif configurazione == "v2.3":
 
     CG_position_from_nose = 416 / 1000          # mm
