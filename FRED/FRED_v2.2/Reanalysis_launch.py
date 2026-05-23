@@ -30,7 +30,7 @@ ballast = 0 / 1000  #1600 / 1000            # kg MODIFICARE
 latitude = 44.290583 # MODIFICARE SE SERVE, SONO LE COORDINATE
 longitude = 12.027111
 elevation = 18
-date_of_launch = (2025, 5, 24, 16)          #(Year, Month, Day, Hour UTC) MODIFICARE A DATA GIUSTA
+date_of_launch = (2025, 5, 24, 14)          #(Year, Month, Day, Hour UTC) MODIFICARE A DATA GIUSTA
 weather_data: Literal['c','e','f','i','m'] = 'f'        #(Custom, Ensemble, Forecast, Isa, Manual) #MODIFICARE, m per analisi a vento avverso, f normalmente
 
 # Definition of global variables, to be used inside and outside parachute functions
@@ -231,11 +231,11 @@ grain_external_radius = 0.033 / 2
 grain_internal_radius = 0.013 / 2 
 grain_length = 0.147
 grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
-grain_mass = 0.19694061309132402
+grain_mass = 196.6 / 1000
 grain_dens = grain_mass / grain_volume
-srad_motor_dry_mass = 0.7871568876139587
+srad_motor_dry_mass = 622 / 1000 
 thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_20-44-20.csv")
-CG_position_from_nose = 397 / 1000                          # (m)
+CG_position_from_nose = 416 / 1000                         # (m)
 
 solid_motor = SolidMotor(
     burn_time=t_burnout,
