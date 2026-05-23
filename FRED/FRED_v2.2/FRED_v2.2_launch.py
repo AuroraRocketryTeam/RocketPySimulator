@@ -103,10 +103,9 @@ elif motore == 'nozzle 7mm test':
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
     grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
-    grain_mass = 0.19694061309132402
+    grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
-    srad_motor_dry_mass = 0.7871568876139587
-    #thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
+    srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_21-07-43.csv")
 
 elif motore == 'nozzle 7mm sim':
@@ -118,11 +117,10 @@ elif motore == 'nozzle 7mm sim':
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
     grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
-    grain_mass = 0.19694061309132402
+    grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
-    srad_motor_dry_mass = 0.7871568876139587
+    srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
-    #thrust_curve_test =str(BASE_DIR/"simulation_inputs/propulsion_data/test_2026-05-21_21-07-43.csv")
 
 if configurazione == "2x_barre_alte":
     CG_position_from_nose = 397 / 1000          # mm
@@ -130,10 +128,14 @@ if configurazione == "2x_barre_alte":
 elif configurazione == "4x_barre_alte":
     CG_position_from_nose = 391 / 1000          # mm
     dry_mass =  2618 / 1000                     # g
+elif configurazione == "v2.3":
+
+    CG_position_from_nose = 416 / 1000          # mm
+    dry_mass = 2692 / 1000                      # g
 
 
 
-ballast =  0# 750 / 1000     #   (kg) MODIFICARE 750 originalmente
+ballast =  0                           # NON TOCCARE, NON RAPPRESENTA LA REALTA'     #   (kg)
 
 analysis_parameters = {
     
@@ -1223,7 +1225,7 @@ plt.legend()
 plt.grid(visible=True, which='minor', linestyle='--', color='grey', alpha=0.3, linewidth=0.6)
 plt.grid(visible=True, which='major', linestyle='-', color='white', alpha=0.4, linewidth=0.8)
 
-# --- MODIFICATO: Titolo esteso con indicazione del tipo di meteo utilizzato ---
+# Add title and labels to plot
 ax.set_title(
     f"Dispersion Ellipses [{weather_label}] (Inc: {nominal_inc}°, Hdg: {nominal_hdg}°)\n"
     r"1$\sigma$, 2$\sigma$ and 3$\sigma$ Apogee and Landing Points"
@@ -1233,6 +1235,7 @@ ax.set_xlabel("East (m)")
 # ------------------------------------------------------------------------------
 
 # Add background image to plot
+# You can translate the basemap by changing dx and dy (in meters)
 dx = 250
 dy = -150
 plt.imshow(img, zorder=0, extent=[-850-dx, 850-dx, -500-dy, 500-dy])
@@ -1244,6 +1247,7 @@ plt.ylim(-500, 500)
 # Save plot and show result
 svg_file = output_launch_site / f"Villafranca_launch_site{file_suffix}.svg"
 plt.savefig(str(svg_file), format='svg', bbox_inches="tight")
+# as pickle
 
 pickle_file = output_launch_site / f"Villafranca_launch_site{file_suffix}.pickle"
 with open(pickle_file, "wb") as f:
