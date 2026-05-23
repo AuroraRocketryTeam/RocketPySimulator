@@ -43,7 +43,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest_nominal'
-number_of_simulations = 15
+number_of_simulations = 150
 ballistic = False
 
 show_graph = False
@@ -59,7 +59,7 @@ weather_data: Literal['c','e','f','i','m'] = 'f'        #(Custom, Ensemble, Fore
 
 motore: Literal['nozzle 7mm sim','nozzle 8mm sim','nozzle 7mm test','nozzle 8mm test'] = 'nozzle 7mm test'
 
-configurazione: Literal['2x_barre_alte','4x_barre_alte'] = '2x_barre_alte'
+configurazione: Literal['2x_barre_alte','4x_barre_alte', 'v2.3'] = 'v2.3'
 
 #=========================================================================================================
 
@@ -126,6 +126,11 @@ elif configurazione == "4x_barre_alte":
 
     CG_position_from_nose = 391 / 1000          # mm
     dry_mass =  2618 / 1000                     # g
+
+elif configurazione == "v2.3":
+
+    CG_position_from_nose = 416 / 1000          # mm
+    dry_mass = 2692 / 1000                      # g
 
 
 
