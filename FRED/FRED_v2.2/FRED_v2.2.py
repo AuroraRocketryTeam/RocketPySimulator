@@ -42,9 +42,9 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest'
-number_of_simulations = 50
-ballistic = True
+output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest_nominal'
+number_of_simulations = 15
+ballistic = False
 
 show_graph = False
 sensitivity_analysis = False
@@ -52,7 +52,7 @@ sensitivity_analysis = False
 latitude = 44.290583
 longitude = 12.027111
 elevation = 18
-date_of_launch = (2025, 5, 24, 16)          #(Year, Month, Day, Hour UTC)
+date_of_launch = (2025, 5, 24, 14)          #(Year, Month, Day, Hour UTC), italia e' UTC + 2 quindi se lanciamo alle 16 mettere le 14
 weather_data: Literal['c','e','f','i','m'] = 'f'        #(Custom, Ensemble, Forecast, Isa, Manual)
 
 #========================================================================================================= Parametri FRED
@@ -66,7 +66,7 @@ configurazione: Literal['2x_barre_alte','4x_barre_alte'] = '2x_barre_alte'
 if motore == 'nozzle 8mm test':
     #   SRAD motor info BRICO 45 8mm
     impulse = 234.43507869871195
-    t_burnout = 0.9                      # VALORE TEST
+    t_burnout = 1.70                         # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
@@ -74,8 +74,9 @@ if motore == 'nozzle 8mm test':
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
-    #thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_8mm.csv")
-    thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_20-44-20.csv")
+    thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/test_2026-05-21_20-44-20.csv")
+
+    # ATTENTO, per qualche motivo non gli piace il reshape thrust curve con questo motore, quindi toglila nella sezione SolidMotor
 
 elif motore == 'nozzle 8mm sim':
     #   SRAD motor info BRICO 45 8mm
@@ -89,47 +90,46 @@ elif motore == 'nozzle 8mm sim':
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_8mm.csv")
-    #thrust_curve_test=str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_20-44-20.csv")
 
 elif motore == 'nozzle 7mm test':
     #   SRAD motor info BRICO 45 7mm
     impulse = 243.96
-    t_burnout = 2.37                      # VALORE TEST
+    t_burnout = 2.37                        # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
     grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
-    grain_mass = 0.19694061309132402
+    grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
-    srad_motor_dry_mass = 0.7871568876139587
-    #thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
+    srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_21-07-43.csv")
 
 elif motore == 'nozzle 7mm sim':
     #   SRAD motor info BRICO 45 7mm
     impulse = 243.96
     t_burnout = 0.640                       # VALORE SIMULATO
-    #t_burnout_test = 3.2193                # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
     grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
-    grain_mass = 0.19694061309132402
+    grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
-    srad_motor_dry_mass = 0.7871568876139587
+    srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
-    #thrust_curve_test =str(BASE_DIR/"simulation_inputs/propulsion_data/test_2026-05-21_21-07-43.csv")
 
 if configurazione == "2x_barre_alte":
+
     CG_position_from_nose = 397 / 1000          # mm
     dry_mass = 2374 / 1000                      # g
+
 elif configurazione == "4x_barre_alte":
+
     CG_position_from_nose = 391 / 1000          # mm
     dry_mass =  2618 / 1000                     # g
 
 
 
-ballast =  0# 750 / 1000     #   (kg)
+ballast =  0                            # NON TOCCARE, NON RAPPRESENTA LA REALTA'     #   (kg)
 
 analysis_parameters = {
     
@@ -147,21 +147,20 @@ analysis_parameters = {
     # Dry Motor Mass
 
     # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation).
-    "motor_dry_mass": (srad_motor_dry_mass, 0.0001),                                                        # 7 mm
+    "motor_dry_mass": (srad_motor_dry_mass, 0.0001),
     # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
-    "motor_inertia_11": (0.66, 0.00001),                                                                    # 7 mm
+    "motor_inertia_11": (0.66, 0.00001),
     # Motor's dry inertia moment relative to its axis (kg*m^2)
-    "motor_inertia_33": (0.00001, 0.00001),                                                                   # 7 mm
+    "motor_inertia_33": (0.00001, 0.00001),
     # Distance between the origin of the referential system and motor's center of dry mass (m)
-    "motor_dry_mass_position": (99.41 / 1000, 0.001),                                                             # 7 mm
-    # "motor_dry_mass_position": (98.86 / 1000, 0.001),                                                            # 8 mm
+    "motor_dry_mass_position": (99.41 / 1000, 0.001),
 
     # Performance
 
     # Motor total impulse (N*s)
     "impulse": (impulse, 1),
     # Motor burn out time (s)
-    "burn_time": (t_burnout, 0.01),
+    "burn_time": (t_burnout, 0.001),
     # Motor's nozzle radius (m)                                                         # both nozzle dimesions are taken from Borealis
     "nozzle_radius": (13.71 / 1000, 1 / 1000),
     # Motor's nozzle throat radius (m)
@@ -241,7 +240,7 @@ analysis_parameters = {
     # Drag coefficient times reference area for the rocket main chute (m^2)
     "cd_s_main": (0.97 * 1.168, 0.0277),                                                        # 4ft rocketman without spillout
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
-    "lag_rec": (2, 0.5),                                                                        # more conservative, previous was (1.73 , 0.2)
+    "lag_rec": (0.75, 0.5),                                                                        # more conservative, previous was (1.73 , 0.2)
     
     # === Rail buttons Details ===
     
@@ -255,7 +254,7 @@ analysis_parameters = {
     # === Electronic Systems and Sensors Details ===
 
     # Time delay between sensor signal is received and ejection signal is fired (s)
-    "lag_se": (0.1, 0.05),                                                                          # more conservative
+    "lag_se": (0.75, 0.05),                                                                          # more conservative
     # Mean noise value of the Pressure signal (Pa) 
     "noise_mean": (0 , 0.001),
     # Standard deviation of the Pressure signal (Pa)
@@ -271,7 +270,6 @@ i = 0
 initial_wall_time = time.time()
 initial_cpu_time = process_time()
 #--------------------------------------------------------------------------------------------------------
-
 
 
 
@@ -699,7 +697,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
     # Define COTS motor
     Solid_motor = SolidMotor(
         # Thrust data
-        thrust_source=thrust_curve,
+        thrust_source = thrust_curve,
         burn_time=setting["burn_time"],
         reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
         interpolation_method="linear",
@@ -744,7 +742,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         power_off_drag=power_off_drag,
         power_on_drag=power_on_drag,
         # Define the center of dry mass as the distance from the tip of the nose, and set the positive axis orientation
-        center_of_mass_without_motor=CG_position_from_nose,
+        center_of_mass_without_motor = CG_position_from_nose,
         coordinate_system_orientation="nose_to_tail",
     )
 
@@ -854,8 +852,6 @@ dispersion_error_file.close()
 
 
 
-
-
 #-------------------------------------------------------------------------------------------------------- READ OUTPUT FILE
 # Initialize variable to store all results
 dispersion_general_results = []
@@ -917,27 +913,27 @@ comparison = CompareFlights(flights)
 if show_graph:
     comparison.velocities()
     comparison.accelerations()
-    # comparison.attitude_angles()
-    # comparison.euler_angles()
-    #comparison.attitude_frequency()
+    comparison.attitude_angles()
+    comparison.euler_angles()
+    comparison.attitude_frequency()
     comparison.aerodynamic_forces()
-    # comparison.aerodynamic_moments()
-    # comparison.angular_velocities()
-    # comparison.trajectories_3d()
-    # comparison.rail_buttons_forces()
-    #comparison.stability_margin()
+    comparison.aerodynamic_moments()
+    comparison.angular_velocities()
+    comparison.trajectories_3d()
+    comparison.rail_buttons_forces()
+    comparison.stability_margin()
 
 comparison.velocities(filename=str(output_comparison/"velocities.svg"),legend=False)
 comparison.accelerations(filename=str(output_comparison/"accelerations.svg"),legend=False)
-comparison.attitude_angles(filename=str(output_comparison/"attitude_angles.svg"),legend=False)
-#comparison.euler_angles(filename=str(output_comparison/"euler_angles.svg"),legend=False)
-#comparison.attitude_frequency(filename=str(output_comparison/"attitude_frequency.svg"),legend=False)
+# comparison.attitude_angles(filename=str(output_comparison/"attitude_angles.svg"),legend=False)
+# comparison.euler_angles(filename=str(output_comparison/"euler_angles.svg"),legend=False)
+# comparison.attitude_frequency(filename=str(output_comparison/"attitude_frequency.svg"),legend=False)
 comparison.aerodynamic_forces(filename=str(output_comparison/"aerodynamic_forces.svg"),legend=False)
-comparison.aerodynamic_moments(filename=str(output_comparison/"aerodynamic_moments.svg"),legend=False)
-comparison.angular_velocities(filename=str(output_comparison/"angular_velocities.svg"),legend=False)
-comparison.trajectories_3d(filename=str(output_comparison/"trajectories_3d.svg"))
-comparison.rail_buttons_forces(filename=str(output_comparison/"rail_buttons_forces.svg"),legend=False)
-comparison.stability_margin(filename=str(output_comparison/"stability_margin.svg"), legend=False)
+# comparison.aerodynamic_moments(filename=str(output_comparison/"aerodynamic_moments.svg"),legend=False)
+# comparison.angular_velocities(filename=str(output_comparison/"angular_velocities.svg"),legend=False)
+# comparison.trajectories_3d(filename=str(output_comparison/"trajectories_3d.svg"))
+# comparison.rail_buttons_forces(filename=str(output_comparison/"rail_buttons_forces.svg"),legend=False)
+# comparison.stability_margin(filename=str(output_comparison/"stability_margin.svg"), legend=False)
 plt.close('all')
 #--------------------------------------------------------------------------------------------------------
 
