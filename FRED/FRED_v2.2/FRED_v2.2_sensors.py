@@ -12,6 +12,12 @@ from rocketpy import Environment, SolidMotor, Rocket, Flight, CompareFlights
 from rocketpy.tools import load_monte_carlo_data
 from rocketpy.sensitivity import SensitivityModel
 
+# --- NUOVE LIBRERIE PER I SENSORI E UTF-8 ---
+from rocketpy import Accelerometer, Barometer
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+# --------------------------------------------
+
 # Time measurement utilities
 from datetime import datetime
 from time import process_time
@@ -74,7 +80,7 @@ if motore == 'nozzle 8mm test':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length # Credo sia r^2 e non r*2
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
@@ -818,6 +824,37 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
             ),
         )
     
+# --- IMPLEMENTAZIONE SENSORI ---
+    sensor_position = CG_position_from_nose
+
+    accel_noisy = Accelerometer(
+        sampling_rate=105, consider_gravity=True, orientation=(0,0,0), measurement_range=100,
+        resolution=0.25, noise_density=0.02, random_walk_density=0.005, constant_bias=1.0,
+        temperature_bias=0.05, operating_temperature=25, cross_axis_sensitivity=0.02, name="Accelerometer"
+    )
+    accel_clean = Accelerometer(
+        sampling_rate=105, consider_gravity=True, orientation=(0,0,0), measurement_range=100,
+        resolution=0.0, noise_density=0.0, random_walk_density=0.0, constant_bias=0.0,
+        operating_temperature=25, temperature_bias=0.0, cross_axis_sensitivity=0.0, name="Clean Accelerometer"
+    )
+    barom_noisy = Barometer(
+        sampling_rate=50, measurement_range=200000, resolution=0.1, noise_density=15.0,
+        noise_variance=15.0, random_walk_density=0.01, constant_bias=1.5, operating_temperature=25,
+        temperature_bias=0.03, temperature_scale_factor=0.02, name="Noisy Barometer"
+    )
+    barom_clean = Barometer(
+        sampling_rate=50, measurement_range=200000, resolution=0.0, noise_density=0.0,
+        constant_bias=0.0, operating_temperature=25, temperature_bias=0.0, name="Clean Barometer"
+    )
+
+    FRED.add_sensor(accel_noisy, sensor_position)
+    FRED.add_sensor(accel_clean, sensor_position)
+    FRED.add_sensor(barom_noisy, sensor_position)
+    FRED.add_sensor(barom_clean, sensor_position)
+    # --------------------------------
+
+
+
     # Run trajectory simulation
     try: 
         rocket_flight = Flight(
@@ -1130,7 +1167,6 @@ print(colored('\n\nEnvironmental graphs saved!\n'))
 
 
 
-
 #-------------------------------------------------------------------------------------------------------- LAUNCH SITE
 print(colored('\n\nLaunch site graph:'))
 # Import background map
@@ -1259,7 +1295,6 @@ plt.close('all')
 
 
 
-
 #-------------------------------------------------------------------------------------------------------- SENSITIVITY ANALYSIS
 if sensitivity_analysis:
     print(colored('\n\nSensitivity analysis graphs:'))
@@ -1319,5 +1354,88 @@ if sensitivity_analysis:
     plt.close("all")
     plt.ioff()
 
+
     print("- Sensitivity analysis graphs saved successfully")
 #-------------------------------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------------------------------- SENSORS OUTPUT
+print(colored('\n\nGenerating Sensor graphs (for the last simulated flight):'))
+outdir_sensors = BASE_DIR / "FRED_sensors_output"
+outdir_sensors.mkdir(parents=True, exist_ok=True)
+
+# Exporting and saving sensors data in csv format
+accel_noisy.export_measured_data(str(outdir_sensors / "exported_noisy_accelerometer_data.csv"))
+accel_clean.export_measured_data(str(outdir_sensors / "exported_clean_accelerometer_data.csv"))
+barom_noisy.export_measured_data(str(outdir_sensors / "exported_noisy_barometer_data.csv"))
+barom_clean.export_measured_data(str(outdir_sensors / "exported_clean_barometer_data.csv"))
+
+def save_acceleration_plots(accel_noisy, accel_clean, outdir=outdir_sensors, show=False):
+    outdir = Path(outdir)
+
+    time1, ax, ay, az_raw = zip(*accel_noisy.measured_data)
+    time2, bx, by, bz_raw = zip(*accel_clean.measured_data)
+
+    # Invertiamo l'asse Z in modo che l'accelerazione verso l'alto sia positiva nei grafici (Richiesta dell'amico!)
+    az = [-val for val in az_raw]
+    bz = [-val for val in bz_raw]
+
+    for axis_name, data1, data2 in zip(['ax', 'ay', 'az'], [ax, ay, az], [bx, by, bz]):
+        plt.figure()
+        plt.plot(time1, data1, label="Noisy Accelerometer")
+        plt.plot(time2, data2, label="Clean Accelerometer")
+        plt.xlabel("Time (s)")
+        plt.ylabel(f"Acceleration {axis_name} (m/s^2)")
+        plt.legend()
+        plt.grid()
+        plt.title(f"Acceleration comparison - {axis_name}")
+        path = outdir / f"acceleration_{axis_name}.png"
+        plt.savefig(path, dpi=200, bbox_inches="tight")
+        if show: plt.show()
+        plt.close()
+
+    # Total acceleration
+    abs_a = (np.array(ax) ** 2 + np.array(ay) ** 2 + np.array(az) ** 2) ** 0.5
+    abs_b = (np.array(bx) ** 2 + np.array(by) ** 2 + np.array(bz) ** 2) ** 0.5
+
+    plt.figure()
+    plt.plot(time2, abs_b, label="clean")
+    plt.plot(time1, abs_a, label="noisy")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Acceleration (m/s^2)")
+    plt.legend()
+    plt.grid()
+    plt.title("Acceleration")
+    path = outdir / "acceleration_total.png"
+    plt.savefig(path, dpi=200, bbox_inches="tight")
+    if show: plt.show()
+    plt.close()
+
+def save_barometer_plot(barom_noisy, barom_clean, test_flight, outdir=outdir_sensors, show=False):
+    outdir = Path(outdir)
+
+    time_barometer, pressure_barometer = zip(*barom_clean.measured_data)
+    time_barometer_noisy, pressure_barometer_noisy = zip(*barom_noisy.measured_data)
+    rocket_pressure = test_flight.pressure.y_array
+    rocket_time = test_flight.pressure.x_array
+
+    plt.figure()
+    plt.plot(rocket_time, rocket_pressure, label="Rocket")
+    plt.plot(time_barometer, pressure_barometer, label="Clean Barometer")
+    plt.plot(time_barometer_noisy, pressure_barometer_noisy, label="Noisy Barometer")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Pressure (Pa)")
+    plt.title("Pressure comparison")
+    plt.grid()
+    plt.legend()
+    path = outdir / "barometer_pressure.png"
+    plt.savefig(path, dpi=200, bbox_inches="tight")
+    if show: plt.show()
+    plt.close()
+
+# Genera e salva tutti i grafici nella nuova cartella basandosi sull'ultimo volo del Monte Carlo
+save_acceleration_plots(accel_noisy, accel_clean, outdir=outdir_sensors, show=False)
+save_barometer_plot(barom_noisy, barom_clean, flights[-1], outdir=outdir_sensors, show=show_graph)
+
+print(f"- Sensor graphs and CSV data saved successfully in {colored('FRED_sensors_output')}")
+
