@@ -234,7 +234,7 @@ grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_
 grain_mass = 196.6 / 1000
 grain_dens = grain_mass / grain_volume
 srad_motor_dry_mass = 622 / 1000 
-thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_20-44-20.csv")
+thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_21-07-43.csv")
 CG_position_from_nose = 416 / 1000                         # (m)
 
 solid_motor = SolidMotor(
@@ -266,11 +266,11 @@ power_on_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v1.8_CD_
 
 FRED = Rocket(
     radius= 42.5 / 1000,
-    mass= 2374 / 1000 + ballast,
+    mass= 2692 / 1000 + ballast, # Used to be 2374 / 1000 + ballast,
     inertia=(1.49, 1.49, 0.01),
     power_off_drag=power_off_drag, # use the prevoius defined drag curve^
     power_on_drag=power_on_drag, # use the prevoius defined drag curve 
-    center_of_mass_without_motor= 397 / 1000,
+    center_of_mass_without_motor= 416 / 1000, # used to be 397 / 1000
     coordinate_system_orientation="nose_to_tail",
 )
 FRED.add_motor(solid_motor, position=0.814)
@@ -309,7 +309,7 @@ if not ballistic:
         cd_s= 0.97 * 1.168,
         trigger=simulator_check_drogue_opening,
         sampling_rate=105,
-        lag=2,
+        lag=0.75,
         noise=(0, 6.5, 0.3),
     )
 

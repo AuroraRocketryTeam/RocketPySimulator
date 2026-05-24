@@ -52,7 +52,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # Core internal variables remain defined within their respective modules.
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest'
+output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest_nominal'
 number_of_simulations = 50 # MODIFICARE era 200, usare magari 50 per velocizzare e poi 200 solo per i piu utili
 ballistic = True
 
@@ -62,21 +62,21 @@ sensitivity_analysis = False
 latitude = 44.290583 # MODIFICARE SE SERVE, SONO LE COORDINATE
 longitude = 12.027111
 elevation = 18
-date_of_launch = (2025, 5, 24, 16)          #(Year, Month, Day, Hour UTC) MODIFICARE A DATA GIUSTA
+date_of_launch = (2025, 5, 24, 14)          #(Year, Month, Day, Hour UTC) MODIFICARE A DATA GIUSTA
 weather_data: Literal['c','e','f','i','m'] = 'f'        #(Custom, Ensemble, Forecast, Isa, Manual) MODIFICARE, 'm' per analisi a vento avverso, 'f' normalmente
 
 #========================================================================================================= Parametri FRED
 
 motore: Literal['nozzle 7mm sim','nozzle 8mm sim','nozzle 7mm test','nozzle 8mm test'] = 'nozzle 7mm test'
 
-configurazione: Literal['2x_barre_alte','4x_barre_alte'] = '2x_barre_alte'
+configurazione: Literal['2x_barre_alte','4x_barre_alte', 'v2.3'] = 'v2.3'
 
 #=========================================================================================================
 
 if motore == 'nozzle 8mm test':
     #   SRAD motor info BRICO 45 8mm
     impulse = 234.43507869871195
-    t_burnout = 0.9                      # VALORE TEST
+    t_burnout = 1.70                         # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
@@ -84,8 +84,9 @@ if motore == 'nozzle 8mm test':
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
-    #thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_8mm.csv")
-    thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_20-44-20.csv")
+    thrust_curve = str(BASE_DIR/"simulation_inputs/propulsion_data/test_2026-05-21_20-44-20.csv")
+
+    # ATTENTO, per qualche motivo non gli piace il reshape thrust curve con questo motore, quindi toglila nella sezione SolidMotor
 
 elif motore == 'nozzle 8mm sim':
     #   SRAD motor info BRICO 45 8mm
@@ -103,14 +104,14 @@ elif motore == 'nozzle 8mm sim':
 elif motore == 'nozzle 7mm test':
     #   SRAD motor info BRICO 45 7mm
     impulse = 243.96
-    t_burnout = 2.37                      # VALORE TEST
+    t_burnout = 2.37                        # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
     grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
-    srad_motor_dry_mass = 622 / 1000  
+    srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/reshape_test_2026-05-21_21-07-43.csv")
 
 elif motore == 'nozzle 7mm sim':
@@ -123,21 +124,27 @@ elif motore == 'nozzle 7mm sim':
     grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
-    srad_motor_dry_mass = 622 / 1000   
+    srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
     thrust_curve =str(BASE_DIR/"simulation_inputs/propulsion_data/SRAD_thrustcurve_7mm.csv")
 
 if configurazione == "2x_barre_alte":
+
     CG_position_from_nose = 397 / 1000          # mm
     dry_mass = 2374 / 1000                      # g
+
 elif configurazione == "4x_barre_alte":
+
     CG_position_from_nose = 391 / 1000          # mm
     dry_mass =  2618 / 1000                     # g
+
 elif configurazione == "v2.3":
 
     CG_position_from_nose = 416 / 1000          # mm
     dry_mass = 2692 / 1000                      # g
 
-ballast =  0                           # NON TOCCARE, NON RAPPRESENTA LA REALTA'     #   (kg)
+
+
+ballast =  0                            # NON TOCCARE, NON RAPPRESENTA LA REALTA'     #   (kg)
 
 analysis_parameters = {
     
@@ -155,21 +162,20 @@ analysis_parameters = {
     # Dry Motor Mass
 
     # Motors's dry mass without propellant (kg) and its uncertainty (standard deviation).
-    "motor_dry_mass": (srad_motor_dry_mass, 0.0001),                                                        # 7 mm
+    "motor_dry_mass": (srad_motor_dry_mass, 0.0001),
     # Motor's dry inertia moment perpendicular to its axis (kg*m^2)
-    "motor_inertia_11": (0.66, 0.00001),                                                                    # 7 mm
+    "motor_inertia_11": (0.66, 0.00001),
     # Motor's dry inertia moment relative to its axis (kg*m^2)
-    "motor_inertia_33": (0.00001, 0.00001),                                                                   # 7 mm
+    "motor_inertia_33": (0.00001, 0.00001),
     # Distance between the origin of the referential system and motor's center of dry mass (m)
-    "motor_dry_mass_position": (99.41 / 1000, 0.001),                                                             # 7 mm
-    # "motor_dry_mass_position": (98.86 / 1000, 0.001),                                                            # 8 mm
+    "motor_dry_mass_position": (99.41 / 1000, 0.001),
 
     # Performance
 
     # Motor total impulse (N*s)
     "impulse": (impulse, 1),
     # Motor burn out time (s)
-    "burn_time": (t_burnout, 0.01),
+    "burn_time": (t_burnout, 0.001),
     # Motor's nozzle radius (m)                                                         # both nozzle dimesions are taken from Borealis
     "nozzle_radius": (13.71 / 1000, 1 / 1000),
     # Motor's nozzle throat radius (m)
@@ -246,12 +252,12 @@ analysis_parameters = {
 
     # === Parachute Details ===
 
-    # Drag coefficient times reference area for the rocket main chute (m^2)
+   # Drag coefficient times reference area for the rocket main chute (m^2)
     "cd_s_main": (0.97 * 1.168, 0.0277),                                                        # 4ft rocketman without spillout
     # Time delay between parachute ejection signal is detected and parachute is inflated (s)
-    "lag_rec": (2, 0.5),                                                                        # more conservative, previous was (1.73 , 0.2)
+    "lag_rec": (0.75, 0.5),                                                                      # more conservative, previous was (1.73 , 0.2)
     
-    # === Rail buttons Details ===
+   # === Rail buttons Details ===
     
     # Position of the rail button closer to the tip of the rocket (m)
     "upper_button_y": (424 / 1000, 0.005),
@@ -263,7 +269,7 @@ analysis_parameters = {
     # === Electronic Systems and Sensors Details ===
 
     # Time delay between sensor signal is received and ejection signal is fired (s)
-    "lag_se": (0.1, 0.05),                                                                          # more conservative
+    "lag_se": (0.75, 0.05),                                                                          # more conservative
     # Mean noise value of the Pressure signal (Pa) 
     "noise_mean": (0 , 0.001),
     # Standard deviation of the Pressure signal (Pa)
@@ -713,7 +719,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         # Thrust data
         thrust_source=thrust_curve,
         burn_time=setting["burn_time"],
-        reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
+        #reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
         interpolation_method="linear",
         # Nozzle data
         nozzle_radius=setting["nozzle_radius"],
