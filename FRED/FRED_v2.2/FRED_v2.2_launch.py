@@ -63,7 +63,7 @@ weather_data: Literal['c','e','f','i','m'] = 'f'        #(Custom, Ensemble, Fore
 
 motore: Literal['nozzle 7mm sim','nozzle 8mm sim','nozzle 7mm test','nozzle 8mm test'] = 'nozzle 7mm test'
 
-configurazione: Literal['2x_barre_alte','4x_barre_alte', 'v2.3'] = 'v2.3'
+configurazione: Literal['2x_barre_alte','4x_barre_alte', 'v2.3', 'v2.3_lite', 'v2.3_super_lite'] = 'v2.3_super_lite'
 
 #=========================================================================================================
 
@@ -136,6 +136,16 @@ elif configurazione == "v2.3":
 
     CG_position_from_nose = 416 / 1000          # mm
     dry_mass = 2692 / 1000                      # g
+
+elif configurazione == "v2.3_lite":
+
+    CG_position_from_nose = 402 / 1000          # mm
+    dry_mass = 2490 / 1000                      # g
+
+elif configurazione == "v2.3_super_lite":
+
+    CG_position_from_nose = 409 / 1000          # mm
+    dry_mass = 2246 / 1000                      # g
 
 
 
@@ -239,7 +249,7 @@ analysis_parameters = {
     # Launch rail inclination angle relative to the horizontal plane (degrees)
     "inclination": (80, 3), # DA MODIFICARE 2, L'ORIGINALE ERA 80, COME RANGE CONSIDERA 75-84
     # Launch rail heading relative to north (degrees)
-    "heading": (180, 5), # MODIFICARE 1, è compreso fra 160 a 180
+    "heading": (160, 5), # MODIFICARE 1, è compreso fra 160 a 180
     # Launch rail length (m)
     "rail_length": (1.5, 0.005), # MODIFICARE 3 SE NECESSARIO
     # Members of the ensemble forecast to be used
