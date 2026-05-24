@@ -47,7 +47,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest_nominal'
-number_of_simulations = 60 # MODIFICARE era 150, usare magari 50 per velocizzare e poi 200 solo per i piu utili
+number_of_simulations = 100 # MODIFICARE era 150, usare magari 50 per velocizzare e poi 200 solo per i piu utili
 ballistic = False
 
 show_graph = False
@@ -247,11 +247,11 @@ analysis_parameters = {
     # === Launch and Environment Details ===
 
     # Launch rail inclination angle relative to the horizontal plane (degrees)
-    "inclination": (80, 3), # DA MODIFICARE 2, L'ORIGINALE ERA 80, COME RANGE CONSIDERA 75-84
+    "inclination": (85, 3), # DA MODIFICARE 2, L'ORIGINALE ERA 80, COME RANGE CONSIDERA 75-84
     # Launch rail heading relative to north (degrees)
-    "heading": (160, 5), # MODIFICARE 1, è compreso fra 160 a 180
+    "heading": (180, 5), # MODIFICARE 1, è compreso fra 160 a 180
     # Launch rail length (m)
-    "rail_length": (1.5, 0.005), # MODIFICARE 3 SE NECESSARIO
+    "rail_length": (1.5, 0.005),
     # Members of the ensemble forecast to be used
     "ensemble_member": list(range(10)),
 
@@ -1047,13 +1047,32 @@ def plot_graph(dispersion_result, x_label ,title, unit_of_measure):
     print(f'\t- Standard Deviation: {colored(round(std_out,3))} {unit_of_measure}\n')
     
 
-    # SAVE GRAPH
+    # --- 🟢 RECUPERO PARAMETRI DA ANALYSIS_PARAMETERS (STESSA LOGICA LAUNCH SITE) ---
+    weather_mapping = {
+        'c': 'Custom',
+        'e': 'Ensemble',
+        'f': 'Forecast',
+        'i': 'ISA_Standard',
+        'm': 'Manual_WorstCase'
+    }
+    weather_label = weather_mapping.get(weather_data, 'Unknown')
+
+    nominal_inc = analysis_parameters["inclination"][0]
+    nominal_hdg = analysis_parameters["heading"][0]
     
+    # Sostituisce gli spazi con gli underscore per il nome del file
+    clean_title = title.replace(" ", "_")
+    
+    # Genera il nome del file finale (es. Apogee_Altitude_inc80_hdg180_forecast)
+    filename = f"{clean_title}_inc{int(nominal_inc)}_hdg{int(nominal_hdg)}_{weather_label.lower()}"
+    # ---------------------------------------------------------------------------------
+
+    # SAVE GRAPH
     # as SVG 
-    plt.savefig(str(output_dispersion_svg/title)+".svg", format='svg')
+    plt.savefig(str(output_dispersion_svg / filename) + ".svg", format='svg')
 
     # as pickle
-    pickle_file = str(output_dispersion_pickle/title)+".pickle"
+    pickle_file = str(output_dispersion_pickle / filename) + ".pickle"
     with open(pickle_file, "wb") as f:
         pickle.dump(s, f)
 
@@ -1062,28 +1081,28 @@ def plot_graph(dispersion_result, x_label ,title, unit_of_measure):
 
     plt.close(s)    # Stop automatic printing of images
 
+# Dizionario filtrato con i grafici richiesti (Apogeo, Velocità, Accelerazione, Margini Statici)
 all_plots = {
+    "Apogee Altitude": ["apogee_altitude", "Altitude", "m"],
+    "Maximum Velocity": ["max_velocity", "Velocity", "m/s"],
+    "Maximum Acceleration": ["max_acceleration", "Acceleration", "m/s^2"],
+    "Initial Static Margin": ["initial_static_margin", "Static Margin", "c"],
+    "Out of Rail Static Margin": ["out_of_rail_static_margin", "Static Margin", "c"],
+    "Final Static Margin": ["final_static_margin", "Static Margin", "c"],
+    
     "Out of Rail Time" : ["out_of_rail_time", "Time","s"],
     "Out of Rail Velocity": ["out_of_rail_velocity", "Velocity", "m/s"],
     "Apogee Time":["apogee_time", "Time", "s"],
-    "Apogee Altitude":["apogee_altitude","Altitude", "m"],
     "Apogee X Position":["apogee_x","Apogee X Position", "m"],
     "Apogee Y Position":["apogee_y","Apogee Y Position", "m"],
     "Impact Time":["impact_time","Time","s"],
     "Impact X Position":["impact_x","Impact X Position", "m"],
     "Impact Y Position":["impact_y","Impact Y Position", "m"],
     "Impact Velocity":["impact_velocity","Velocity", "m/s"],
-    "Initial Static Margin":["initial_static_margin","Static Margin", "c"],
-    "Out of Rail Static Margin":["out_of_rail_static_margin","Static Margin", "c"],
-    "Final Static Margin":["final_static_margin","Static Margin", "c"],
-    "Maximum Velocity":["max_velocity","Velocity", "m/s"],
-    "Maximum Acceleration":["max_acceleration","Acceleration", "m/s^2"],
-    # "Maximum Load Factor":["max_load_factor","Load Factor","G"],
     "Maximum Aerodynamic Drag":["max_aerodynamic_drag","Drag Force","N"],
     "Maximum Aerodynamic Lift":["max_aerodynamic_lift","Lift Force", "N"],
     "Maximum Aerodynamic Spin Moment":["max_aerodynamic_spin_moment","Spin Moment", "N*m"],
     "Maximum Aerodynamic Bending Moment":["max_aerodynamic_bending_moment","Bending Moment", "N*m"],
-    #"Parachute Events":["number_of_events","Number of Parachute Events"],
     "Drogue Parachute Trigger Time":["drogue_triggerTime","Time", "s"],
     "Drogue Parachute Fully Inflated Time":["drogue_inflated_time","Time", "s"],
     "Drogue Parachute Fully Inflated Velocity":["drogue_inflated_velocity","Velocity", "m/s"],
