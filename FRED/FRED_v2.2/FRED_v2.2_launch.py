@@ -74,7 +74,7 @@ if motore == 'nozzle 8mm test':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
@@ -89,7 +89,7 @@ elif motore == 'nozzle 8mm sim':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
@@ -103,7 +103,7 @@ elif motore == 'nozzle 7mm test':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
@@ -116,7 +116,7 @@ elif motore == 'nozzle 7mm sim':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
+    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
@@ -749,8 +749,8 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         coordinate_system_orientation = "nozzle_to_combustion_chamber",
     )
 
-    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v2.0_CD_power_off.csv")
-    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/FRED_v2.0_CD_power_on.csv")
+    power_off_drag = str(BASE_DIR / "simulation_inputs/aerodynamic_data/CD_power_off_v2.3_TEST.csv")
+    power_on_drag  = str(BASE_DIR / "simulation_inputs/aerodynamic_data/CD_power_on_v2.3_TEST.csv")
 
 
 # Now create the Rocket
@@ -861,6 +861,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
 # jump a row to not overwrite loading bar
 print('\n')
 
+#FRED.all_info()
 
 # Print total time
 cpu_time = round(process_time() - initial_cpu_time, 2)
