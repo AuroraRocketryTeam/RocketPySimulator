@@ -74,7 +74,7 @@ if motore == 'nozzle 8mm test':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+    grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
@@ -89,7 +89,7 @@ elif motore == 'nozzle 8mm sim':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+    grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
@@ -103,7 +103,7 @@ elif motore == 'nozzle 7mm test':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+    grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
@@ -116,7 +116,7 @@ elif motore == 'nozzle 7mm sim':
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
     grain_length = 0.147
-    grain_volume = 3.14*((grain_external_radius*2)-(grain_internal_radius*2))*grain_length
+    grain_volume = 3.14*((grain_external_radius**2)-(grain_internal_radius**2))*grain_length
     grain_mass = 196.6 / 1000
     grain_dens = grain_mass / grain_volume
     srad_motor_dry_mass = 622 / 1000                    # SOTTRAENDO GRAIN SIMULATO (196g) DAL MOTORE REALE WET (818g), AGGIORNA CON MASSA SOLIDWORKS
