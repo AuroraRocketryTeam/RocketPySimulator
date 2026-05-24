@@ -97,7 +97,8 @@ elif motore == 'nozzle 8mm sim':
 
 elif motore == 'nozzle 7mm test':
     #   SRAD motor info BRICO 45 7mm
-    impulse = 243.96
+    impulse = 202.054
+    #impulse = 243.96
     t_burnout = 2.37                        # VALORE TEST
     grain_external_radius = 0.033 / 2
     grain_internal_radius = 0.013 / 2 
@@ -713,7 +714,7 @@ for setting in flight_settings(analysis_parameters, number_of_simulations):
         # Thrust data
         thrust_source=thrust_curve,
         burn_time=setting["burn_time"],
-        #reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
+        reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
         interpolation_method="linear",
         # Nozzle data
         nozzle_radius=setting["nozzle_radius"],
@@ -857,6 +858,7 @@ wall_time = round(time.time() - initial_wall_time, 2)
 final_string = f"Completed {i} iterations successfully. Total CPU time: {colored(cpu_time)} s. Total wall time: {colored(wall_time)} s"
 print(final_string)
 
+#Solid_motor.all_info()
 
 # Close files
 dispersion_input_file.close()
@@ -1122,7 +1124,7 @@ try:
         print(f"\t- Graph '{colored(title)}' saved successfully.")
 
 except Exception as e:
-    print(f"\t- {colored('Error', 'red')}: Could not save graphs. Details: {e}")
+    print(f"\t- {colored('Error')}: Could not save graphs. Details: {e}")
 
 finally:
     # 4. Chiude i grafici fatti e RIPRISTINA il backend originale 
