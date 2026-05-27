@@ -48,7 +48,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'FRED_v2.2_2xbarre_alte_nozzle7mmtest_nominal'
 number_of_simulations = 100 # MODIFICARE era 150, usare magari 50 per velocizzare e poi 200 solo per i piu utili
-ballistic = False
+ballistic = True
 
 show_graph = False
 sensitivity_analysis = False
@@ -57,7 +57,7 @@ latitude = 44.290583 # MODIFICARE SE SERVE, SONO LE COORDINATE
 longitude = 12.027111
 elevation = 18
 date_of_launch = (2025, 5, 24, 14)          #(Year, Month, Day, Hour UTC) MODIFICARE A DATA GIUSTA
-weather_data: Literal['c','e','f','i','m'] = 'f'        #(Custom, Ensemble, Forecast, Isa, Manual) MODIFICARE, 'm' per analisi a vento avverso, 'f' normalmente
+weather_data: Literal['c','e','f','i','m'] = 'm'        #(Custom, Ensemble, Forecast, Isa, Manual) MODIFICARE, 'm' per analisi a vento avverso, 'f' normalmente
 
 #========================================================================================================= Parametri FRED
 
@@ -145,7 +145,7 @@ elif configurazione == "v2.3_lite":
 elif configurazione == "v2.3_super_lite":
 
     CG_position_from_nose = 409 / 1000          # mm
-    dry_mass = 2246 / 1000                      # g
+    dry_mass = 2201 / 1000                      # g
 
 
 
@@ -247,9 +247,9 @@ analysis_parameters = {
     # === Launch and Environment Details ===
 
     # Launch rail inclination angle relative to the horizontal plane (degrees)
-    "inclination": (85, 3), # DA MODIFICARE 2, L'ORIGINALE ERA 80, COME RANGE CONSIDERA 75-84
+    "inclination": (80, 3), # DA MODIFICARE 2, L'ORIGINALE ERA 80, COME RANGE CONSIDERA 75-84
     # Launch rail heading relative to north (degrees)
-    "heading": (180, 5), # MODIFICARE 1, è compreso fra 160 a 180
+    "heading": (160, 5), # MODIFICARE 1, è compreso fra 160 a 180
     # Launch rail length (m)
     "rail_length": (1.5, 0.005),
     # Members of the ensemble forecast to be used
@@ -685,7 +685,7 @@ elif weather_data == 'm': # MODIFICARE solo se si usa vento avverso modifica mag
     )
 
     # Check if the wind profiles are accurate
-    Env.all_info()
+    #Env.all_info()
 
 elif weather_data!='i':
     # The default weather data type is the International Standard Atmosphere (ISA).
