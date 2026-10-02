@@ -1,0 +1,22 @@
+# Cesaroni Pro75 9977M2245-P - curva di spinta in thrust_curve.csv
+# Massa caricata 8182 g, burnout 2873 g: i grain qui sotto pesano i 5,309 kg espulsi.
+# L'hardware del motore è nella massa a secco del razzo, quindi motor_dry_mass è circa zero.
+# Ugello e gola scalati dalla geometria nota di un Pro54 (quella del Pro75 non è pubblica).
+# Posizioni misurate dall'ugello verso la camera di combustione.
+name,value,std,unit,note
+impulse,9977,5,N*s,
+burn_time,4.3,0.1,s,
+nozzle_radius,0.029,0.0005,m,
+throat_radius,0.020,0.0005,m,
+nozzle_position,0,0.0001,m,
+grain_number,6,0,-,
+grain_separation,0.003,0.00001,m,
+grain_density,1876.3,5,kg/m^3,corretta sulla differenza di massa con OpenRocket
+grain_outer_radius,0.0359,0.0001,m,
+grain_initial_inner_radius,0.0181,0.0001,m,
+grain_initial_height,0.15617,0.0001,m,
+grains_center_of_mass_position,0.5125,0.01,m,
+motor_dry_mass,0.0001,0.0001,kg,
+motor_dry_mass_position,0,0.001,m,
+motor_inertia_11,0,0,kg*m^2,
+motor_inertia_33,0,0,kg*m^2,

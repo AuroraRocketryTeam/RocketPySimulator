@@ -1,0 +1,6 @@
+# Airbrake v1.0 - CD in funzione di apertura e Mach in cd_mach.csv
+name,value,std,unit,note
+reference_area,0.0125,0,m^2,superficie a cui si applica il CD degli airbrake
+deployment_level,0.7,0,-,apertura (0-1) dopo il burnout sopra deployment_altitude
+deployment_altitude,1500,0,m,sul livello del mare (circa 1340 m AGL a Santa Margarida)
+airbrake_sampling_rate,10,0,Hz,frequenza del controller
