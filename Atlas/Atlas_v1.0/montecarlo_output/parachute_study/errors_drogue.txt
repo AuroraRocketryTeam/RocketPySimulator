@@ -1,0 +1,9 @@
+La mappa monospecie è simulata a cinque pressioni ambiente fisse. Per confrontarla con la bispecie, simulata direttamente lungo la traiettoria, sono stati ricostruiti i valori monospecie agli NPR della bispecie nel transonico (14.44, 19.29, 21.94 e 25.42), così che anche la curva monospecie avesse nove punti. A ogni Mach della mappa i valori simulati sono stati interpolati in funzione della pressione ambiente con un polinomio cubico di Hermite monotono (PCHIP) e valutati a $p^* = p_c/\text{NPR}^*$. Si interpola in pressione perché la spinta di un ugello vale
+
+$$F = \dot m\, v_e + (p_e - p_a)\,A_e$$
+
+e per un aerospike è quasi lineare nella pressione ambiente $p_a$, con pendenza $-A_e$. Sostituendo $p_a = p_c/\text{NPR}$ si ottiene invece
+
+$$F = \left(\dot m\, v_e + p_e A_e\right) - \frac{p_c\, A_e}{\text{NPR}}$$
+
+cioè un andamento iperbolico in NPR, ripido agli NPR bassi e quasi piatto a quelli alti, che un'interpolazione approssima male quando i nodi sono distanti.

@@ -1,0 +1,335 @@
+% Atlas v1.2 - analisi di missione al variare della massa (salita e recupero)
+% Tabelle e numeri nel testo sono generati da parachute_study_plots.py in generated/:
+% dopo una nuova campagna basta rilanciare parachute_study.py --analyze-only e ricompilare.
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[italian]{babel}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{placeins}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro\UrlBreaks{\do\_\do\.}\makeatother
+
+% Floats: up to two figures per page, fewer pages with a single figure
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
+
+\sisetup{
+  output-decimal-marker={,},
+  group-separator={\,},
+  group-minimum-digits=4,
+  per-mode=symbol,
+  uncertainty-mode=separate,
+}
+\definecolor{ok}{HTML}{006300}
+\definecolor{ko}{HTML}{C62828}
+\captionsetup{font=small}
+\graphicspath{{../plots/pdf/}}
+
+% Numeri generati dai risultati: \val{metrica}{massa}{stat}, \valD{metrica}{massa}{T}{stat} (drogue),
+% \valM{metrica}{massa}{T}{stat} (main), \valMP{metrica}{massa}{stat} (main, tutti i T).
+% Argomento opzionale = cifre decimali. stat: mean, std, p01, p99, min, max.
+\input{generated/numbers.tex}
+\newcommand{\valfmt}[2]{%
+  \ifcsname #2\endcsname
+    \edef\valtmp{\csname #2\endcsname}\num[round-mode=places,round-precision=#1]{\valtmp}%
+  \else
+    \PackageError{report}{Valore mancante: #2}{Rigenerare generated/numbers.tex}%
+  \fi}
+\newcommand{\val}[4][0]{\valfmt{#1}{val@#2@#3@#4}}
+\newcommand{\valD}[5][0]{\valfmt{#1}{valD@#2@#3@#4@#5}}
+\newcommand{\valM}[5][0]{\valfmt{#1}{valM@#2@#3@#4@#5}}
+\newcommand{\valMP}[4][0]{\valfmt{#1}{valMP@#2@#3@#4}}
+
+\newcommand{\figura}[2]{%
+  \begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth,height=0.36\textheight,keepaspectratio]{#1}
+    \caption{#2}
+    \label{fig:#1}
+  \end{figure}}
+
+\title{\textbf{Atlas v1.2}\\[2pt] \large Analisi di missione al variare della massa:\\ prestazioni in salita e recupero}
+\author{Aurora Rocketry Team -- Mission Analysis}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Scopo}
+Il documento riporta un'analisi Monte Carlo del volo di Atlas, condotta con RocketPy, su cinque valori di
+massa a secco attorno a quello che al momento è il valore ideale di \SI{25}{kg}:
+\SIlist{20;22.5;25;27.5;30}{kg}. Per ogni massa sono state valutate le prestazioni in salita e il comportamento
+del sistema di recupero (drogue e main) al variare del ritardo di apertura dei paracadute.
+
+Con massa a secco si intende tutto ciò che non brucia. La massa al decollo si ottiene aggiungendo la massa espulsa dal motore,
+\PropellantMass~kg (\autoref{sec:motore}).
+
+I risultati sono riportati come media.
+
+%-----------------------------------------------------------------------------------------------------------
+\section{Dati e ipotesi}
+
+\subsection{Motore}\label{sec:motore}
+Il motore è un Cesaroni Pro75 9977M2245-P (propellente Imax, case Pro75-6GXL). I 6 grain sono modellati con densità \SI{1876.3}{kg/m^3}, scelta in modo che la loro
+massa coincida con la massa persa dal motore in volo.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Dati del motore}
+  \label{tab:motore}
+  \begin{tabular}{lcl}
+    \toprule
+    Proprietà & Valore & Unità di misura \\
+    \midrule
+    Impulso totale & \num{9976.7} & \si{N.s} \\
+    Tempo di combustione & \num{4.29} & \si{s} \\
+    Spinta media & \num{2326} & \si{N} \\
+    Spinta massima & \num{3357} & \si{N} \\
+    Impulso specifico & \num{200.5} & \si{s} \\
+    Diametro & \num{75} & \si{mm} \\
+    Lunghezza & \num{1025} & \si{mm} \\
+    Massa carico & \num{8182} & \si{g} \\
+    Massa del propellente & \num{5074} & \si{g} \\
+    Massa a burnout & \num{2873} & \si{g} \\
+    Massa espulsa in volo (carico $-$ burnout) & \num{5309} & \si{g} \\
+    Densità dei grain & \num{1876.3} & \si{kg/m^3} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+\newpage
+\subsection{Modello del razzo}
+La geometria è quella del modello OpenRocket Atlas v1.2
+, \path{openrocket_model/v1.2/Atlas_v_1.2_pro75_wedge.ork}
+
+Le curve $C_D$--Mach usate sono le ricavate da RASAero, file
+\path{CD_45_square}.
+
+\subsection{Atmosfera e rampa}
+Il lancio è simulato a Santa Margarida con un'atmosfera
+custom: i profili medi di pressione, temperatura e vento ottenuti dalle analisi Copernicus per la
+settimana di EuRoC (10--15 ottobre) dal 2005 al 2024, ore 09--18 locali, elaborati con l'analisi ambientale di
+RocketPy, \path{simulation_inputs/environment_data/mean_environment_values.json}.
+
+La rampa è lunga \SI{12}{m}, inclinata di \SI{84}{\degree} in direzione \SI{145}{\degree}.
+
+\subsection{Recupero}
+Entrambi i paracadute sono Rocketman Standard, con $C_D = \num{0.97}$ dichiarato dal costruttore:
+\begin{itemize}
+  \item \textbf{drogue} da \SI{3}{ft}: $C_D S = \SI{0.637}{m^2}$; 4 funi da \SI{250}{lb}, capacità complessiva
+        circa \DrogueLinesCapacity~N;
+  \item \textbf{main} da \SI{14}{ft}: $C_D S = \SI{13.87}{m^2}$; 4 funi da \SI{550}{lb}, capacità complessiva
+        circa \MainLinesCapacity~N.
+\end{itemize}
+
+\subsection{Monte Carlo}
+Ogni combinazione di massa e ritardo è simulata \NSims{} volte, disperdendo i parametri principali secondo
+distribuzioni normali (\autoref{tab:dispersioni}); le quote geometriche hanno tolleranze
+dell'ordine del millimetro.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Principali parametri dispersi (distribuzioni normali).}
+  \label{tab:dispersioni}
+  \begin{tabular}{lcc}
+    \toprule
+    Parametro & Media & Deviazione standard \\
+    \midrule
+    Massa a secco & caso analizzato & \SI{0.3}{kg} \\
+    Impulso totale & \SI{9977}{N.s} & \SI{5}{N.s} \\
+    Tempo di combustione & \SI{4.3}{s} & \SI{0.1}{s} \\
+    Inclinazione della rampa & \SI{84}{\degree} & \SI{0.5}{\degree} \\
+    Direzione della rampa & \SI{145}{\degree} & \SI{1}{\degree} \\
+    $C_D S$ drogue e main & valori nominali & \SI{5}{\percent} \\
+    Rumore del barometro & \SI{0}{Pa} & \SI{6.5}{Pa} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\FloatBarrier
+%-----------------------------------------------------------------------------------------------------------
+\section{Salita}
+La salita non dipende dal sistema di recupero: i risultati di questa sezione raccolgono tutte le simulazioni di
+ogni massa. Le figure \ref{fig:01_ascent_acceleration}--\ref{fig:05_ascent_apogee} e la
+\autoref{tab:salita} riportano accelerazione, velocità e apogeo.
+
+La velocità massima si raggiunge a fine combustione:
+a \SI{25}{kg} vale \val{max_speed}{25}{mean}~m/s (Mach \val[2]{max_mach}{25}{mean}), mentre nel caso più
+leggero da \SI{20}{kg} arriva a Mach \val[2]{max_mach}{20}{mean}.
+\newpage
+\figura{01_ascent_acceleration}{Accelerazione in salita}
+\figura{02_ascent_max_velocity}{Velocità massima, raggiunta a fine combustione}
+\newpage
+\figura{03_ascent_max_mach}{Numero di Mach}
+\figura{04_ascent_rail_velocity}{Velocità di uscita dalla rampa}
+\newpage
+\figura{05_ascent_apogee}{Apogeo}
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.4}
+  \caption{Salita: media e intervallo P1--P99}
+  \label{tab:salita}
+  \begin{adjustbox}{max width=\textwidth}
+    \input{generated/tab_ascent.tex}
+  \end{adjustbox}
+\end{table}
+
+\FloatBarrier
+\newpage
+\section{Recupero}
+Per ogni massa sono state simulate le aperture dei paracadute con ritardi variabili tra la rilevazione
+dell'evento e la piena apertura (\emph{fully inflation}): l'apogeo per il drogue, il passaggio a
+\SI{450}{m} AGL per il main. Il ritardo comprende elaborazione del software, attivazione dell'espulsione e
+gonfiaggio del paracadute. I valori coprono casi molto ottimistici (\SI{3}{s} per il drogue, \SI{0.75}{s} per il
+main) e casi decisamente peggiorativi (\SI{11}{s} e \SI{3.75}{s}):
+\begin{itemize}
+  \item \textbf{drogue}: $T = \SIlist{3;5;7;9;11}{s}$ dall'apogeo.
+  \item \textbf{main}: $T = \SIlist{0.75;1.5;2.25;3;3.75}{s}$ dal passaggio a \SI{450}{m}, con il drogue
+        aperto \MainFixedDrogueDelay~s dopo l'apogeo. A \SI{450}{m} il razzo scende già a velocità costante
+        sotto l'effetto del drogue, quindi il ritardo del drogue non influisce sul main.
+\end{itemize}
+In totale sono stati simulati \NFlightsDrogue{} voli per il drogue e \NFlightsMain{} per il main.
+
+\paragraph{Forza di apertura.} RocketPy porta il $C_D S$ del paracadute dal valore nullo a quello pieno in un
+istante, alla fine del ritardo, e da lì integra il moto del razzo sotto paracadute. La forza di apertura
+riportata è la resistenza della calotta in quell'istante,
+\begin{equation*}
+  F = \tfrac{1}{2}\,\rho\,C_D S\,v^2,
+\end{equation*}
+con densità $\rho$ e velocità relativa all'aria $v$ del razzo al momento della piena apertura.
+
+\paragraph{Velocità di discesa a regime.} Dopo il transitorio di apertura il razzo scende alla velocità
+terminale $v_t = \sqrt{2mg/(\rho\, C_D S)}$, che cresce con la quota perché l'aria è meno densa. La velocità
+massima a regime è $v_t$ alla quota in cui finisce il transitorio; la minima si ha alla quota più bassa del
+tratto (\SI{450}{m} per il drogue, il suolo per il main).
+\newpage
+\subsection{Drogue}
+La velocità di discesa a regime (\autoref{fig:06_drogue_descent_velocity}, \autoref{tab:drogue_discesa})
+diminuisce leggermente all'aumentare del ritardo: più tardi si apre il drogue, più in basso finisce il
+transitorio, dove l'aria è più densa. La
+velocità a \SI{450}{m}, la più bassa di tutto il tratto sotto drogue, non dipende dal ritardo.
+
+La forza di apertura (\autoref{fig:07_drogue_opening_force}, \autoref{tab:drogue_forza}) dipende soprattutto dal
+ritardo, perché il razzo accelera in caduta prima che il drogue si apra, invece la massa ha un effetto minore.
+
+\figura{06_drogue_descent_velocity}{Drogue: velocità di discesa a regime al variare del ritardo $T$ tra apogeo e
+piena apertura, e velocità a \SI{450}{m} AGL con banda P1--P99}
+\figura{07_drogue_opening_force}{Drogue: forza di apertura al variare del ritardo $T$ tra apogeo e piena
+apertura.}
+\newpage
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.4}
+  \caption{Drogue: velocità di discesa a regime media [m/s] per ogni ritardo $T$. Velocità a \SI{450}{m} media e P1--P99}
+  \label{tab:drogue_discesa}
+  \begin{adjustbox}{max width=\textwidth}
+    \input{generated/tab_drogue_descent.tex}
+  \end{adjustbox}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.4}
+  \caption{Drogue: forza di apertura media [N] e P99.}
+  \label{tab:drogue_forza}
+  \begin{adjustbox}{max width=\textwidth}
+    \input{generated/tab_drogue_force.tex}
+  \end{adjustbox}
+\end{table}
+
+\newpage
+\FloatBarrier
+\subsection{Main}
+Quando il main si apre, il razzo sta scendendo già a velocità costante sotto il drogue. La velocità di discesa a regime
+(\autoref{fig:08_main_descent_velocity}) dipende dal ritardo di apertura del main, come per il drogue, ma la
+differenza è minima (a \SI{25}{kg} da \valM[2]{main_terminal_after_transient}{25}{0.75}{mean} a
+\valM[2]{main_terminal_after_transient}{25}{3.75}{mean}~m/s) e nel grafico non si apprezza. La forza di apertura
+(\autoref{fig:09_main_opening_force}) invece non dipende dal ritardo: più in basso l'aria è più densa, ma il drogue
+ha rallentato di più il razzo e i due effetti si compensano, perché
+$\tfrac{1}{2}\rho v^2 C_D S_\text{main} = (C_D S_\text{main}/C_D S_\text{drogue})\,mg$ a qualsiasi quota.
+
+La velocità di discesa a regime va da \valMP[1]{main_terminal_after_transient}{20}{mean} a
+\valMP[1]{main_terminal_after_transient}{30}{mean}~m/s tra 20 e \SI{30}{kg}, sempre sotto il limite EuRoC di
+\SI{9}{m/s}. La forza di apertura media cresce con la massa da \valMP{main_force}{20}{mean} a
+\valMP{main_force}{30}{mean}~N; a \SI{30}{kg} il P99 è \valMP{main_force}{30}{p99}~N.
+
+Il ritardo cambia invece la quota a cui il main è completamente aperto (\autoref{fig:10_main_inflation_altitude},
+\autoref{tab:main_quota}): circa \MainAltitudeSlope~m in meno per ogni secondo.
+
+\figura{08_main_descent_velocity}{Main: velocità di discesa a regime al variare del ritardo $T$ tra il passaggio
+a \SI{450}{m} AGL e la piena apertura, e velocità all'impatto}
+\newpage
+\figura{09_main_opening_force}{Main: forza di apertura al variare del ritardo $T$; la banda grigia è la
+dispersione P1--P99 di tutti i ritardi insieme.}
+\figura{10_main_inflation_altitude}{Main: quota di piena apertura al variare del ritardo $T$.}
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.4}
+  \caption{Main: velocità di discesa a regime media [m/s] per ogni ritardo $T$. Velocità all'impatto media e
+  P1--P99}
+  \label{tab:main_discesa}
+  \begin{adjustbox}{max width=\textwidth}
+    \input{generated/tab_main_descent.tex}
+  \end{adjustbox}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.4}
+  \caption{Main: forza di apertura media [N] e P99.}
+  \label{tab:main_forza}
+  \begin{adjustbox}{max width=\textwidth}
+    \input{generated/tab_main_force.tex}
+  \end{adjustbox}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.4}
+  \caption{Main: quota di piena apertura AGL media [m] e P1--P99.}
+  \label{tab:main_quota}
+  \begin{adjustbox}{max width=\textwidth}
+    \input{generated/tab_main_altitude.tex}
+  \end{adjustbox}
+\end{table}
+
+\FloatBarrier
+%-----------------------------------------------------------------------------------------------------------
+\section{Requisiti EuRoC}
+\autoref{tab:euroc} confronta le velocità di discesa con i requisiti EuRoC, considerando il caso peggiore su
+tutti i ritardi simulati:
+\begin{itemize}
+  \item \textbf{RQT-0360}: dopo l'apertura del drogue la velocità di discesa deve restare tra 23 e \SI{46}{m/s};
+  \item \textbf{RQT-0380}: dopo l'apertura del main la velocità di discesa deve essere inferiore a \SI{9}{m/s}.
+\end{itemize}
+Tutte le masse rispettano RQT-0380 con ampio margine. RQT-0360 è rispettato da \SI{22.5}{kg} in su; a
+\SI{20}{kg} il drogue da \SI{3}{ft} è al limite inferiore a bassa quota.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Verifica dei requisiti EuRoC di velocità di discesa (caso peggiore su tutti i ritardi).}
+  \label{tab:euroc}
+  \begin{adjustbox}{max width=\textwidth}
+    \input{generated/tab_euroc.tex}
+  \end{adjustbox}
+\end{table}
+
+%-----------------------------------------------------------------------------------------------------------
+
+%-----------------------------------------------------------------------------------------------------------
+
+\end{document}
