@@ -3,7 +3,7 @@
 Simulazioni di volo del team Aurora Rocketry con [RocketPy](https://github.com/RocketPy-Team/RocketPy).
 
 ## Cartelle
-- `Atlas/`: razzo per EuRoC. `Atlas_v1.0/` contiene Monte Carlo, reanalysis, studio paracadute e dati di input; `Airbrake/` lo studio degli airbrake.
+- `Atlas/`: razzo per EuRoC. Monte Carlo, reanalysis e studio paracadute usano tutti `atlas_model.py`, con i dati versionati in `simulation_inputs/` (vedi `Atlas/README.md`); `Airbrake/` è il vecchio studio degli airbrake.
 - `FRED/`: prototipo per i test flight dell'avionica.
 - `Nemesis/`: razzo già lanciato, progetto chiuso.
 - `RealTimeSimulation/`: reanalysis sulla telemetria di volo, in sviluppo.

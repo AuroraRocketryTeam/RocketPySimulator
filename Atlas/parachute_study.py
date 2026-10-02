@@ -1,8 +1,8 @@
 """
 Atlas parachute study: dry mass x drogue opening delay.
 
-Monte Carlo sweep of the Atlas flight (same model as Atlas_v1.0.py) over the rocket dry mass
-(everything that does not burn, motor hardware included) and, depending on the campaign:
+Monte Carlo sweep of the Atlas flight (atlas_model.py) over the rocket dry mass (everything that
+does not burn, motor hardware included) and, depending on the campaign:
 - drogue: time between apogee and drogue full inflation (main delay dispersed around 4 s)
 - main: time between the 450 m AGL crossing and main full inflation (drogue delay fixed)
 
@@ -11,9 +11,9 @@ RocketPy parachute model and the descent velocities, then writes runs_<campaign>
 tables and plots into montecarlo_output/parachute_study/.
 
 Usage (from the repo root, no GUI needed):
-    MPLBACKEND=Agg .venv/bin/python Atlas/Atlas_v1.0/parachute_study.py --campaign drogue --n-sims 100
-    MPLBACKEND=Agg .venv/bin/python Atlas/Atlas_v1.0/parachute_study.py --campaign main --n-sims 100
-    MPLBACKEND=Agg .venv/bin/python Atlas/Atlas_v1.0/parachute_study.py --analyze-only
+    MPLBACKEND=Agg .venv/bin/python Atlas/parachute_study.py --campaign drogue --n-sims 100
+    MPLBACKEND=Agg .venv/bin/python Atlas/parachute_study.py --campaign main --n-sims 100
+    MPLBACKEND=Agg .venv/bin/python Atlas/parachute_study.py --analyze-only
 """
 
 import argparse
@@ -27,32 +27,21 @@ from pathlib import Path
 
 import numpy as np
 
+import atlas_model as model
+
 BASE_DIR = Path(__file__).resolve().parent
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
-# Launch site and date (same as Atlas_v1.0.py)
-LATITUDE = 39.389700
-LONGITUDE = -8.288964
-ELEVATION = 160.0
-DATE_OF_LAUNCH = (2024, 10, 11, 12)          # (Year, Month, Day, Hour UTC)
-
-# Drag curves (same case as Atlas_v1.0.py)
-DRAG_CASE = "CD_Test_45_square"
+# Rocket, motor, recovery and launch site come from atlas_model.py; this study changes only what follows.
+PARAMETERS = model.load_parameters()
+NOMINAL = model.nominal(PARAMETERS)
 
 # Cesaroni Pro75 9977M2245-P: loaded 8182 g, burnout 2873 g -> 5309 g expelled.
-# The grains defined below weigh exactly this much, and the motor dry mass is ~0,
+# The grains of the motor file weigh exactly this much, and the motor dry mass is ~0,
 # so rocket_dry_mass is everything that does not burn (motor hardware included).
 PROPELLANT_MASS = 5.309
 
-# Reference dry mass and inertias of Atlas_v1.0.py, used to scale inertias with mass
-REFERENCE_DRY_MASS = 26.470
-REFERENCE_INERTIA_11 = (16.305, 0.187)
-REFERENCE_INERTIA_33 = (0.087, 0.00122)
-
-# Recovery logic
-SAMPLING_RATE = 105             # Hz, recovery algorithm sampling rate
-APOGEE_THRESHOLD = 0.1          # s of continuous descent before apogee is acknowledged
-MAIN_DEPLOY_ALTITUDE = 450.0    # m AGL
+MAIN_DEPLOY_ALTITUDE = NOMINAL["main_altitude"]     # m AGL
 
 # Rocketman standard chutes: 4 shroud lines, 1/4" 250 lb (3 ft) and 3/8" 550 lb (8-16 ft)
 LBF = 4.44822
@@ -66,70 +55,17 @@ EUROC_MAIN_MAX = 9.0
 # A descent is "steady" once the relative speed is within this fraction of the local terminal velocity
 STEADY_TOLERANCE = 0.01
 
-CD_S_DROGUE = 0.97 * 0.6567     # rocketman 3ft
-CD_S_MAIN = 0.97 * 14.3013      # rocketman 14ft
-
-analysis_parameters = {
-    # === Mass Details === (rocket_dry_mass mean and inertias are overridden per case)
-    "rocket_dry_mass": (REFERENCE_DRY_MASS, 0.3),
-    "motor_dry_mass": (0.0001, 0.0001),
-    "motor_inertia_11": (0, 0),
-    "motor_inertia_33": (0.0, 0.0),
-    "motor_dry_mass_position": (0.0, 0.001),
-
-    # === Propulsion Details ===
-    "impulse": (9977, 5),
-    "burn_time": (4.3, 0.1),
-    "nozzle_radius": (29 / 1000, 0.5 / 1000),
-    "throat_radius": (20 / 1000, 0.5 / 1000),
-    "grain_separation": (3 / 1000, 0.01 / 1000),
-    "grain_density": (1876.3, 5),
-    "grain_outer_radius": (35.9 / 1000, 0.0001),
-    "grain_initial_inner_radius": (18.10 / 1000, 0.0001),
-    "grain_initial_height": (156.17 / 1000, 0.0001),
-
-    # === Aerodynamic Details ===
-    "radius": (75 / 1000, 0.001),
-    "nozzle_position": (0, 0.0001),
-    "grains_center_of_mass_position": (0.5125, 0.01),
-    "power_off_drag_corr": (1.0, 0.001),
-    "power_on_drag_corr": (1.0, 0.001),
-    "nose_length": (0.60, 0.001),
-    "tail_position": (2.990, 0.001),
-    "nose_position": (0, 0),
-    "fin_span": (0.145, 0.0005),
-    "fin_root_chord": (0.20, 0.0005),
-    "fin_tip_chord": (0.10, 0.0005),
-    "fin_position": (2.99, 0.005),
-    "fin_sweep_angle": (45.1, 0.005),
-    "tail_length": (0.326, 0.001),
-    "tail_bottom_radius": (0.045, 0.001),
-    "tail_top_radius": (0.075, 0.001),
-
-    # === Launch Details ===
-    "inclination": (84, 0.5),
-    "heading": (145, 1),
-    "rail_length": (12, 0.005),
-
-    # === Parachute Details === (5% uncertainty on the manufacturer Cd = 0.97)
-    "cd_s_drogue": (CD_S_DROGUE, 0.05 * CD_S_DROGUE),
-    "cd_s_main": (CD_S_MAIN, 0.05 * CD_S_MAIN),
+# Parameters that differ from the model in this study
+STUDY_PARAMETERS = {
+    # 5% uncertainty on the manufacturer Cd = 0.97
+    "cd_s_drogue": (NOMINAL["cd_s_drogue"], 0.05 * NOMINAL["cd_s_drogue"]),
+    "cd_s_main": (NOMINAL["cd_s_main"], 0.05 * NOMINAL["cd_s_main"]),
     # Software decision -> electric ejection impulse (s)
     "t_sw_drogue": (1.0, 0.15),
     "t_sw_main": (1.0, 0.15),
     # Electric ejection impulse -> parachute fully inflated (s)
     "t_infl_drogue": (3.0, 0.5),
     "t_infl_main": (3.0, 0.5),
-
-    # === Rail buttons Details ===
-    "upper_button_y": (0.57, 0.005),
-    "lower_button_y": (2.14, 0.005),
-    "angular_button": (0, 0.01),
-
-    # === Barometer noise ===
-    "noise_mean": (0, 0.001),
-    "noise_p_stdev": (6.5, 0.01),
-    "noise_p_tc": (0.3, 0.01),
 }
 
 DEFAULT_MASSES = "20,22.5,25,27.5,30"
@@ -145,160 +81,21 @@ DEFAULT_OUTPUT = BASE_DIR / "montecarlo_output" / "parachute_study"
 
 #-------------------------------------------------------------------------------------------------------- SAMPLING
 def sample_setting(rng, dry_mass):
-    """Draw one flight setting, with the rocket dry mass centred on dry_mass."""
-    parameters = dict(analysis_parameters)
-    mass_ratio = dry_mass / REFERENCE_DRY_MASS
-    parameters["rocket_dry_mass"] = (dry_mass, analysis_parameters["rocket_dry_mass"][1])
-    parameters["rocket_dry_inertia_11"] = tuple(v * mass_ratio for v in REFERENCE_INERTIA_11)
-    parameters["rocket_dry_inertia_33"] = tuple(v * mass_ratio for v in REFERENCE_INERTIA_33)
+    """Draw one flight setting, with the rocket dry mass centred on dry_mass and inertias scaled with it."""
+    parameters = {**PARAMETERS, **STUDY_PARAMETERS}
+    mass_ratio = dry_mass / PARAMETERS["rocket_dry_mass"][0]
+    parameters["rocket_dry_mass"] = (dry_mass, PARAMETERS["rocket_dry_mass"][1])
+    for key in ("rocket_dry_inertia_11", "rocket_dry_inertia_33"):
+        parameters[key] = tuple(v * mass_ratio for v in PARAMETERS[key])
 
     while True:
-        setting = {key: rng.normal(*value) for key, value in parameters.items()}
+        setting = model.sample(parameters, rng)
         # Skip unrealistic draws from the tails of the normal curves
         if min(setting["t_sw_drogue"], setting["t_sw_main"]) <= 0:
             continue
         if min(setting["t_infl_drogue"], setting["t_infl_main"]) < 1.5:
             continue
         return setting
-#--------------------------------------------------------------------------------------------------------
-
-
-
-
-
-#-------------------------------------------------------------------------------------------------------- RECOVERY LOGIC
-class RecoveryLogic:
-    """Python representation of the on-board C code (same algorithm as Atlas_v1.0.py).
-
-    Drogue: apogee acknowledged after APOGEE_THRESHOLD s of continuous negative vertical velocity.
-    Main: apogee acknowledged and barometric altitude <= MAIN_DEPLOY_ALTITUDE.
-    """
-
-    def __init__(self):
-        self.last_negative_time = None
-        self.apogee_detected = False
-        # Advances of 1/SAMPLING_RATE at every call, as a measure of in-flight time
-        self.stopwatch = 0.0
-
-    def check_apogee(self, vertical_velocity, current_time):
-        if self.apogee_detected:
-            return True
-        if vertical_velocity < 0:
-            if self.last_negative_time is None:
-                self.last_negative_time = current_time
-                return False
-            return (current_time - self.last_negative_time) >= APOGEE_THRESHOLD
-        self.last_negative_time = None
-        return False
-
-    def drogue_trigger(self, p, h, y):
-        self.stopwatch += 1 / SAMPLING_RATE
-        self.apogee_detected = self.check_apogee(y[5], self.stopwatch)
-        return self.apogee_detected
-
-    def main_trigger(self, p, h, y):
-        return self.apogee_detected and h <= MAIN_DEPLOY_ALTITUDE
-#--------------------------------------------------------------------------------------------------------
-
-
-
-
-
-#-------------------------------------------------------------------------------------------------------- MODEL
-def build_environment(weather_data):
-    from rocketpy import Environment
-
-    env = Environment(
-        date=DATE_OF_LAUNCH,
-        latitude=LATITUDE,
-        longitude=LONGITUDE,
-        elevation=ELEVATION,
-        max_expected_height=5000,
-    )
-    if weather_data == "c":
-        # Mean EuRoC-week atmosphere at Santa Margarida (2005-2024), see Atlas_v1.0.py
-        with open(BASE_DIR / "simulation_inputs/environment_data/mean_environment_values.json") as f:
-            data = json.load(f)
-        hour = str(env.date[3])
-        env.set_atmospheric_model(
-            type="custom_atmosphere",
-            pressure=data["atmospheric_model_pressure_profile"][hour],
-            temperature=data["atmospheric_model_temperature_profile"][hour],
-            wind_u=data["atmospheric_model_wind_velocity_x_profile"][hour],
-            wind_v=data["atmospheric_model_wind_velocity_y_profile"][hour],
-        )
-    return env
-
-
-def build_atlas(setting, drogue_lag, main_lag, logic):
-    """Atlas as defined in Atlas_v1.0.py, with the recovery lags given explicitly."""
-    from rocketpy import Rocket, SolidMotor
-
-    motor = SolidMotor(
-        thrust_source=str(BASE_DIR / "simulation_inputs/propulsion_data/Cesaroni_9977_M2245.csv"),
-        burn_time=setting["burn_time"],
-        reshape_thrust_curve=(setting["burn_time"], setting["impulse"]),
-        interpolation_method="linear",
-        nozzle_radius=setting["nozzle_radius"],
-        throat_radius=setting["throat_radius"],
-        grain_number=6,
-        grain_separation=setting["grain_separation"],
-        grain_density=setting["grain_density"],
-        grain_outer_radius=setting["grain_outer_radius"],
-        grain_initial_inner_radius=setting["grain_initial_inner_radius"],
-        grain_initial_height=setting["grain_initial_height"],
-        nozzle_position=setting["nozzle_position"],
-        grains_center_of_mass_position=setting["grains_center_of_mass_position"],
-        dry_mass=setting["motor_dry_mass"],
-        dry_inertia=(setting["motor_inertia_11"], setting["motor_inertia_11"], setting["motor_inertia_33"]),
-        center_of_dry_mass_position=setting["motor_dry_mass_position"],
-        coordinate_system_orientation="nozzle_to_combustion_chamber",
-    )
-
-    drag_dir = BASE_DIR / "simulation_inputs/aerodynamic_data/v1.2_wedge"
-    atlas = Rocket(
-        radius=setting["radius"],
-        mass=setting["rocket_dry_mass"],
-        inertia=(setting["rocket_dry_inertia_11"], setting["rocket_dry_inertia_11"], setting["rocket_dry_inertia_33"]),
-        power_off_drag=str(drag_dir / f"{DRAG_CASE}_power_off.csv"),
-        power_on_drag=str(drag_dir / f"{DRAG_CASE}_power_on.csv"),
-        center_of_mass_without_motor=1.84789,
-        coordinate_system_orientation="nose_to_tail",
-    )
-    atlas.set_rail_buttons(
-        upper_button_position=setting["upper_button_y"],
-        lower_button_position=setting["lower_button_y"],
-        angular_position=setting["angular_button"],
-    )
-    atlas.add_motor(motor, position=3.32)
-    atlas.power_off_drag *= setting["power_off_drag_corr"]
-    atlas.power_on_drag *= setting["power_on_drag_corr"]
-    atlas.add_nose(length=setting["nose_length"], kind="lvhaack", position=setting["nose_position"])
-    atlas.add_trapezoidal_fins(
-        n=3,
-        span=setting["fin_span"],
-        root_chord=setting["fin_root_chord"],
-        tip_chord=setting["fin_tip_chord"],
-        position=setting["fin_position"],
-        sweep_angle=setting["fin_sweep_angle"],
-        cant_angle=0,
-    )
-    atlas.add_tail(
-        top_radius=setting["tail_top_radius"],
-        bottom_radius=setting["tail_bottom_radius"],
-        length=setting["tail_length"],
-        position=setting["tail_position"],
-    )
-    noise = (setting["noise_mean"], setting["noise_p_stdev"], setting["noise_p_tc"])
-    atlas.add_parachute(
-        "Drogue", cd_s=setting["cd_s_drogue"], trigger=logic.drogue_trigger,
-        sampling_rate=SAMPLING_RATE, lag=drogue_lag, noise=noise,
-    )
-    atlas.add_parachute(
-        "Main", cd_s=setting["cd_s_main"], trigger=logic.main_trigger,
-        sampling_rate=SAMPLING_RATE, lag=main_lag, noise=noise,
-    )
-    return atlas
 #--------------------------------------------------------------------------------------------------------
 
 
@@ -454,17 +251,15 @@ _ENV = None
 
 def init_worker(weather_data):
     global _ENV
-    _ENV = build_environment(weather_data)
+    _ENV = model.build_environment(weather_data)
 
 
 def run_one(task):
-    from rocketpy import Flight
-
     start = time.process_time()
     rng = np.random.default_rng(task["seed"])
     setting = sample_setting(rng, task["dry_mass"])
 
-    # Full inflation T seconds after apogee: the detection algorithm already adds APOGEE_THRESHOLD
+    # Full inflation T seconds after apogee: the detection algorithm already adds apogee_threshold
     if task["campaign"] == "main":
         drogue_case = f"{task['drogue_delay']:g}"
         # The barometric trigger fires when crossing 450 m AGL: the lag is the whole crossing -> inflation time
@@ -472,7 +267,7 @@ def run_one(task):
     else:
         drogue_case = task["case"]
         main_lag = setting["t_sw_main"] + setting["t_infl_main"]
-    drogue_lag = float(drogue_case) - APOGEE_THRESHOLD
+    drogue_lag = float(drogue_case) - setting["apogee_threshold"]
 
     info = {
         "dry_mass_case": task["dry_mass"],
@@ -488,16 +283,7 @@ def run_one(task):
         "cd_s_main": setting["cd_s_main"],
     }
     try:
-        logic = RecoveryLogic()
-        atlas = build_atlas(setting, drogue_lag, main_lag, logic)
-        flight = Flight(
-            rocket=atlas,
-            environment=_ENV,
-            rail_length=setting["rail_length"],
-            inclination=setting["inclination"],
-            heading=setting["heading"],
-            max_time=1200,
-        )
+        flight = model.simulate(setting, _ENV, drogue_lag=drogue_lag, main_lag=main_lag)
         row, profile = analyze_flight(flight, _ENV, drogue_lag, main_lag)
         info["wet_mass"] = flight.rocket.total_mass(0)
         info.update(row)
@@ -531,8 +317,10 @@ def run_study(args, output_dir):
         json.dump({
             "campaign": campaign, "masses": masses, "delay_cases": cases, "n_sims": args.n_sims, "seed": args.seed,
             "fixed_drogue_delay": args.drogue_delay if campaign == "main" else None,
-            "weather_data": args.weather, "drag_case": DRAG_CASE, "propellant_mass": PROPELLANT_MASS,
-            "analysis_parameters": analysis_parameters,
+            "weather_data": args.weather, "propellant_mass": PROPELLANT_MASS,
+            "versions": {"geometry": model.GEOMETRY, "aerodynamics": model.AERODYNAMICS, "motor": model.MOTOR,
+                         "recovery": model.RECOVERY, "launch_site": model.LAUNCH_SITE},
+            "parameters": {**PARAMETERS, **STUDY_PARAMETERS},
         }, f, indent=2)
 
     print(f"Atlas parachute study ({campaign}): {len(masses)} masses x {len(cases)} delay cases x {args.n_sims} runs "
@@ -586,13 +374,13 @@ def add_terminal_columns(output_dir, weather_data):
     df = pd.read_csv(path, dtype={"delay_case": str, "main_delay_case": str})
     if "drogue_terminal_at_main_trigger" in df.columns and df["drogue_terminal_after_transient"].notna().all():
         return
-    env = build_environment(weather_data)
+    env = model.build_environment(weather_data)
 
     def terminal(altitude_agl, mass, cd_s):
         z = altitude_agl + env.elevation
         return np.sqrt(2 * mass * env.gravity.get_value_opt(z) / (env.density.get_value_opt(z) * cd_s))
 
-    mass = df.rocket_dry_mass + analysis_parameters["motor_dry_mass"][0]
+    mass = df.rocket_dry_mass + NOMINAL["motor_dry_mass"]
     df["drogue_terminal_after_transient"] = [
         terminal(h, m, c) for h, m, c in zip(df.drogue_steady_altitude, mass, df.cd_s_drogue)]
     df["drogue_terminal_at_main_trigger"] = [

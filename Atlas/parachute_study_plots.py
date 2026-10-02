@@ -386,7 +386,7 @@ def make_summary(drogue, main, output_dir):
         "",
         f"- Campagna drogue: {len(drogue)} voli, {drogue_config['n_sims']} per ogni coppia (massa, T drogue)",
         f"- Atmosfera: `{drogue_config['weather_data']}` (c = media EuRoC Santa Margarida 2005–2024, ore 12); "
-        f"drag `{drogue_config['drag_case']}`",
+        f"drag `{drogue_config.get('drag_case') or drogue_config['versions']['aerodynamics']}`",
         f"- Massa a secco = tutto ciò che non brucia; massa al decollo ≈ secca + {PROPELLANT_MASS} kg",
         "- Valori: **media [P1 – P99]** sulle simulazioni",
         "",
