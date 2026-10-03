@@ -5,8 +5,7 @@ notebook (ATLAS_PARAMETERS_*.txt: lengths in mm, masses in kg).
 Prints mass and center of mass of every part, center of mass and inertias of the dry motor, of the
 grains and of the loaded motor; saves them in mass_properties.csv and draws the motor section
 (motor_section.png / .pdf), next to the parameters file or in --output.
-Then checks the results: part masses against the notebook ones (warning above 0.1 %), and center of
-mass and inertias of the loaded motor against the ones RocketPy computes from the motor.csv values.
+Then checks the part masses against the notebook ones (warning above 0.1 %).
 
 Axis x from the nozzle exit (x = 0) towards the combustion chamber, as RocketPy's
 coordinate_system_orientation="nozzle_to_combustion_chamber". Inertias are about the center of mass of
@@ -25,7 +24,7 @@ The masses use the notebook formulas, so they add up to M_motor_dry and M_pr.
 Usage:
     python Atlas/tools/motor_mass_properties.py "<ATLAS_PARAMETERS file>.txt"
     python Atlas/tools/motor_mass_properties.py <file> --rho-nozzle 1800 --output <folder>
-    python Atlas/tools/motor_mass_properties.py <file> --no-drawing --no-rocketpy
+    python Atlas/tools/motor_mass_properties.py <file> --no-drawing
 """
 import argparse
 import csv
@@ -168,43 +167,6 @@ def check_notebook(parts, p):
               "check densities (--rho-*) and the parts in build_parts")
 
 
-def check_rocketpy(parts, results, p):
-    """Loaded motor as RocketPy computes it from the motor.csv values, next to the script values."""
-    try:
-        from rocketpy import SolidMotor
-    except ImportError:
-        print("\nrocketpy not installed: RocketPy check skipped")
-        return
-    mm = lambda key: p[key] / 1000
-    grain = next(part for part in parts if part.group == "propellant")
-    dry_mass, dry_cm, dry_I_11, dry_I_33 = results["dry"]
-    motor = SolidMotor(
-        thrust_source=1000,  # any thrust: only t = 0 is used
-        burn_time=1,
-        nozzle_radius=mm("D_exit") / 2,
-        throat_radius=mm("D_throat") / 2,
-        grain_number=int(p["n_grains"]),
-        grain_separation=mm("grains_distance"),
-        grain_density=grain.density,
-        grain_outer_radius=mm("D_ext") / 2,
-        grain_initial_inner_radius=mm("D_int") / 2,
-        grain_initial_height=mm("L_single_grain"),
-        grains_center_of_mass_position=results["propellant"][1],
-        nozzle_position=0,
-        dry_mass=dry_mass,
-        dry_inertia=(dry_I_11, dry_I_11, dry_I_33),
-        center_of_dry_mass_position=dry_cm,
-        coordinate_system_orientation="nozzle_to_combustion_chamber",
-    )
-    _, cm, I_11, I_33 = results["loaded"]
-    print("\nLoaded motor at t = 0, RocketPy (from the motor.csv values) vs script: compare by eye")
-    print(f"{'':10s} {'RocketPy':>10s} {'script':>10s}")
-    print(f"{'mass':10s} {motor.total_mass(0):10.4f} {results['loaded'][0]:10.4f}  kg")
-    print(f"{'CG':10s} {motor.center_of_mass(0):10.4f} {cm:10.4f}  m")
-    print(f"{'I_11':10s} {motor.I_11(0):10.4f} {I_11:10.4f}  kg*m^2")
-    print(f"{'I_33':10s} {motor.I_33(0):10.5f} {I_33:10.5f}  kg*m^2")
-
-
 def draw(parts, results, path):
     import matplotlib.pyplot as plt
     from matplotlib.patches import Polygon
@@ -254,7 +216,6 @@ def main():
     parser.add_argument("--rho-phenolic", type=float, default=RHO_PHENOLIC, help="kg/m^3")
     parser.add_argument("--rho-nozzle", type=float, default=RHO_NOZZLE, help="kg/m^3")
     parser.add_argument("--no-drawing", action="store_true")
-    parser.add_argument("--no-rocketpy", action="store_true", help="skip the check with RocketPy")
     args = parser.parse_args()
 
     p = read_parameters(args.parameters)
@@ -299,8 +260,6 @@ def main():
     print(f"\nSaved in {output}")
 
     check_notebook(parts, p)
-    if not args.no_rocketpy:
-        check_rocketpy(parts, results, p)
 
 
 if __name__ == "__main__":

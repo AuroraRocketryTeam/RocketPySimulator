@@ -15,7 +15,6 @@ python Atlas/tools/motor_mass_properties.py "Atlas/simulation_inputs/propulsion_
 | `--output <cartella>` | dove salvare i risultati (di default la cartella del txt) |
 | `--rho-casing`, `--rho-phenolic`, `--rho-nozzle` | densità dei materiali [kg/m³] (di default 2700, 1500, 1950) |
 | `--no-drawing` | non disegna la sezione |
-| `--no-rocketpy` | salta il confronto con RocketPy (sezione 6) |
 
 Risultati:
 - a terminale: massa, estensione e baricentro di ogni pezzo, poi massa, baricentro e inerzie dei tre gruppi (a secco, propellente, motore pieno);
@@ -161,8 +160,6 @@ Il metodo `slices()` divide il pezzo in fette e restituisce centri, masse, raggi
 
 **`check_notebook(parts, p)`.** Confronta le masse dei pezzi con quelle del txt (sezione 6).
 
-**`check_rocketpy(parts, results, p)`.** Costruisce il motore in RocketPy con i valori da mettere in `motor.csv` e stampa le sue proprietà accanto a quelle dello script (sezione 6). Se rocketpy non è installato salta il confronto.
-
 **`draw(parts, results, path)`.** Disegna ogni pezzo come due poligoni, sopra e sotto l'asse, tra $r_i(x)$ e $r_e(x)$. Poi aggiunge i tre baricentri e salva png e pdf. Gli assi sono in scala 1:1.
 
 **`main()`.**
@@ -171,9 +168,10 @@ Il metodo `slices()` divide il pezzo in fette e restituisce centri, masse, raggi
 3. Calcola le proprietà dei tre gruppi.
 4. Stampa la tabella dei pezzi e quella dei gruppi.
 5. Scrive `mass_properties.csv` e disegna la sezione.
-6. Esegue le verifiche.
+6. Confronta le masse con quelle del notebook.
+
 ## 6. Verifiche
-Lo script controlla da solo i risultati alla fine di ogni esecuzione.
+Alla fine di ogni esecuzione lo script confronta da solo le masse con quelle del notebook.
 
 **Masse del notebook.** `check_notebook` confronta:
 
@@ -187,7 +185,3 @@ Lo script controlla da solo i risultati alla fine di ogni esecuzione.
 | `M_pr` | grain |
 
 Se una differenza supera lo 0,1% (`MASS_TOLERANCE`) stampa `<!> WARNING`: vanno controllate le densità (`--rho-*`) o i pezzi in `build_parts`.
-
-**RocketPy.** `check_rocketpy` costruisce un `SolidMotor` con i valori che vanno in `motor.csv` e stampa massa, baricentro, $I_{11}$ e $I_{33}$ del motore pieno a $t = 0$, sia di RocketPy sia dello script. Va controllato a occhio che coincidano. Se non coincidono, RocketPy interpreta i valori in modo diverso dallo script, per esempio un riferimento sbagliato in `motor.csv`. La spinta usata è fittizia, ma non conta: a $t = 0$ i grain sono interi.
-
-Sul txt v1.0 RocketPy e lo script danno gli stessi valori: 15,2717 kg, 0,6783 m, 2,1891 kg·m² e 0,02396 kg·m².
