@@ -17,7 +17,7 @@ weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = fo
 
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
-show_graph = False
+show_graph = True
 print_info = True
 export_mass_and_cg = False  # mass and CG over time as .csv in tools/mass_analysis/
 #--------------------------------------------------------------------------------------------------------

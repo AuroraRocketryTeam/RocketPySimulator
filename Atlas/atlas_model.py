@@ -21,9 +21,9 @@ import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
-GEOMETRY = "v1.3"                                   # simulation_inputs/geometry_data/<version>/
-AERODYNAMICS = "v1.3/CD_Test_45_square.csv"         # simulation_inputs/aerodynamic_data/rocket_body/<file>
-MOTOR = "COTS/Cesaroni_Pro75_9977M2245"             # simulation_inputs/propulsion_data/<motor>/
+GEOMETRY = "v1.4"                                   # simulation_inputs/geometry_data/<version>/
+AERODYNAMICS = "v1.4/CD_Mach_Test_Atlas_v_1.2_SDRAD_cd_mach.csv"         # simulation_inputs/aerodynamic_data/rocket_body/<file>
+MOTOR = "SRAD/v1.0"             # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v1.0"                                   # simulation_inputs/recovery_data/<version>/
 AIRBRAKES = None                                    # None = no airbrakes, or "v1.0"
 LAUNCH_SITE = "santa_margarida"                     # simulation_inputs/environment_data/<site>/

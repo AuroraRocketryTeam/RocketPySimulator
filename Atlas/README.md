@@ -26,6 +26,7 @@ Da lanciare dalla cartella `Atlas/` o dalla radice della repo; le opzioni sono i
   - `parachute_quick_check.py`: verifica rapida dei requisiti EuRoC con la velocità terminale;
   - `mass_analysis/`: confronto di massa e CG tra RocketPy e OpenRocket;
   - `pickle_opener.py`: apre un grafico salvato in `.pickle`;
-  - `importcsv.py`: converte gli export di RASAero in file CD-Mach.
+  - `importcsv.py`: converte gli export di RASAero in file CD-Mach (`python tools/importcsv.py <export>.CSV`, `--help` per le opzioni);
+  - `motor_mass_properties.py`: baricentri e inerzie di un motore SRAD dal txt di propulsione, con il disegno della sezione.
 
 Per salvare su git i risultati di una Monte Carlo si usa un `output_dir_name` nuovo; `prova` non va su git.

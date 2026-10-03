@@ -454,11 +454,11 @@ def main():
     wall_time = round(time.time() - initial_time, 2)
     print(f"Completed {len(results)} iterations successfully, {errors} errors. "
           f"Total CPU time (main process): {colored(cpu_time)} s. Total wall time: {colored(wall_time)} s")
-
+    
     # COMPARISON GRAPHS
     if keep_flights:
         from rocketpy import CompareFlights
-
+        
         print(colored('\n\nComparison graphs:'))
         comparison = CompareFlights(flights)
         if show_compare_graph:
@@ -509,4 +509,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
 #-------------------------------------------------------------------------------------------------------

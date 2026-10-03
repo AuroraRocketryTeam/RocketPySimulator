@@ -1,0 +1,20 @@
+"# from ATLAS_PARAMETERS_1.0 GRAPHITE.txt; positions from the nozzle exit, inertias about the center of mass of each group"
+group,mass [kg],CG [m],I_11 [kg*m^2],I_33 [kg*m^2]
+dry,6.43769,0.616235,1.2311,0.0129662
+propellant,8.834,0.723866,0.918262,0.0109906
+loaded,15.2717,0.678495,2.1925,0.0239568
+
+part,mass [kg],from [m],to [m],CG [m]
+nozzle,1.38895,0,0.165366,0.0839446
+nozzle ring,0.0800871,0.0953661,0.125366,0.110366
+casing tube,3.01139,0.0953661,1.31537,0.705366
+thermal protection liner,1.437,0.165366,1.28237,0.723866
+thermal protection closure,0.031229,1.28237,1.28537,1.28387
+bulkhead,0.376614,1.28537,1.31537,1.30037
+casing closure,0.112424,1.30937,1.31537,1.31237
+grain 1,1.47233,0.168366,0.351033,0.259699
+grain 2,1.47233,0.354033,0.536699,0.445366
+grain 3,1.47233,0.539699,0.722366,0.631033
+grain 4,1.47233,0.725366,0.908033,0.8167
+grain 5,1.47233,0.911033,1.0937,1.00237
+grain 6,1.47233,1.0967,1.27937,1.18803
