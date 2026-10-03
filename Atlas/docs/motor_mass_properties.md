@@ -43,7 +43,7 @@ In `motor.csv` vanno:
 ### 3.1 Disegno
 ![Geometria del motore SRAD](motor_geometry.png)
 
-Il disegno è generato da `make_motor_geometry_figure.py` (in questa cartella) a partire dai pezzi che costruisce lo script. Le coordinate $x$ sono le posizioni lungo l'asse che separano i pezzi; la tabella in fondo al disegno dice come si calcolano. Gli altri simboli sono parametri del txt:
+Le coordinate $x$ sono le posizioni lungo l'asse che separano i pezzi; la tabella in fondo al disegno dice come si calcolano. Gli altri simboli sono parametri del txt:
 
 | Simbolo | Nel txt | Simbolo | Nel txt |
 |---|---|---|---|
@@ -90,15 +90,15 @@ $$\rho_{grain} = \frac{M_{pr}}{n\,\pi\left(\frac{D_{est}^2}{4} - \frac{D_{int}^2
 
 ### 3.5 Ipotesi
 Queste informazioni non sono nel txt:
-- l'ugello sta negli ultimi $L_{ring} + L_{housing}$ (70 mm) del case e sporge per il resto della sua lunghezza (95 mm);
-- il disco di $2\,t_{case}$ che il notebook somma alla massa del case è la faccia chiusa del bulkhead, appoggiata alla chiusura della protezione termica. Il notebook non dice dove sia, ma nella formula di $L_{grain}$ non gli riserva lunghezza: deve quindi stare dentro il bulkhead;
+- l'ugello sta negli ultimi $L_{ring} + L_{housing}$ (70 mm) del case e sporge per il resto della sua lunghezza (95 mm).
+- il disco di spessore $2\,t_{case}$ che il notebook somma alla massa del case è la faccia chiusa del bulkhead, appoggiata alla chiusura della protezione termica.
 - le densità dei materiali sono quelle del notebook (opzioni `--rho-*`).
 
 Per avere le stesse masse del notebook, lo script ne usa gli stessi volumi. In due punti questi volumi si sovrappongono (tratteggio nel disegno):
-- l'ugello, cilindro pieno di diametro $D_{cc}$, e il nozzle ring;
-- il disco di chiusura e l'anello del bulkhead.
+- l'ugello con il nozzle ring;
+- il disco di chiusura e l'anello della bulkhead.
 
-In tutto sono circa 0,13 kg contati due volte. Se il CAD di propulsione è diverso vanno corretti `build_parts` (coordinate e pezzi) o le densità.
+Se il CAD di propulsione è diverso vanno corretti `build_parts` (coordinate e pezzi) o le densità.
 
 ## 4. Massa, baricentro e inerzie
 
@@ -124,8 +124,6 @@ $I_{11}$ dipende da quanto la massa è lontana da un asse perpendicolare al moto
 1. $\tfrac14\,\Delta m\,(r_e^2+r_i^2)$: la massa è distribuita in raggio, tra $r_i$ e $r_e$;
 2. $\tfrac1{12}\,\Delta m\,\Delta x^2$: la massa è distribuita lungo lo spessore $\Delta x$ della fetta, non è tutta nel suo centro. È lo stesso $mL^2/12$ di un'asta lunga $L$;
 3. $\Delta m\,(x_j - x_{CG})^2$: il trasporto (Steiner) dal centro della fetta al baricentro del gruppo.
-
-Il secondo termine conta solo se le fette sono poche. Con una sola fetta per pezzo il trasporto vale zero e il secondo termine dà tutto l'$mL^2/12$ del pezzo. Con $N$ fette quasi tutto l'$mL^2/12$ lo dà il trasporto, e il secondo termine si riduce a $mL^2/(12N^2)$. Con 4000 fette vale circa $10^{-7}$ volte l'inerzia, ma costa una riga e la formula resta esatta.
 
 ### 4.3 Gruppi
 | Gruppo | Pezzi | Uso |
@@ -188,7 +186,7 @@ Lo script controlla da solo i risultati alla fine di ogni esecuzione.
 | `M_motor_dry` | gruppo a secco |
 | `M_pr` | grain |
 
-Se una differenza supera lo 0,1% (`MASS_TOLERANCE`) stampa `<!> WARNING`: vanno controllate le densità (`--rho-*`) o i pezzi in `build_parts`. Sul txt v1.0 le differenze sono sotto lo 0,02%, dovute agli arrotondamenti del txt.
+Se una differenza supera lo 0,1% (`MASS_TOLERANCE`) stampa `<!> WARNING`: vanno controllate le densità (`--rho-*`) o i pezzi in `build_parts`.
 
 **RocketPy.** `check_rocketpy` costruisce un `SolidMotor` con i valori che vanno in `motor.csv` e stampa massa, baricentro, $I_{11}$ e $I_{33}$ del motore pieno a $t = 0$, sia di RocketPy sia dello script. Va controllato a occhio che coincidano. Se non coincidono, RocketPy interpreta i valori in modo diverso dallo script, per esempio un riferimento sbagliato in `motor.csv`. La spinta usata è fittizia, ma non conta: a $t = 0$ i grain sono interi.
 
