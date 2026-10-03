@@ -5,6 +5,8 @@ notebook (ATLAS_PARAMETERS_*.txt: lengths in mm, masses in kg).
 Prints mass and center of mass of every part, center of mass and inertias of the dry motor, of the
 grains and of the loaded motor; saves them in mass_properties.csv and draws the motor section
 (motor_section.png / .pdf), next to the parameters file or in --output.
+Then checks the results: part masses against the notebook ones (warning above 0.1 %), and center of
+mass and inertias of the loaded motor against the ones RocketPy computes from the motor.csv values.
 
 Axis x from the nozzle exit (x = 0) towards the combustion chamber, as RocketPy's
 coordinate_system_orientation="nozzle_to_combustion_chamber". Inertias are about the center of mass of
@@ -16,12 +18,14 @@ Layout (the lengths the notebook uses to size the grains, which then fill the ca
                     the nozzle sits in its last 70 mm: nozzle ring at the aft end, then the housing
   grains and gaps   L_total -> + length_tp   inside the thermal protection liner
   thermal protection forward closure (tp_thickness), then the bulkhead (L_bulkhead)
-  casing closure    the notebook adds a disc 2*th_casing thick: placed at the forward end
+  casing closure    the notebook adds a disc 2*th_casing thick and keeps no length for it: it is the
+                    closed face of the bulkhead, against the thermal protection closure
 The masses use the notebook formulas, so they add up to M_motor_dry and M_pr.
 
 Usage:
     python Atlas/tools/motor_mass_properties.py "<ATLAS_PARAMETERS file>.txt"
     python Atlas/tools/motor_mass_properties.py <file> --rho-nozzle 1800 --output <folder>
+    python Atlas/tools/motor_mass_properties.py <file> --no-drawing --no-rocketpy
 """
 import argparse
 import csv
@@ -36,6 +40,7 @@ RHO_PHENOLIC = 1500     # thermal protection
 RHO_NOZZLE = 1950       # graphite nozzle
 
 N_SLICES = 4000
+MASS_TOLERANCE = 0.001  # relative difference from the notebook masses that gives a warning
 
 
 @dataclass
@@ -53,8 +58,9 @@ class Part:
         x = np.linspace(self.x0, self.x1, N_SLICES + 1)
         xc = (x[:-1] + x[1:]) / 2
         ro, ri = self.r_out(xc), self.r_in(xc)
-        dm = self.density * np.pi * (ro**2 - ri**2) * np.diff(x)
-        return xc, dm, ro, ri
+        dx = np.diff(x)
+        dm = self.density * np.pi * (ro**2 - ri**2) * dx
+        return xc, dm, ro, ri, dx
 
 
 def constant(value):
@@ -112,7 +118,7 @@ def build_parts(p, rho_casing=RHO_CASING, rho_phenolic=RHO_PHENOLIC, rho_nozzle=
              constant(D_cc / 2), constant(0), "#eda100"),
         Part("bulkhead", "dry", rho_casing, x_bulkhead, x_bulkhead + L_bulkhead,
              constant(D_cc / 2), constant(D_cc / 2 - th_fillet), "#184f95"),
-        Part("casing closure", "dry", rho_casing, x_casing_fwd - 2 * th_casing, x_casing_fwd,
+        Part("casing closure", "dry", rho_casing, x_bulkhead, x_bulkhead + 2 * th_casing,
              constant(D_cc / 2), constant(0), "#184f95"),
     ]
     for k in range(n_grains):
@@ -125,12 +131,78 @@ def build_parts(p, rho_casing=RHO_CASING, rho_phenolic=RHO_PHENOLIC, rho_nozzle=
 def mass_properties(parts):
     """Mass, center of mass and inertias (about that center of mass) of a list of parts."""
     data = [part.slices() for part in parts]
-    x, dm, ro, ri = (np.concatenate([d[i] for d in data]) for i in range(4))
+    x, dm, ro, ri, dx = (np.concatenate([d[i] for d in data]) for i in range(5))
     mass = dm.sum()
     cm = (dm * x).sum() / mass
     I_33 = (0.5 * dm * (ro**2 + ri**2)).sum()
-    I_11 = (0.25 * dm * (ro**2 + ri**2) + dm * (x - cm) ** 2).sum()
+    # every slice is a short hollow cylinder: radial spread + axial spread + transport to the CG
+    I_11 = (0.25 * dm * (ro**2 + ri**2) + dm * dx**2 / 12 + dm * (x - cm) ** 2).sum()
     return mass, cm, I_11, I_33
+
+
+def check_notebook(parts, p):
+    """Masses of the script against the ones in the notebook file; warning above MASS_TOLERANCE."""
+    mass = {part.name: mass_properties([part])[0] for part in parts}
+    grains = sum(m for name, m in mass.items() if name.startswith("grain"))
+    dry = sum(m for name, m in mass.items() if not name.startswith("grain"))
+    checks = [
+        ("M_casing", mass["casing tube"] + mass["bulkhead"] + mass["casing closure"], "casing + bulkhead + closure"),
+        ("M_tp", mass["thermal protection liner"] + mass["thermal protection closure"], "liner + closure"),
+        ("M_nozzle", mass["nozzle"], "nozzle"),
+        ("M_nozzle_ring", mass["nozzle ring"], "nozzle ring"),
+        ("M_motor_dry", dry, "dry motor"),
+        ("M_pr", grains, "grains"),
+    ]
+    print(f"\nCheck against the notebook masses [kg]:\n{'':14s} {'script':>8s} {'notebook':>9s} {'diff':>8s}")
+    warnings = 0
+    for key, value, parts_used in checks:
+        if key not in p:
+            print(f"{key:14s} {value:8.4f} {'-':>9s}           not in the file")
+            continue
+        diff = (value - p[key]) / p[key]
+        flag = "" if abs(diff) <= MASS_TOLERANCE else "   <!> WARNING"
+        warnings += bool(flag)
+        print(f"{key:14s} {value:8.4f} {p[key]:9.4f} {diff:+8.3%}  {parts_used}{flag}")
+    if warnings:
+        print(f"<!> WARNING: {warnings} masses differ from the notebook by more than {MASS_TOLERANCE:.1%}: "
+              "check densities (--rho-*) and the parts in build_parts")
+
+
+def check_rocketpy(parts, results, p):
+    """Loaded motor as RocketPy computes it from the motor.csv values, next to the script values."""
+    try:
+        from rocketpy import SolidMotor
+    except ImportError:
+        print("\nrocketpy not installed: RocketPy check skipped")
+        return
+    mm = lambda key: p[key] / 1000
+    grain = next(part for part in parts if part.group == "propellant")
+    dry_mass, dry_cm, dry_I_11, dry_I_33 = results["dry"]
+    motor = SolidMotor(
+        thrust_source=1000,  # any thrust: only t = 0 is used
+        burn_time=1,
+        nozzle_radius=mm("D_exit") / 2,
+        throat_radius=mm("D_throat") / 2,
+        grain_number=int(p["n_grains"]),
+        grain_separation=mm("grains_distance"),
+        grain_density=grain.density,
+        grain_outer_radius=mm("D_ext") / 2,
+        grain_initial_inner_radius=mm("D_int") / 2,
+        grain_initial_height=mm("L_single_grain"),
+        grains_center_of_mass_position=results["propellant"][1],
+        nozzle_position=0,
+        dry_mass=dry_mass,
+        dry_inertia=(dry_I_11, dry_I_11, dry_I_33),
+        center_of_dry_mass_position=dry_cm,
+        coordinate_system_orientation="nozzle_to_combustion_chamber",
+    )
+    _, cm, I_11, I_33 = results["loaded"]
+    print("\nLoaded motor at t = 0, RocketPy (from the motor.csv values) vs script: compare by eye")
+    print(f"{'':10s} {'RocketPy':>10s} {'script':>10s}")
+    print(f"{'mass':10s} {motor.total_mass(0):10.4f} {results['loaded'][0]:10.4f}  kg")
+    print(f"{'CG':10s} {motor.center_of_mass(0):10.4f} {cm:10.4f}  m")
+    print(f"{'I_11':10s} {motor.I_11(0):10.4f} {I_11:10.4f}  kg*m^2")
+    print(f"{'I_33':10s} {motor.I_33(0):10.5f} {I_33:10.5f}  kg*m^2")
 
 
 def draw(parts, results, path):
@@ -182,6 +254,7 @@ def main():
     parser.add_argument("--rho-phenolic", type=float, default=RHO_PHENOLIC, help="kg/m^3")
     parser.add_argument("--rho-nozzle", type=float, default=RHO_NOZZLE, help="kg/m^3")
     parser.add_argument("--no-drawing", action="store_true")
+    parser.add_argument("--no-rocketpy", action="store_true", help="skip the check with RocketPy")
     args = parser.parse_args()
 
     p = read_parameters(args.parameters)
@@ -224,6 +297,10 @@ def main():
     if not args.no_drawing:
         draw(parts, results, output / "motor_section")
     print(f"\nSaved in {output}")
+
+    check_notebook(parts, p)
+    if not args.no_rocketpy:
+        check_rocketpy(parts, results, p)
 
 
 if __name__ == "__main__":

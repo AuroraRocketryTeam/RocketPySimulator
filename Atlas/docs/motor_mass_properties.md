@@ -15,11 +15,13 @@ python Atlas/tools/motor_mass_properties.py "Atlas/simulation_inputs/propulsion_
 | `--output <cartella>` | dove salvare i risultati (di default la cartella del txt) |
 | `--rho-casing`, `--rho-phenolic`, `--rho-nozzle` | densità dei materiali [kg/m³] (di default 2700, 1500, 1950) |
 | `--no-drawing` | non disegna la sezione |
+| `--no-rocketpy` | salta il confronto con RocketPy (sezione 6) |
 
 Risultati:
 - a terminale: massa, estensione e baricentro di ogni pezzo, poi massa, baricentro e inerzie dei tre gruppi (a secco, propellente, motore pieno);
 - `mass_properties.csv`: gli stessi valori;
-- `motor_section.png` e `motor_section.pdf`: il disegno.
+- `motor_section.png` e `motor_section.pdf`: il disegno;
+- a terminale, alla fine, le verifiche della sezione 6.
 
 In `motor.csv` vanno:
 
@@ -37,24 +39,26 @@ In `motor.csv` vanno:
 - $I_{11}$ è l'inerzia attorno a un asse perpendicolare all'asse del motore, $I_{33}$ quella attorno all'asse del motore. Entrambe sono calcolate rispetto al baricentro del gruppo di pezzi considerato, come richiede RocketPy per `dry_inertia`.
 
 ## 3. Geometria
-<!-- io sostituirei questa sezione 3.1 interamente con il disegno che ti ho fatto fare, a cui devi cavare la colonna coi numeri dalla tabella, anzi caverei proprio tutti i numeri dal disegno, perchè tanto deve solo mostrare com'è fatto il motore per far capire all'utente come sono definiti i raggi (int/ext) e le coordinate di inizio e fine di ogni pezzo-->
-### 3.1 Stazioni assiali
-Il notebook dimensiona la lunghezza dei grain in modo che riempiano esattamente il case:
+
+### 3.1 Disegno
+![Geometria del motore SRAD](motor_geometry.png)
+
+Il disegno è generato da `make_motor_geometry_figure.py` (in questa cartella) a partire dai pezzi che costruisce lo script. Le coordinate $x$ sono le posizioni lungo l'asse che separano i pezzi; la tabella in fondo al disegno dice come si calcolano. Gli altri simboli sono parametri del txt:
+
+| Simbolo | Nel txt | Simbolo | Nel txt |
+|---|---|---|---|
+| $L_{div}$, $L_{conv}$, $L_{tot}$ | `L_div`, `L_conv`, `L_total` | $D_{exit}$, $D_{throat}$ | `D_exit`, `D_throat` |
+| $L_{ring}$, $t_{ring}$ | `L_nozzle_ring`, `th_nozzle_ring` | $D_{cc}$, $D_{cc,est}$ | `D_cc`, `D_cc_outer` |
+| $L_{housing}$ | `nozzle_housing_length` | $t_{case}$ | `th_casing` |
+| $L_{cc}$ | `L_cc` | $t_{tp}$ | `tp_thickness` |
+| $L_{tp}$ | `length_tp` | $L_{bulkhead}$, $t_{fillet}$ | `L_bulkhead`, `th_bulkhead_fillet` |
+| $L_{grain}$, $g$, $n$ | `L_single_grain`, `grains_distance`, `n_grains` | $D_{est}$, $D_{int}$ | `D_ext`, `D_int` |
+
+Il notebook sceglie la lunghezza dei grain in modo che riempiano esattamente il case:
 
 $$L_{grain} = \frac{L_{cc} - L_{bulkhead} - t_{tp} - L_{housing} - L_{ring} - (n+1)\,g}{n}$$
 
-con $n$ numero di grain e $g$ distanza tra i grain. Lo script usa la stessa disposizione, dall'ugello verso la testa:
-
-| Stazione | Formula | Valore v1.0 [m] |
-|---|---|---|
-| fine dell'ugello lato camera | $L_{tot} = L_{conv} + L_{div}$ | 0,1654 |
-| inizio del case | $x_{case} = L_{tot} - (L_{ring} + L_{housing})$ | 0,0954 |
-| inizio della colonna di grain | $x_{grain} = L_{tot}$ | 0,1654 |
-| chiusura della protezione termica | $x_{tp} = x_{grain} + L_{tp}$ | 1,2824 |
-| inizio del bulkhead | $x_{bh} = x_{tp} + t_{tp}$ | 1,2854 |
-| fine del case | $x_{fine} = x_{case} + L_{cc}$ | 1,3154 |
-
-dove $L_{tp} = n\,L_{grain} + (n+1)\,g$ è la lunghezza della colonna di grain, cioè del liner. Lo script controlla che $x_{bh} + L_{bulkhead} = x_{fine}$: se il txt non è coerente si ferma con un errore.
+con $n$ numero di grain. Per questo deve valere $x_{bh} + L_{bulkhead} = x_{fine}$. Lo script lo controlla e, se il txt non è coerente, si ferma con un errore.
 
 ### 3.2 Pezzi
 Ogni pezzo è un solido di rivoluzione tra $x_0$ e $x_1$, con raggio esterno $r_e(x)$ e interno $r_i(x)$:
@@ -67,7 +71,7 @@ Ogni pezzo è un solido di rivoluzione tra $x_0$ e $x_1$, con raggio esterno $r_
 | liner della protezione termica | $x_{grain} \rightarrow x_{tp}$ | $D_{cc}/2$ | $D_{cc}/2 - t_{tp}$ | fenolica |
 | chiusura della protezione termica | $x_{tp} \rightarrow x_{bh}$ | $D_{cc}/2$ | 0 | fenolica |
 | bulkhead | $x_{bh} \rightarrow x_{bh} + L_{bulkhead}$ | $D_{cc}/2$ | $D_{cc}/2 - t_{fillet}$ | alluminio |
-| disco di chiusura del case | $x_{fine} - 2t_{case} \rightarrow x_{fine}$ | $D_{cc}/2$ | 0 | alluminio |
+| disco di chiusura del case | $x_{bh} \rightarrow x_{bh} + 2t_{case}$ | $D_{cc}/2$ | 0 | alluminio |
 | grain $k$ ($k = 0 \dots n-1$) | $x_{grain} + g + k(L_{grain}+g) \rightarrow$ $+\,L_{grain}$ | $D_{est}/2$ | $D_{int}/2$ | propellente |
 
 Sono gli stessi pezzi, con gli stessi volumi, che il notebook somma per `M_casing`, `M_tp`, `M_nozzle` e `M_nozzle_ring`.
@@ -87,11 +91,14 @@ $$\rho_{grain} = \frac{M_{pr}}{n\,\pi\left(\frac{D_{est}^2}{4} - \frac{D_{int}^2
 ### 3.5 Ipotesi
 Queste informazioni non sono nel txt:
 - l'ugello sta negli ultimi $L_{ring} + L_{housing}$ (70 mm) del case e sporge per il resto della sua lunghezza (95 mm);
-<!-- no guarda sono abbastanza sicuro che in realtà quel disco di chiusura sia appoggiato alla chiusura protezione termica del motore, lo dico perchè ho visto quel pezzo realizzato coi miei occhi, però leggi nella simulazione di propulsione per vedere se danno delle informazioni-->
-- il disco di $2\,t_{case}$ che il notebook somma alla massa del case è in testa al motore;
+- il disco di $2\,t_{case}$ che il notebook somma alla massa del case è la faccia chiusa del bulkhead, appoggiata alla chiusura della protezione termica. Il notebook non dice dove sia, ma nella formula di $L_{grain}$ non gli riserva lunghezza: deve quindi stare dentro il bulkhead;
 - le densità dei materiali sono quelle del notebook (opzioni `--rho-*`).
 
-Se il CAD di propulsione è diverso vanno corretti `build_parts` (stazioni e pezzi) o le densità.
+Per avere le stesse masse del notebook, lo script ne usa gli stessi volumi. In due punti questi volumi si sovrappongono (tratteggio nel disegno):
+- l'ugello, cilindro pieno di diametro $D_{cc}$, e il nozzle ring;
+- il disco di chiusura e l'anello del bulkhead.
+
+In tutto sono circa 0,13 kg contati due volte. Se il CAD di propulsione è diverso vanno corretti `build_parts` (coordinate e pezzi) o le densità.
 
 ## 4. Massa, baricentro e inerzie
 
@@ -109,10 +116,16 @@ $$m = \sum_j \Delta m_j \qquad x_{CG} = \frac{\sum_j \Delta m_j\, x_j}{m}$$
 
 $$I_{33} = \sum_j \tfrac{1}{2}\,\Delta m_j\left(r_{e,j}^2 + r_{i,j}^2\right)$$
 
-$$I_{11} = \sum_j \left[\tfrac{1}{4}\,\Delta m_j\left(r_{e,j}^2 + r_{i,j}^2\right) + \Delta m_j\,(x_j - x_{CG})^2\right]$$
+$$I_{11} = \sum_j \left[\tfrac{1}{4}\,\Delta m_j\left(r_{e,j}^2 + r_{i,j}^2\right) + \tfrac{1}{12}\,\Delta m_j\,\Delta x^2 + \Delta m_j\,(x_j - x_{CG})^2\right]$$
 
-- $I_{33}$ è la somma delle inerzie assiali degli anelli.
-- In $I_{11}$, il primo termine è l'inerzia dell'anello attorno a un suo diametro. Il secondo è il trasporto (Steiner) dal centro della fetta al baricentro del gruppo. <!-- non ho capito questo termine trascurato --> Il termine $\Delta m\,\Delta x^2/12$ della fetta è trascurato perché $\Delta x$ è dell'ordine di 0,04 mm.
+$I_{33}$ è la somma delle inerzie assiali degli anelli.
+
+$I_{11}$ dipende da quanto la massa è lontana da un asse perpendicolare al motore che passa per il baricentro. Ogni fetta è un cilindro cavo corto e i suoi tre termini sono:
+1. $\tfrac14\,\Delta m\,(r_e^2+r_i^2)$: la massa è distribuita in raggio, tra $r_i$ e $r_e$;
+2. $\tfrac1{12}\,\Delta m\,\Delta x^2$: la massa è distribuita lungo lo spessore $\Delta x$ della fetta, non è tutta nel suo centro. È lo stesso $mL^2/12$ di un'asta lunga $L$;
+3. $\Delta m\,(x_j - x_{CG})^2$: il trasporto (Steiner) dal centro della fetta al baricentro del gruppo.
+
+Il secondo termine conta solo se le fette sono poche. Con una sola fetta per pezzo il trasporto vale zero e il secondo termine dà tutto l'$mL^2/12$ del pezzo. Con $N$ fette quasi tutto l'$mL^2/12$ lo dà il trasporto, e il secondo termine si riduce a $mL^2/(12N^2)$. Con 4000 fette vale circa $10^{-7}$ volte l'inerzia, ma costa una riga e la formula resta esatta.
 
 ### 4.3 Gruppi
 | Gruppo | Pezzi | Uso |
@@ -123,7 +136,7 @@ $$I_{11} = \sum_j \left[\tfrac{1}{4}\,\Delta m_j\left(r_{e,j}^2 + r_{i,j}^2\righ
 
 ## 5. Il codice blocco per blocco
 
-**Costanti.** `RHO_CASING`, `RHO_PHENOLIC` e `RHO_NOZZLE` sono le densità del notebook; `N_SLICES` è il numero di fette per pezzo.
+**Costanti.** `RHO_CASING`, `RHO_PHENOLIC` e `RHO_NOZZLE` sono le densità del notebook; `N_SLICES` è il numero di fette per pezzo; `MASS_TOLERANCE` è la differenza dalle masse del notebook oltre la quale lo script dà un warning (sezione 6).
 
 **Classe `Part`.** Descrive un pezzo:
 - nome;
@@ -133,7 +146,7 @@ $$I_{11} = \sum_j \left[\tfrac{1}{4}\,\Delta m_j\left(r_{e,j}^2 + r_{i,j}^2\righ
 - funzioni $r_e(x)$ e $r_i(x)$;
 - colore nel disegno.
 
-Il metodo `slices()` divide il pezzo in fette e restituisce centri, masse e raggi delle fette (4.1).
+Il metodo `slices()` divide il pezzo in fette e restituisce centri, masse, raggi e spessori delle fette (4.1).
 
 **`constant(value)`.** Restituisce una funzione che vale sempre `value`, per i raggi costanti.
 
@@ -141,12 +154,16 @@ Il metodo `slices()` divide il pezzo in fette e restituisce centri, masse e ragg
 
 **`build_parts(p, ...)`.**
 1. Converte le lunghezze in metri.
-2. Calcola le stazioni (3.1) e controlla che i pezzi riempiano il case.
+2. Calcola le coordinate dei pezzi (3.1) e controlla che i pezzi riempiano il case.
 3. Calcola la densità dei grain (3.4).
 4. Definisce il profilo dell'ugello (3.3).
 5. Crea la lista dei pezzi (3.2): prima quelli a secco, poi un `Part` per ogni grain.
 
 **`mass_properties(parts)`.** Unisce le fette di tutti i pezzi della lista e applica le formule 4.2. Restituisce massa, $x_{CG}$, $I_{11}$, $I_{33}$. La stessa funzione serve per un pezzo solo, per un gruppo e per il motore intero.
+
+**`check_notebook(parts, p)`.** Confronta le masse dei pezzi con quelle del txt (sezione 6).
+
+**`check_rocketpy(parts, results, p)`.** Costruisce il motore in RocketPy con i valori da mettere in `motor.csv` e stampa le sue proprietà accanto a quelle dello script (sezione 6). Se rocketpy non è installato salta il confronto.
 
 **`draw(parts, results, path)`.** Disegna ogni pezzo come due poligoni, sopra e sotto l'asse, tra $r_i(x)$ e $r_e(x)$. Poi aggiunge i tre baricentri e salva png e pdf. Gli assi sono in scala 1:1.
 
@@ -156,10 +173,23 @@ Il metodo `slices()` divide il pezzo in fette e restituisce centri, masse e ragg
 3. Calcola le proprietà dei tre gruppi.
 4. Stampa la tabella dei pezzi e quella dei gruppi.
 5. Scrive `mass_properties.csv` e disegna la sezione.
-<!-- queste verifiche le metterei in automatico dentro il codice con tipo dei warning se già non sono presenti, giusto per fare un doppio check che i numeri che calcoliamo noi siano uguali a quelli di propulsione. Per il confronto con rocketpy non saprei bene come fare, forse si riesce a fargli stampare questi valori che dici e poi li controlla un umano a occhio -->
-## 6. Verifiche 
-Sul txt di SRAD v1.0:
-- **Masse:** la massa a secco è 6,4377 kg e quella del propellente 8,834 kg, come `M_motor_dry` e `M_pr` del notebook. Anche i singoli pezzi coincidono:
-  - case + bulkhead + disco = `M_casing`;
-  - liner + chiusura = `M_tp`.
-- **Confronto con RocketPy:** con `motor.csv` compilato dai valori dello script, RocketPy calcola per il motore pieno un baricentro di 0,6785 m e un $I_{11}$ di 2,1926 kg·m². Lo script dà 0,6785 m e 2,1925 kg·m².
+6. Esegue le verifiche.
+## 6. Verifiche
+Lo script controlla da solo i risultati alla fine di ogni esecuzione.
+
+**Masse del notebook.** `check_notebook` confronta:
+
+| Nel txt | Somma dello script |
+|---|---|
+| `M_casing` | case + bulkhead + disco |
+| `M_tp` | liner + chiusura della protezione termica |
+| `M_nozzle` | ugello |
+| `M_nozzle_ring` | nozzle ring |
+| `M_motor_dry` | gruppo a secco |
+| `M_pr` | grain |
+
+Se una differenza supera lo 0,1% (`MASS_TOLERANCE`) stampa `<!> WARNING`: vanno controllate le densità (`--rho-*`) o i pezzi in `build_parts`. Sul txt v1.0 le differenze sono sotto lo 0,02%, dovute agli arrotondamenti del txt.
+
+**RocketPy.** `check_rocketpy` costruisce un `SolidMotor` con i valori che vanno in `motor.csv` e stampa massa, baricentro, $I_{11}$ e $I_{33}$ del motore pieno a $t = 0$, sia di RocketPy sia dello script. Va controllato a occhio che coincidano. Se non coincidono, RocketPy interpreta i valori in modo diverso dallo script, per esempio un riferimento sbagliato in `motor.csv`. La spinta usata è fittizia, ma non conta: a $t = 0$ i grain sono interi.
+
+Sul txt v1.0 RocketPy e lo script danno gli stessi valori: 15,2717 kg, 0,6783 m, 2,1891 kg·m² e 0,02396 kg·m².
