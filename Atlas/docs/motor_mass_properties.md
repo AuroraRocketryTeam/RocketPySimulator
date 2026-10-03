@@ -37,7 +37,7 @@ In `motor.csv` vanno:
 - $I_{11}$ è l'inerzia attorno a un asse perpendicolare all'asse del motore, $I_{33}$ quella attorno all'asse del motore. Entrambe sono calcolate rispetto al baricentro del gruppo di pezzi considerato, come richiede RocketPy per `dry_inertia`.
 
 ## 3. Geometria
-
+<!-- io sostituirei questa sezione 3.1 interamente con il disegno che ti ho fatto fare, a cui devi cavare la colonna coi numeri dalla tabella, anzi caverei proprio tutti i numeri dal disegno, perchè tanto deve solo mostrare com'è fatto il motore per far capire all'utente come sono definiti i raggi (int/ext) e le coordinate di inizio e fine di ogni pezzo-->
 ### 3.1 Stazioni assiali
 Il notebook dimensiona la lunghezza dei grain in modo che riempiano esattamente il case:
 
@@ -70,7 +70,7 @@ Ogni pezzo è un solido di rivoluzione tra $x_0$ e $x_1$, con raggio esterno $r_
 | disco di chiusura del case | $x_{fine} - 2t_{case} \rightarrow x_{fine}$ | $D_{cc}/2$ | 0 | alluminio |
 | grain $k$ ($k = 0 \dots n-1$) | $x_{grain} + g + k(L_{grain}+g) \rightarrow$ $+\,L_{grain}$ | $D_{est}/2$ | $D_{int}/2$ | propellente |
 
-Sono gli stessi pezzi, con gli stessi volumi, che il notebook somma per `M_casing`, `M_tp`, `M_nozzle` e `M_nozzle_ring`. Per questo le masse coincidono.
+Sono gli stessi pezzi, con gli stessi volumi, che il notebook somma per `M_casing`, `M_tp`, `M_nozzle` e `M_nozzle_ring`.
 
 ### 3.3 Profilo interno dell'ugello
 Il notebook calcola la massa dell'ugello come un cilindro di diametro $D_{cc}$, scavato da due tronchi di cono. Il raggio interno varia quindi linearmente:
@@ -87,6 +87,7 @@ $$\rho_{grain} = \frac{M_{pr}}{n\,\pi\left(\frac{D_{est}^2}{4} - \frac{D_{int}^2
 ### 3.5 Ipotesi
 Queste informazioni non sono nel txt:
 - l'ugello sta negli ultimi $L_{ring} + L_{housing}$ (70 mm) del case e sporge per il resto della sua lunghezza (95 mm);
+<!-- no guarda sono abbastanza sicuro che in realtà quel disco di chiusura sia appoggiato alla chiusura protezione termica del motore, lo dico perchè ho visto quel pezzo realizzato coi miei occhi, però leggi nella simulazione di propulsione per vedere se danno delle informazioni-->
 - il disco di $2\,t_{case}$ che il notebook somma alla massa del case è in testa al motore;
 - le densità dei materiali sono quelle del notebook (opzioni `--rho-*`).
 
@@ -99,7 +100,7 @@ Ogni pezzo è diviso in $N = 4000$ fette di spessore $\Delta x = (x_1 - x_0)/N$.
 
 $$\Delta m_j = \rho\,\pi\left(r_{e,j}^2 - r_{i,j}^2\right)\Delta x$$
 
-Con raggi costanti la somma è esatta; per l'ugello, dove i raggi variano, approssima l'integrale con la regola del punto medio. Con 4000 fette la differenza rispetto a 40 000 fette è sotto lo 0,00001%.
+Con raggi costanti la somma è esatta; per l'ugello, dove i raggi variano, approssima l'integrale con la regola del punto medio. 
 
 ### 4.2 Formule
 Per un gruppo di pezzi (tutte le fette insieme):
@@ -111,7 +112,7 @@ $$I_{33} = \sum_j \tfrac{1}{2}\,\Delta m_j\left(r_{e,j}^2 + r_{i,j}^2\right)$$
 $$I_{11} = \sum_j \left[\tfrac{1}{4}\,\Delta m_j\left(r_{e,j}^2 + r_{i,j}^2\right) + \Delta m_j\,(x_j - x_{CG})^2\right]$$
 
 - $I_{33}$ è la somma delle inerzie assiali degli anelli.
-- In $I_{11}$, il primo termine è l'inerzia dell'anello attorno a un suo diametro. Il secondo è il trasporto (Steiner) dal centro della fetta al baricentro del gruppo. Il termine $\Delta m\,\Delta x^2/12$ della fetta è trascurato perché $\Delta x$ è dell'ordine di 0,04 mm.
+- In $I_{11}$, il primo termine è l'inerzia dell'anello attorno a un suo diametro. Il secondo è il trasporto (Steiner) dal centro della fetta al baricentro del gruppo. <!-- non ho capito questo termine trascurato --> Il termine $\Delta m\,\Delta x^2/12$ della fetta è trascurato perché $\Delta x$ è dell'ordine di 0,04 mm.
 
 ### 4.3 Gruppi
 | Gruppo | Pezzi | Uso |
@@ -155,8 +156,8 @@ Il metodo `slices()` divide il pezzo in fette e restituisce centri, masse e ragg
 3. Calcola le proprietà dei tre gruppi.
 4. Stampa la tabella dei pezzi e quella dei gruppi.
 5. Scrive `mass_properties.csv` e disegna la sezione.
-
-## 6. Verifiche
+<!-- queste verifiche le metterei in automatico dentro il codice con tipo dei warning se già non sono presenti, giusto per fare un doppio check che i numeri che calcoliamo noi siano uguali a quelli di propulsione. Per il confronto con rocketpy non saprei bene come fare, forse si riesce a fargli stampare questi valori che dici e poi li controlla un umano a occhio -->
+## 6. Verifiche 
 Sul txt di SRAD v1.0:
 - **Masse:** la massa a secco è 6,4377 kg e quella del propellente 8,834 kg, come `M_motor_dry` e `M_pr` del notebook. Anche i singoli pezzi coincidono:
   - case + bulkhead + disco = `M_casing`;
