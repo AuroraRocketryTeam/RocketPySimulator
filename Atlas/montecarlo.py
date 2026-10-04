@@ -5,7 +5,7 @@ Every run flies Atlas (atlas_model.py) with all the parameters drawn from a norm
 around their nominal value (std from the files in simulation_inputs/). The versions of geometry,
 aerodynamics, motor, recovery, airbrakes and launch site are chosen at the top of atlas_model.py.
 
-Outputs in montecarlo_output/<output_dir_name>/: inputs and outputs of every run (json), dispersion
+Outputs in simulation_output/montecarlo_output/<output_dir_name>/: inputs and outputs of every run (json), dispersion
 graphs, launch site map with the 1-2-3 sigma ellipses, comparison and sensitivity graphs.
 """
 print("importing libraries...", end="\r")
@@ -13,6 +13,7 @@ import json
 import multiprocessing as mp
 import os
 import pickle
+import sys
 import time
 from pathlib import Path
 
@@ -23,9 +24,10 @@ from matplotlib.patches import Ellipse
 from scipy.stats import norm
 
 import atlas_model as model
-from compare_plot_saver import save_compare_plots
 
 BASE_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(BASE_DIR / "tools" / "others"))
+from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
@@ -162,7 +164,7 @@ def run_one(run_seed):
 # - Creates a histogram of the data and overlays the corresponding normal distribution curve;
 # - Adds title, axis labels, and a grid to the plot for better clarity;
 # - Saves the plot as a .svg file for high-quality output (e.g., for reports or web use);
-# - Saves the entire figure as a pickle file for later reuse or resizing (open it with tools/pickle_opener.py)
+# - Saves the entire figure as a pickle file for later reuse or resizing (open it with tools/others/pickle_opener.py)
 
 def plot_unit_of_measure(unit_of_measure: str):
     # correct way to print unit of measure inside plot
@@ -377,7 +379,7 @@ def main():
     global sensitivity_analysis
 
     # Paths
-    output_path = BASE_DIR/"montecarlo_output"/output_dir_name
+    output_path = BASE_DIR/"simulation_output"/"montecarlo_output"/output_dir_name
     filename = str(output_path/"Atlas")
     output_sensitivity = output_path/"sensitivity"
     output_comparison = output_path/"comparison"

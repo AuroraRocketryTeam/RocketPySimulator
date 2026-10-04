@@ -22,9 +22,9 @@ Layout (the lengths the notebook uses to size the grains, which then fill the ca
 The masses use the notebook formulas, so they add up to M_motor_dry and M_pr.
 
 Usage:
-    python Atlas/tools/motor_mass_properties.py "<ATLAS_PARAMETERS file>.txt"
-    python Atlas/tools/motor_mass_properties.py <file> --rho-nozzle 1800 --output <folder>
-    python Atlas/tools/motor_mass_properties.py <file> --no-drawing
+    python Atlas/tools/propulsion/motor_geometry/motor_mass_properties.py "<ATLAS_PARAMETERS file>.txt"
+    python Atlas/tools/propulsion/motor_geometry/motor_mass_properties.py <file> --rho-nozzle 1800 --output <folder>
+    python Atlas/tools/propulsion/motor_geometry/motor_mass_properties.py <file> --no-drawing
 """
 import argparse
 import csv

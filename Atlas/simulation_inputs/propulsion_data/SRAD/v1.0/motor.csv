@@ -1,6 +1,6 @@
 # SRAD - curva di spinta in thrust_curve.csv
 # Notebook di propulsione "Atlas motor correct 1.0": motore pieno 15.272 kg, a secco 6.438 kg, propellente 8.834 kg (KNSB + 1% Fe2O3).
-# Baricentro e inerzie a secco ricavati da ATLAS_PARAMETERS_1.0 GRAPHITE.txt con tools/motor_mass_properties.py (vedi mass_properties.csv e motor_section.png).
+# Baricentro e inerzie a secco ricavati da ATLAS_PARAMETERS_1.0 GRAPHITE.txt con tools/propulsion/motor_geometry/motor_mass_properties.py (risultati in tools/propulsion/motor_geometry/v1.0/).
 # L'hardware del motore è la motor_dry_mass, quindi è escluso dalla rocket_dry_mass (vedi geometry)
 # La fine dell'ugello coincide con la fine del razzo
 # Posizioni misurate dall'ugello verso la camera di combustione.

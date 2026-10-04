@@ -8,12 +8,12 @@ does not burn, motor hardware included) and, depending on the campaign:
 
 For each flight it extracts ascent data, the drogue/main opening loads computed with the
 RocketPy parachute model and the descent velocities, then writes runs_<campaign>.csv, summary
-tables and plots into montecarlo_output/parachute_study/.
+tables and plots into simulation_output/montecarlo_output/parachute_study/.
 
 Usage (from the repo root, no GUI needed):
-    MPLBACKEND=Agg .venv/bin/python Atlas/parachute_study.py --campaign drogue --n-sims 100
-    MPLBACKEND=Agg .venv/bin/python Atlas/parachute_study.py --campaign main --n-sims 100
-    MPLBACKEND=Agg .venv/bin/python Atlas/parachute_study.py --analyze-only
+    MPLBACKEND=Agg .venv/bin/python Atlas/tools/recovery/parachute_study.py --campaign drogue --n-sims 100
+    MPLBACKEND=Agg .venv/bin/python Atlas/tools/recovery/parachute_study.py --campaign main --n-sims 100
+    MPLBACKEND=Agg .venv/bin/python Atlas/tools/recovery/parachute_study.py --analyze-only
 """
 
 import argparse
@@ -22,14 +22,15 @@ import json
 import multiprocessing as mp
 import os
 import pickle
+import sys
 import time
 from pathlib import Path
 
 import numpy as np
 
-import atlas_model as model
-
-BASE_DIR = Path(__file__).resolve().parent
+ATLAS_DIR = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ATLAS_DIR))
+import atlas_model as model  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Rocket, motor, recovery and launch site come from atlas_model.py; this study changes only what follows.
@@ -72,7 +73,7 @@ DEFAULT_MASSES = "20,22.5,25,27.5,30"
 DEFAULT_DELAYS = "3,5,7,9,11"
 DEFAULT_MAIN_DELAYS = "0.75,1.5,2.25,3,3.75"
 DEFAULT_DROGUE_DELAY = 4.0
-DEFAULT_OUTPUT = BASE_DIR / "montecarlo_output" / "parachute_study"
+DEFAULT_OUTPUT = ATLAS_DIR / "simulation_output" / "montecarlo_output" / "parachute_study"
 #--------------------------------------------------------------------------------------------------------
 
 

@@ -7,11 +7,15 @@ Works both with the decimal point and with the decimal comma of an Italian Windo
 decimal number is split in two fields by the comma).
 
 Writes "mach,cd" rows without header, as the files in simulation_inputs/aerodynamic_data/rocket_body/.
+The RASAero exports are kept next to this script, one folder per geometry version (v1.4/...): write the
+CD-Mach file straight into simulation_inputs with -o.
 
 Usage (one or more files):
-    python Atlas/tools/importcsv.py <RASAero export>.CSV
-    python Atlas/tools/importcsv.py <folder>/*.CSV --column on --max-mach 3
-    python Atlas/tools/importcsv.py <export>.CSV -o <folder>/<name>.csv
+    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/importcsv.py <RASAero export>.CSV
+    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/importcsv.py <folder>/*.CSV --column on --max-mach 3
+    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/importcsv.py <export>.CSV -o <folder>/<name>.csv
+    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/importcsv.py Atlas/tools/aerodynamic/cd_mach_rasaero_convert/v1.4/<export>.CSV \
+        -o Atlas/simulation_inputs/aerodynamic_data/rocket_body/v1.4/<export>_cd_mach.csv
 Paths start from the folder where the command is launched; quote them if they contain spaces.
 """
 import argparse

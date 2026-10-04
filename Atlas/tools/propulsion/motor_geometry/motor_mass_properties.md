@@ -2,12 +2,12 @@
 
 Lo script ricava massa, baricentro e inerzie di un motore SRAD dal file di parametri scritto dal notebook di propulsione (`ATLAS_PARAMETERS_*.txt`) e disegna la sezione del motore. I valori servono a `motor.csv` del modello (`simulation_inputs/propulsion_data/SRAD/<versione>/`).
 
-![Sezione del motore SRAD v1.0](../simulation_inputs/propulsion_data/SRAD/v1.0/motor_section.png)
+![Sezione del motore SRAD v1.0](v1.0/motor_section.png)
 
 ## 1. Uso
 
 ```bash
-python Atlas/tools/motor_mass_properties.py "Atlas/simulation_inputs/propulsion_data/SRAD/v1.0/ATLAS_PARAMETERS_1.0 GRAPHITE.txt"
+python Atlas/tools/propulsion/motor_geometry/motor_mass_properties.py "Atlas/tools/propulsion/motor_geometry/v1.0/ATLAS_PARAMETERS_1.0 GRAPHITE.txt"
 ```
 
 | Opzione | Significato |
@@ -15,6 +15,8 @@ python Atlas/tools/motor_mass_properties.py "Atlas/simulation_inputs/propulsion_
 | `--output <cartella>` | dove salvare i risultati (di default la cartella del txt) |
 | `--rho-casing`, `--rho-phenolic`, `--rho-nozzle` | densità dei materiali [kg/m³] (di default 2700, 1500, 1950) |
 | `--no-drawing` | non disegna la sezione |
+
+Ogni versione del motore ha qui una cartella `<versione>/` con il txt e i risultati dello script; in `simulation_inputs/` vanno solo i valori copiati in `motor.csv`.
 
 Risultati:
 - a terminale: massa, estensione e baricentro di ogni pezzo, poi massa, baricentro e inerzie dei tre gruppi (a secco, propellente, motore pieno);

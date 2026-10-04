@@ -20,5 +20,5 @@ __pycache__/
 *.toc
 *.synctex.gz
 
-# Output del notebook di propulsione (si rigenera con Atlas/propulsion/run_motor_notebook.py)
-Atlas/propulsion/output/
+# Output del notebook di propulsione (si rigenera con run_motor_notebook.py)
+Atlas/tools/propulsion/thrust_curve/output/

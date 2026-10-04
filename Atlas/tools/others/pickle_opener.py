@@ -5,7 +5,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 # insert desired pickle directory
-with open(BASE_DIR.parent / "montecarlo_output/prova/comparison/pickle/velocities.pickle", "rb") as f:
+with open(BASE_DIR.parents[1] / "simulation_output/montecarlo_output/prova/comparison/pickle/velocities.pickle", "rb") as f:
     fig = pickle.load(f)
 
 plt.show()

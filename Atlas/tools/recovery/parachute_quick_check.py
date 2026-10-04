@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import atlas_model as model
 
 # function that takes a text and add code for green color (ANSI Escape Codes)

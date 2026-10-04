@@ -23,25 +23,28 @@ uv venv --python 3.13 ~/Documenti/AuroraRocketry/.venv-propulsione
 ```
 
 ```bash
-uv pip install --python ~/Documenti/AuroraRocketry/.venv-propulsione -r Atlas/propulsion/requirements.txt
+uv pip install --python ~/Documenti/AuroraRocketry/.venv-propulsione -r Atlas/tools/propulsion/thrust_curve/requirements.txt
 ```
 
 ## Uso
 Dalla radice della repo:
 
 ```bash
-~/Documenti/AuroraRocketry/.venv-propulsione/bin/python Atlas/propulsion/run_motor_notebook.py
+~/Documenti/AuroraRocketry/.venv-propulsione/bin/python Atlas/tools/propulsion/thrust_curve/run_motor_notebook.py
 ```
 
 Dura circa 30 s. Opzioni: `--notebook` (un altro notebook), `--output` (cartella dei risultati), `--cd` (file CD-Mach per il volo).
 
-Risultati in `Atlas/propulsion/output/`, che non va su git:
+Risultati in `output/`, accanto allo script, che non va su git:
 
 | File | Contenuto |
 |---|---|
-| `ATLAS_PARAMETERS_*.txt` | geometria e masse del motore, input di `tools/motor_mass_properties.py` |
+| `ATLAS_PARAMETERS_*.txt` | geometria e masse del motore, input di `tools/propulsion/motor_geometry/motor_mass_properties.py` |
 | `ATLAS_chamber_properties.txt` | proprietà della camera di combustione |
 | `thrust_curve.csv` | spinta fino al burnout (`time [s],thrust [N]`), che il notebook calcola ma non salva |
 | `*.html` | grafici plotly del notebook |
 
-Per una nuova versione del motore si copiano `ATLAS_PARAMETERS_*.txt` e `thrust_curve.csv` in `simulation_inputs/propulsion_data/SRAD/<versione>/`, poi si calcolano baricentri e inerzie con `tools/motor_mass_properties.py` e si compila `motor.csv`.
+Per una nuova versione del motore:
+1. si copia `thrust_curve.csv` in `simulation_inputs/propulsion_data/SRAD/<versione>/`;
+2. si copia `ATLAS_PARAMETERS_*.txt` in `tools/propulsion/motor_geometry/<versione>/` e si lancia `motor_mass_properties.py`, che scrive i risultati nella stessa cartella;
+3. si compila `motor.csv` accanto alla curva di spinta.

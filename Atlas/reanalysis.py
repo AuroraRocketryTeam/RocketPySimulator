@@ -1,7 +1,7 @@
 """
 Atlas reanalysis: one flight with every parameter at its nominal value (atlas_model.py).
 
-Saves the trajectory as .kml (open it in Google Earth) in reanalysis_output/ and, if asked, the
+Saves the trajectory as .kml (open it in Google Earth) in simulation_output/reanalysis_output/ and, if asked, the
 mass and center of mass over time for tools/mass_analysis/.
 """
 from pathlib import Path
@@ -46,9 +46,10 @@ if show_graph:
     rocket_flight.plots.rail_buttons_forces()
 
 # save trajectory, .kml can be open in google earth
-(BASE_DIR / "reanalysis_output").mkdir(exist_ok=True)
+OUTPUT_DIR = BASE_DIR / "simulation_output" / "reanalysis_output"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 rocket_flight.export_kml(
-    file_name=str(BASE_DIR / "reanalysis_output" / "trajectory.kml"),
+    file_name=str(OUTPUT_DIR / "trajectory.kml"),
     extrude=True,
     altitude_mode="relative_to_ground",
 )

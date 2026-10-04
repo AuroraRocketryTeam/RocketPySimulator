@@ -11,8 +11,8 @@ Writes in the output folder: the notebook files (ATLAS_PARAMETERS_*.txt, ATLAS_c
 the figures and thrust_curve.csv ("time [s],thrust [N]", up to burnout).
 
 Usage (with the propulsion venv, see README.md):
-    python Atlas/propulsion/run_motor_notebook.py
-    python Atlas/propulsion/run_motor_notebook.py --notebook <other notebook>.ipynb --output <folder>
+    python Atlas/tools/propulsion/thrust_curve/run_motor_notebook.py
+    python Atlas/tools/propulsion/thrust_curve/run_motor_notebook.py --notebook <other notebook>.ipynb --output <folder>
 """
 import argparse
 import json
@@ -24,9 +24,9 @@ SKIP = {0, 35, 36, 37, 38}
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument("--notebook", type=Path, default=HERE / "Atlas motor correct 1.0.ipynb")
-parser.add_argument("--output", type=Path, default=HERE / "output", help="default Atlas/propulsion/output/")
+parser.add_argument("--output", type=Path, default=HERE / "output", help="default: output/ next to this script")
 parser.add_argument("--cd", type=Path,
-                    default=HERE.parent / "simulation_inputs/aerodynamic_data/rocket_body/v1.4/CD_Mach_Test_Atlas_v_1.2_SDRAD_cd_mach.csv",
+                    default=HERE.parents[2] / "simulation_inputs/aerodynamic_data/rocket_body/v1.4/CD_Mach_Test_Atlas_v_1.2_SDRAD_cd_mach.csv",
                     help="CD-Mach file for the RocketPy flight of the notebook (default: Atlas v1.4)")
 args = parser.parse_args()
 
