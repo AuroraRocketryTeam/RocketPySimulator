@@ -62,7 +62,7 @@ for i, cell in enumerate(cells):
         if line.strip().startswith(("from google.colab", "drive.mount", "files.download")):
             continue
         if "/content/drive/" in line and "drag" in line:
-            line = line.split("=")[0] + f'= "{cd_file}",'
+            line = line.split("=")[0] + f"= {str(cd_file)!r},"  # repr: Windows backslashes stay valid
         lines.append(line)
     print(f"\n######## cell {i}", flush=True)
     exec(compile("\n".join(lines), f"cell_{i}", "exec"), namespace)
