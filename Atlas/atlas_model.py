@@ -311,4 +311,16 @@ def simulate(s, env, recovery=True, **rocket_options):
         time_overshoot=not AIRBRAKES_DIR,
         max_time=1200,
     )
+
+
+def max_acceleration_power_on(flight, skip=1e-4):
+    """Maximum acceleration with the motor on, without the last `skip` seconds before burnout.
+
+    RocketPy takes the second derivative of the center of mass position by finite differences
+    (dx = 1e-6 s): at burnout the center of mass stops moving abruptly and, when the integrator
+    puts a point within ~1e-6 s of it, the acceleration jumps to ~5e4 m/s^2 for a few microseconds.
+    flight.max_acceleration_power_on keeps that spike.
+    """
+    t, a = flight.acceleration.source[:, 0], flight.acceleration.source[:, 1]
+    return a[t < flight.rocket.motor.burn_out_time - skip].max()
 #--------------------------------------------------------------------------------------------------------

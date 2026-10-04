@@ -31,8 +31,8 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'prova'
-number_of_simulations = 50
+output_dir_name = 'Atlas_iterazione_1'
+number_of_simulations = 200
 weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast, i = ISA
 seed = None                 # integer to repeat exactly the same runs
 workers = os.cpu_count()
@@ -40,7 +40,7 @@ workers = os.cpu_count()
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
 show_dispersion_graph = False
-show_compare_graph = False
+show_compare_graph = True
 save_compare_graph = False
 sensitivity_analysis = False
 #--------------------------------------------------------------------------------------------------------
@@ -108,8 +108,9 @@ def flight_results(flight, env, execution_time):
         "out_of_rail_time": flight.out_of_rail_time,
         "out_of_rail_velocity": flight.out_of_rail_velocity,
         "max_velocity": flight.max_speed,
-        # Maximum acceleration with the motor on: the maximum over the whole flight is the main opening shock
-        "max_acceleration": flight.max_acceleration_power_on,
+        # Maximum acceleration with the motor on (the maximum over the whole flight is the main opening
+        # shock), without the numerical spike of RocketPy at burnout
+        "max_acceleration": model.max_acceleration_power_on(flight),
         "max_aerodynamic_drag": flight.aerodynamic_drag.max,
         "max_aerodynamic_lift": flight.aerodynamic_lift.max,
         "max_aerodynamic_spin_moment": flight.aerodynamic_spin_moment.max,

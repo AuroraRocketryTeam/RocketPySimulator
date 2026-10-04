@@ -1,12 +1,12 @@
-# SRAD - curva di spinta in thrust_curve.csv
+# SRAD - curva di spinta in thrust_curve.csv: quella del notebook più una discesa a zero di 25 ms dopo l'ultimo punto, a forma di mezzo coseno (senza, o con una discesa dritta, RocketPy dà picchi numerici di accelerazione)
 # Notebook di propulsione "Atlas motor correct 1.0": motore pieno 15.272 kg, a secco 6.438 kg, propellente 8.834 kg (KNSB + 1% Fe2O3).
 # Baricentro e inerzie a secco ricavati da ATLAS_PARAMETERS_1.0 GRAPHITE.txt con tools/propulsion/motor_geometry/motor_mass_properties.py (risultati in tools/propulsion/motor_geometry/v1.0/).
 # L'hardware del motore è la motor_dry_mass, quindi è escluso dalla rocket_dry_mass (vedi geometry)
 # La fine dell'ugello coincide con la fine del razzo
 # Posizioni misurate dall'ugello verso la camera di combustione.
 name,value,std,unit,note
-impulse,10234.59,5,N*s,integrale di thrust_curve.csv
-burn_time,2.682,0.1,s, 
+impulse,10281.03,5,N*s,integrale di thrust_curve.csv
+burn_time,2.706,0.1,s, 
 nozzle_radius,0.0375,0.0005,m, 
 throat_radius,0.016,0.0005,m, 
 nozzle_position,0,0.0001,m,

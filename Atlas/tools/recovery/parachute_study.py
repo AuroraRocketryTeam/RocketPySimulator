@@ -181,7 +181,7 @@ def analyze_flight(flight, env, drogue_lag, main_lag):
         "out_of_rail_time": flight.out_of_rail_time,
         "out_of_rail_velocity": flight.out_of_rail_velocity,
         "out_of_rail_acceleration": flight.acceleration.get_value_opt(flight.out_of_rail_time),
-        "max_acceleration_power_on": flight.max_acceleration_power_on,
+        "max_acceleration_power_on": model.max_acceleration_power_on(flight),
         "max_acceleration_total": flight.max_acceleration,
         "max_speed": flight.max_speed,
         "max_mach": flight.max_mach_number,
