@@ -1,6 +1,6 @@
 dati del motore. il modello legge la cartella scelta in atlas_model.py: MOTOR = "COTS/<motore>" oppure "SRAD/vx.y"
 - COTS/: una cartella per motore commerciale (nome del motore)
-- SRAD/: una cartella per versione del motore autocostruito
+- SRAD/: una cartella per versione del motore sviluppato da noi
 
 dentro ogni cartella:
 1. thrust_curve.csv: curva di spinta (tempo [s], spinta [N])

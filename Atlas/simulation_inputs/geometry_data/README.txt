@@ -10,8 +10,6 @@ razzo senza motore: il motore è modellato a parte (propulsion_data), quindi geo
 massa, inerzie e baricentro vengono da una simulazione OpenRocket con un motorino messo sul baricentro, togliendo la sua massa.
 posizioni e forme si ricavano dal .ork con tools/geometry/ork_positions/ork_positions.py, che scrive anche un geometry.csv da completare.
 
-v1.2 non ha geometry.csv: i valori usati con quel modello non sono noti, quindi non è simulabile.
-
 formato dei file parametri (geometry.csv, motor.csv, recovery.csv, airbrakes.csv, launch_site.csv):
     name,value,std,unit,note
     fin_span,0.195,0.0005,m,

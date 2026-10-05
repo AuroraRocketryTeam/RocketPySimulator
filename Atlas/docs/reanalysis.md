@@ -1,6 +1,6 @@
 # `reanalysis.py`: volo nominale di Atlas
 
-Un solo volo di Atlas con tutti i parametri al valore nominale, cioè senza dispersione. Serve per controllare il volo di riferimento prima di una Monte Carlo e per vederne i grafici completi. Razzo, motore, recupero e sito di lancio vengono da `atlas_model.py` (vedi [atlas_model.md](atlas_model.md)).
+Un solo volo di Atlas con tutti i parametri al valore nominale. Serve per controllare il volo di riferimento prima di una Monte Carlo e per vederne i grafici completi. Geometria, aerodinamica, motore, recupero e sito di lancio vengono da `atlas_model.py` (vedi [atlas_model.md](atlas_model.md)).
 
 ## 1. Uso
 ```bash

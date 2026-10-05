@@ -1,13 +1,12 @@
 # `montecarlo.py`: simulazione Monte Carlo di Atlas
 
-Fa volare Atlas molte volte, ogni volta con tutti i parametri estratti a caso attorno al valore nominale. Ne ricava la dispersione dei risultati: apogeo, velocità, accelerazione, margine statico, punto di atterraggio. Razzo, motore, recupero e sito di lancio vengono da `atlas_model.py` (vedi [atlas_model.md](atlas_model.md)), con le versioni scelte lì.
+Consente di realizzare molti voli con parametri variabili attorno a una media. Geometria, aerodinamica, motore, recupero e sito di lancio vengono da `atlas_model.py` (vedi [atlas_model.md](atlas_model.md)).
 
 ## 1. Uso
 ```bash
 python Atlas/montecarlo.py
 ```
 
-Le opzioni sono in testa al file:
 
 | Opzione | Significato |
 |---|---|
@@ -15,24 +14,26 @@ Le opzioni sono in testa al file:
 | `number_of_simulations` | numero di run |
 | `weather_data` | atmosfera: `c` media della settimana di EuRoC, `e` ensemble, `f` previsione GFS, `i` ISA |
 | `seed` | `None` = run diverse ogni volta; un intero = stesse run a ogni lancio |
-| `workers` | processi in parallelo (di default tutti i core) |
+| `multiple_core` | `True` = run in parallelo su tutti i core, `False` = su un core solo |
 | `ballistic` | `True` = voli senza paracadute |
 | `show_dispersion_graph` | mostra a schermo istogrammi, mappa e sensibilità (vengono salvati comunque) |
 | `show_compare_graph` | mostra i grafici di confronto dei voli |
 | `save_compare_graph` | salva i grafici di confronto in `comparison/` |
-| `sensitivity_analysis` | analisi di sensibilità (sezione 5); serve almeno 50 run |
+| `sensitivity_analysis` | analisi di sensibilità (sezione 5); servono almeno 50 run |
 
-La cartella `prova` non va su git e ogni run la sovrascrive. Per salvare dei risultati si usa un `output_dir_name` nuovo e si fa il push di quella cartella.
+La cartella `prova` non va su git. Per salvare dei risultati si usa un `output_dir_name` nuovo e si fa il push di quella cartella.
 
-## 2. Come gira
-1. Da `seed` nascono `number_of_simulations` semi diversi, uno per run (`SeedSequence` di numpy).
-2. Ogni run estrae un'impostazione con `model.sample`: ogni parametro con std > 0 da una normale attorno al suo valore. Con l'atmosfera ensemble sceglie anche un membro a caso.
-3. Simula il volo con `model.simulate` e ne estrae i risultati (sezione 3).
-4. Se il volo dà errore, impostazione ed errore finiscono in `Atlas.disp_errors.txt` e la run è scartata.
+## 2. Come funziona
+1. **Semi casuali.** Ogni run ha il suo generatore di numeri casuali, con un seme proprio. I semi nascono tutti da `seed` (con `SeedSequence` di numpy), che li rende indipendenti tra loro. Così:
+   - con `seed` intero si ottengono a ogni lancio esattamente le stesse run, anche in parallelo e in qualsiasi ordine finiscano;
+   - con `seed = None` le run cambiano a ogni lancio.
+2. **Estrazione dei parametri.** Con il suo generatore, la run chiama `model.sample`. Ogni parametro con std > 0 viene estratto da una distribuzione normale con media il valore nominale e deviazione la sua std; quelli con std = 0 restano al valore nominale. Con l'atmosfera ensemble la run sceglie anche un membro a caso.
+3. **Volo.** Simula il volo con `model.simulate` e ne estrae i risultati (sezione 3).
+4. **Errori.** Se il volo dà errore, impostazione ed errore finiscono in `Atlas.disp_errors.txt` e la run è scartata.
 
-Le run girano in parallelo su `workers` processi. I grafici di confronto però hanno bisogno di tutti gli oggetti `Flight`: con `show_compare_graph` o `save_compare_graph` attivi le run girano una dopo l'altra nel processo principale, quindi più lentamente.
+Con `multiple_core = True` le run girano in parallelo, un processo per core. Con `False`, oppure con `show_compare_graph` o `save_compare_graph` attivi, girano una dopo l'altra nel processo principale, quindi più lentamente: i grafici di confronto hanno bisogno di tutti gli oggetti `Flight`, che restano solo nel processo principale.
 
-Il parallelo usa `fork` dei processi, che esiste su Linux e macOS ma non su Windows. Su Windows lo script funziona solo con `show_compare_graph` o `save_compare_graph` attivi.
+Il parallelo funziona su tutti i sistemi. Su Linux e macOS i processi partono come copie di quello principale (`fork`). Su Windows ogni processo rilegge da capo lo script (`spawn`), quindi l'avvio è un po' più lento.
 
 ## 3. Risultati di ogni run
 | Chiave | Cosa è | Unità |
@@ -75,8 +76,15 @@ I `.pickle` sono le figure matplotlib intere: si riaprono, anche per ridimension
 1. si calcola la matrice di covarianza delle posizioni (est, nord);
 2. i suoi autovalori $\lambda_1 \ge \lambda_2$ e il primo autovettore danno assi e orientamento: l'ellisse a $k\sigma$ ha assi $2k\sqrt{\lambda_1}$ e $2k\sqrt{\lambda_2}$ ed è centrata nella media;
 3. si disegnano le ellissi per $k$ = 1, 2, 3 sopra la mappa del sito, centrata sulla rampa (finestra di 4 × 3 km).
+**Quanti punti stanno dentro.** Per una sola variabile, entro ±1σ dalla media cade il 68% dei valori (95% entro 2σ, 99,7% entro 3σ). Con due variabili insieme (est e nord) un punto sta dentro l'ellisse solo se non è troppo lontano dal centro in nessuna delle due direzioni, quindi ne restano dentro meno. La frazione dentro l'ellisse a $k\sigma$ è $1 - e^{-k^2/2}$:
 
-In due dimensioni le ellissi a 1, 2 e 3σ contengono circa il 39%, l'86% e il 99% dei punti, non il 68–95–99,7% di una sola variabile.
+| Ellisse | Punti dentro |
+|---|---|
+| 1σ | 39% |
+| 2σ | 86% |
+| 3σ | 99% |
+
+Per esempio, per un'area che contenga il 95% degli atterraggi serve l'ellisse a circa 2,45σ.
 
 **Analisi di sensibilità.** Usa il `SensitivityModel` di RocketPy: un modello lineare che stima quanto della varianza di apogeo e accelerazione massima dipende da ciascun parametro. Entrano solo i parametri con std > 0. Il modello legge i due file `.json`, per questo impostazione e risultati di una run devono stare sulla stessa riga. Con meno di 50 run viene disattivata.
 

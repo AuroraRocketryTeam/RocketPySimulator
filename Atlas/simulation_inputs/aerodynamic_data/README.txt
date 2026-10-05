@@ -1,7 +1,7 @@
 dati aerodinamici del razzo e degli airbrake.
 
-rocket_body/vx.y/: i file CD-Mach da provare con quella versione della geometria (righe mach,cd senza intestazione).
-il modello ne usa uno solo, sia a motore acceso sia spento (per il nostro razzo sono uguali); in atlas_model.py: AERODYNAMICS = "vx.y/<file>.csv"
+rocket_body/vx.y/: i file CD-Mach della geometria (righe mach,cd senza intestazione).
+il modello ne usa uno solo, sia a motore acceso sia spento. in atlas_model.py: AERODYNAMICS = "vx.y/<file>.csv"
 i file si generano dagli export di RASAero con tools/aerodynamic/cd_mach_rasaero_convert/rasaero_cdmach_generator.py;
 qui resta anche il modello RASAero (.CDX1) o OpenRocket da cui vengono.
 

@@ -1,6 +1,6 @@
 # `atlas_model.py`: il modello di Atlas
 
-È l'unica definizione di razzo, motore, recupero, airbrake e sito di lancio. Gli script non costruiscono Atlas da soli, ma lo prendono da qui:
+È ciò che definisce il razzo: geometria, motore, recupero, airbrake e sito di lancio. Gli script non costruiscono Atlas da soli, ma lo prendono da qui:
 - `montecarlo.py`;
 - `reanalysis.py`;
 - `tools/recovery/parachute_study.py`.
@@ -14,7 +14,6 @@ flight = model.simulate(setting, env)            # oggetto Flight di RocketPy
 ```
 
 ## 1. Scegliere le versioni
-In testa al file:
 
 | Costante | Cosa sceglie | File letto |
 |---|---|---|
@@ -30,14 +29,14 @@ In testa al file:
 I percorsi partono dalla cartella dello script, quindi il modello funziona da qualsiasi cartella venga lanciato.
 
 ## 2. Parametri
-Ogni file di parametri ha le colonne `name,value,std,unit,note` (formato in `simulation_inputs/geometry_data/README.txt`). `std` è la deviazione standard usata dalla Monte Carlo; 0 = valore fisso.
+Ogni file di parametri ha le colonne `name,value,std,unit,note`. `std` è la deviazione standard usata dalla Monte Carlo; 0 = valore fisso.
 
 - **`read_csv(path)`:** legge un file e restituisce `{nome: (valore, std)}`. Le righe che iniziano con `#` sono commenti. Se un valore o una std è `---` (campo da completare, per esempio nei `geometry.csv` scritti da `tools/geometry/ork_positions/`) si ferma e dice quali campi mancano.
 - **`load_parameters()`:** unisce in un solo dizionario geometria, motore, recupero, sito di lancio, airbrake (se attivi) e `drag_factor`. Se lo stesso nome compare in due file si ferma con un errore.
 - **`nominal(params)`:** un'impostazione con ogni parametro al valore nominale, `{nome: valore}`.
 - **`sample(params, rng)`:** un'impostazione casuale. Ogni parametro è estratto da una normale con media `value` e deviazione `std`. Se un ritardo dei paracadute (`drogue_lag`, `main_lag`, `electronics_lag`) esce negativo, l'estrazione si ripete.
 
-Le funzioni che seguono ricevono l'impostazione `s` e prendono i valori per nome: un parametro nuovo nei CSV va usato anche qui.
+Le funzioni delle sezioni seguenti ricevono l'impostazione data da `nominal` o `sample`, un dizionario chiamato `s`, e ne leggono i valori per nome: per esempio `s["fin_span"]`. Per questo aggiungere una riga a un CSV non basta: il nuovo parametro ha effetto solo quando `atlas_model.py` lo legge.
 
 ## 3. Logica di apertura dei paracadute: `RecoveryLogic`
 Riproduce in Python il codice di bordo che apre i paracadute. RocketPy chiama i due trigger a `sampling_rate` Hz.
@@ -86,4 +85,4 @@ Costruisce il razzo e lo fa volare con il `Flight` di RocketPy:
 - con gli airbrake `time_overshoot` è disattivato, perché il controller deve essere chiamato a ogni passo di integrazione.
 
 ## 8. Accelerazione massima: `max_acceleration_power_on(flight, skip)`
-Massima accelerazione a motore acceso, escludendo gli ultimi `skip` secondi (0,1 ms) prima del burnout. Nell'accelerazione RocketPy include la derivata seconda della posizione del baricentro, calcolata per differenze finite su 1 µs. Se la spinta finisce di colpo, quella derivata esplode al burnout: quando il solutore mette un punto proprio lì, `flight.max_acceleration_power_on` vale circa 5·10⁴ m/s² invece di circa 130. Con la curva SRAD v1.0, che finisce con una discesa arrotondata di 25 ms, il picco non c'è e i due valori coincidono; la funzione resta come sicurezza per curve con un taglio netto.
+Massima accelerazione a motore acceso, escludendo gli ultimi `skip` secondi (0,1 ms) prima del burnout. Nell'accelerazione RocketPy include la derivata seconda della posizione del baricentro, calcolata per differenze finite su 1 µs. Se la spinta finisce di colpo, quella derivata esplode al burnout quando il solutore mette un punto proprio lì, quindi `flight.max_acceleration_power_on` è completamente fuori scala. Si consiglia l'inserimento di un transitorio breve, 25 ms sono sufficienti, alla fine della thrust curve in modo da evitare questo errore numerico. La funzione resta come sicurezza per curve con un taglio netto.
