@@ -1,11 +1,11 @@
-# Atlas v1.4 - geometria del modello OpenRocket rocket.ork (alette wedge, Pro75)
+# Atlas v1.5 - geometria del modello OpenRocket rocket.ork
 # Posizioni misurate dalla punta dell'ogiva verso la coda.
 # std = deviazione standard usata dalle Monte Carlo (0 = valore fisso)
 name,value,std,unit,note
 rocket_dry_mass,20.134,0.3,kg,!!!rckt wo motor 
 rocket_dry_inertia_11,11.993,0.187,kg*m^2,perpendicolare all'asse !!!rckt wo motor 
 rocket_dry_inertia_33,0.092,0.00122,kg*m^2,attorno all'asse !!!rckt wo motor 
-center_of_mass_without_motor,164.717,0,m,razzo senza motore (OpenRocket 160.472 cm)
+center_of_mass_without_motor,1.64717,0,m,razzo senza motore 
 motor_position,3.20,0,m,uscita dell'ugello = coda del razzo (tail_position + tail_length)
 radius,0.075,0.001,m, 
 nose_length,0.44,0.001,m,ogiva LV-Haack 
