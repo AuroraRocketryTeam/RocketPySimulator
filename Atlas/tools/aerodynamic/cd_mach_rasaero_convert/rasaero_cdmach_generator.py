@@ -11,10 +11,10 @@ The RASAero exports are kept next to this script, one folder per geometry versio
 CD-Mach file straight into simulation_inputs with -o.
 
 Usage (one or more files):
-    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/importcsv.py <RASAero export>.CSV
-    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/importcsv.py <folder>/*.CSV --column on --max-mach 3
-    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/importcsv.py <export>.CSV -o <folder>/<name>.csv
-    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/importcsv.py Atlas/tools/aerodynamic/cd_mach_rasaero_convert/v1.4/<export>.CSV \
+    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/rasaero_cdmach_generator.py <RASAero export>.CSV
+    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/rasaero_cdmach_generator.py <folder>/*.CSV --column on --max-mach 3
+    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/rasaero_cdmach_generator.py <export>.CSV -o <folder>/<name>.csv
+    python Atlas/tools/aerodynamic/cd_mach_rasaero_convert/rasaero_cdmach_generator.py Atlas/tools/aerodynamic/cd_mach_rasaero_convert/v1.4/<export>.CSV \
         -o Atlas/simulation_inputs/aerodynamic_data/rocket_body/v1.4/<export>_cd_mach.csv
 Paths start from the folder where the command is launched; quote them if they contain spaces.
 """
