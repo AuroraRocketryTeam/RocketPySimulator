@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
-GEOMETRY = "v1.4"                                   # simulation_inputs/geometry_data/<version>/
+GEOMETRY = "v1.6"                                   # simulation_inputs/geometry_data/<version>/
 AERODYNAMICS = "v1.4/CD_Mach_Test_Atlas_v_1.2_SDRAD_cd_mach.csv"         # simulation_inputs/aerodynamic_data/rocket_body/<file>
 MOTOR = "SRAD/v1.0"             # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v1.0"                                   # simulation_inputs/recovery_data/<version>/
@@ -48,7 +48,10 @@ AIRBRAKES_DIR = INPUTS / "aerodynamic_data" / "airbrakes" / AIRBRAKES if AIRBRAK
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 def read_csv(path):
     """{name: (value, std)} from one parameter file."""
-    table = pd.read_csv(path, comment="#", skipinitialspace=True)
+    table = pd.read_csv(path, comment="#", skipinitialspace=True, dtype=str)
+    incomplete = [row.name for row in table.itertuples(index=False) if "---" in (row.value, row.std)]
+    if incomplete:
+        raise ValueError(f"{path}: fields still to fill (---): {', '.join(incomplete)}")
     return {row.name: (float(row.value), float(row.std)) for row in table.itertuples(index=False)}
 
 
@@ -251,7 +254,7 @@ def build_rocket(s, env=None, logic=None, drogue_lag=None, main_lag=None, recove
     atlas.add_motor(motor, position=s["motor_position"])
     atlas.power_off_drag *= s["drag_factor"]
     atlas.power_on_drag *= s["drag_factor"]
-    atlas.add_nose(length=s["nose_length"], kind="lvhaack", position=s["nose_position"])
+    atlas.add_nose(length=s["nose_length"], kind="von karman", position=s["nose_position"])
     atlas.add_trapezoidal_fins(
         n=round(s["fin_number"]),
         span=s["fin_span"],

@@ -31,7 +31,7 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'Atlas_iterazione_1'
+output_dir_name = 'Atlas_iterazione_2'
 number_of_simulations = 200
 weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast, i = ISA
 seed = None                 # integer to repeat exactly the same runs
@@ -40,7 +40,7 @@ workers = os.cpu_count()
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
 show_dispersion_graph = False
-show_compare_graph = True
+show_compare_graph = False
 save_compare_graph = False
 sensitivity_analysis = False
 #--------------------------------------------------------------------------------------------------------
