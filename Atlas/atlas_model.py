@@ -319,10 +319,11 @@ def simulate(s, env, recovery=True, **rocket_options):
 def max_acceleration_power_on(flight, skip=1e-4):
     """Maximum acceleration with the motor on, without the last `skip` seconds before burnout.
 
-    RocketPy takes the second derivative of the center of mass position by finite differences
-    (dx = 1e-6 s): at burnout the center of mass stops moving abruptly and, when the integrator
-    puts a point within ~1e-6 s of it, the acceleration jumps to ~5e4 m/s^2 for a few microseconds.
-    flight.max_acceleration_power_on keeps that spike.
+    RocketPy includes in the acceleration the second derivative of the center of mass position,
+    computed by finite differences over 1e-6 s. If the thrust ends abruptly, that derivative blows
+    up at burnout when the integrator puts a point right there, and flight.max_acceleration_power_on
+    is completely off scale. A short tail-off at the end of the thrust curve (25 ms is enough)
+    avoids the numerical spike; this function stays as a safety net for curves with a sharp cut.
     """
     t, a = flight.acceleration.source[:, 0], flight.acceleration.source[:, 1]
     return a[t < flight.rocket.motor.burn_out_time - skip].max()

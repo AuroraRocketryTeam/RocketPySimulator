@@ -35,7 +35,7 @@ output_dir_name = 'Atlas_iterazione_2'
 number_of_simulations = 200
 weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast, i = ISA
 seed = None                 # integer to repeat exactly the same runs
-workers = os.cpu_count()
+multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
 
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
@@ -418,6 +418,7 @@ def main():
 
     # The comparison graphs need all the Flight objects: in that case the runs are made in this process
     keep_flights = show_compare_graph or save_compare_graph
+    parallel = multiple_core and not keep_flights
     run_seeds = np.random.SeedSequence(seed).generate_state(number_of_simulations)
     initial_time = time.time()
     initial_cpu_time = time.process_time()
@@ -426,11 +427,13 @@ def main():
     with open(filename + ".disp_inputs.json", "w") as input_file, \
          open(filename + ".disp_outputs.json", "w") as output_file, \
          open(filename + ".disp_errors.txt", "w") as error_file:
-        if keep_flights:
-            init_worker(weather_data, True)
+        if not parallel:
+            init_worker(weather_data, keep_flights)
             runs = map(run_one, run_seeds)
         else:
-            pool = mp.get_context("fork").Pool(workers, initializer=init_worker, initargs=(weather_data, False))
+            # fork (Linux, macOS) copies the main process; Windows has only spawn, which re-imports this file
+            start_method = "fork" if "fork" in mp.get_all_start_methods() else "spawn"
+            pool = mp.get_context(start_method).Pool(os.cpu_count(), initializer=init_worker, initargs=(weather_data, False))
             runs = pool.imap_unordered(run_one, run_seeds)
 
         for i, (setting, flight_result, error, flight) in enumerate(runs, start=1):
@@ -447,7 +450,7 @@ def main():
                 error_file.write(json.dumps({**setting, "error": error}, default=float) + "\n")
             loading_bar(initial_time, number_of_simulations, i)
 
-        if not keep_flights:
+        if parallel:
             pool.close()
             pool.join()
 
