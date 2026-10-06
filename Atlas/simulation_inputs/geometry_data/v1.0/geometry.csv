@@ -1,0 +1,25 @@
+# Atlas v1.0 - geometria del modello OpenRocket rocket.ork (alette esagonali)
+# Posizioni misurate dalla punta dell'ogiva verso la coda.
+# std = deviazione standard usata dalle Monte Carlo (0 = valore fisso)
+name,value,std,unit,note
+rocket_dry_mass,25.590,0.3,kg,tutto ciò che non brucia (hardware del motore compreso)
+rocket_dry_inertia_11,14.631,0.187,kg*m^2,perpendicolare all'asse
+rocket_dry_inertia_33,0.075,0.00122,kg*m^2,attorno all'asse
+center_of_mass_without_motor,1.61919,0,m,
+motor_position,3.08,0,m,origine del motore (ugello)
+radius,0.075,0.001,m,
+nose_length,0.43,0.001,m,ogiva LV-Haack
+nose_position,0,0,m,
+fin_number,3,0,-,
+fin_span,0.142,0.0005,m,
+fin_root_chord,0.28,0.0005,m,
+fin_tip_chord,0.06,0.0005,m,
+fin_position,2.71,0.005,m,inizio della root chord
+fin_sweep_angle,58.2,0.005,deg,
+tail_top_radius,0.075,0.001,m,
+tail_bottom_radius,0.05,0.001,m,
+tail_length,0.075,0.001,m,
+tail_position,3.005,0.001,m,
+upper_button_position,0.57,0.005,m,
+lower_button_position,2.14,0.005,m,
+button_angular_position,0,0.01,deg,

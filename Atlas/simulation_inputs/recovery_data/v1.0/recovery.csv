@@ -1,0 +1,14 @@
+# Recupero v1.0 - drogue Rocketman 3 ft, main Rocketman 14 ft (Cd 0,97, senza spill hole)
+# I ritardi vanno dal segnale di espulsione al paracadute completamente aperto.
+name,value,std,unit,note
+cd_s_drogue,0.636999,0.006,m^2,0.97 * 0.6567
+cd_s_main,13.872261,0.277,m^2,0.97 * 14.3013
+drogue_lag,1.73,0.1,s,
+main_lag,1.73,0.1,s,
+electronics_lag,0.05,0.015,s,sensore -> segnale di espulsione
+sampling_rate,105,0,Hz,frequenza dell'algoritmo di recupero
+apogee_threshold,0.1,0,s,discesa continua prima di riconoscere l'apogeo
+main_altitude,450,0,m,AGL
+noise_mean,0,0.001,Pa,rumore del barometro
+noise_std,6.5,0.01,Pa,
+noise_time_correlation,0.3,0.01,-,

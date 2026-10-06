@@ -19,3 +19,6 @@ __pycache__/
 *.out
 *.toc
 *.synctex.gz
+
+# Output del notebook di propulsione (si rigenera con run_motor_notebook.py)
+Atlas/tools/propulsion/thrust_curve/output/
