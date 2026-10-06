@@ -7,7 +7,7 @@ Legge un file OpenRocket (`.ork`) e stampa:
 
 Poi scrive un nuovo `geometry.csv` in `<versione>/` accanto allo script.
 
-Legge solo la geometria scritta nel file (XML, compresso o no): non serve OpenRocket né Java.
+Legge solo la geometria scritta nel file (XML, compresso o no), non serve OpenRocket.
 
 ```bash
 python Atlas/tools/geometry/ork_positions/ork_positions.py Atlas/simulation_inputs/geometry_data/v1.5/rocket.ork
@@ -18,7 +18,7 @@ Con `--geometry <file>` confronta con un altro `geometry.csv`; con `--output <fi
 ## Motore
 In RocketPy il motore è modellato a parte (`motor.csv`), quindi il razzo di `geometry.csv` è la configurazione senza motore. Lo script ignora i motori del `.ork` e scrive solo quali ha trovato. Per esempio nella v1.5 c'è il motorino G250 messo vicino al baricentro, che serve solo per far girare la simulazione OpenRocket da cui si ricavano le inerzie.
 
-Masse, baricentro e inerzie non li calcola: vengono dalla simulazione OpenRocket (`openrocket_simulationdata.csv`), togliendo la massa del motorino.
+Masse, baricentro e inerzie non li calcola perchè vengono dalla simulazione OpenRocket (`openrocket_simulationdata.csv`), simulando il volo con un piccolo motorino sul baricentro.
 
 ## Come calcola le posizioni
 - **Corpo esterno:** ogiva, tubi e transizioni stanno uno dopo l'altro; ognuno parte dove finisce il precedente.
@@ -31,8 +31,6 @@ Masse, baricentro e inerzie non li calcola: vengono dalla simulazione OpenRocket
 | `bottom` | fine del contenitore − lunghezza + offset |
 | `absolute` | offset dalla punta |
 | `after` | fine del componente precedente + offset |
-
-Come lunghezza usa la corda alla radice per le alette, il diametro esterno per i rail button e la lunghezza da impacchettati per paracadute e masse.
 
 ## Valori per `geometry.csv`
 | Parametro | Da dove |
