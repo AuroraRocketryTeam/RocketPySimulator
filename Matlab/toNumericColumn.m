@@ -1,13 +1,13 @@
 function v = toNumericColumn(x)
 
-    % Caso 1: già numerico
+    % Numeric case
     if isnumeric(x)
         v = x(:);
         v = v(~isnan(v));
         return
     end
 
-    % Caso 2: cell array
+    % Cell array case
     if iscell(x)
         mask = cellfun(@(y) isnumeric(y) && isscalar(y) && ~isnan(y), x);
         v = cell2mat(x(mask));
@@ -15,6 +15,6 @@ function v = toNumericColumn(x)
         return
     end
 
-    % Caso 3: altro tipo → scarta
+    % Case anything else (simply removes it)
     v = [];
 end

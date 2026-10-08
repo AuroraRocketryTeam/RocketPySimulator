@@ -1,9 +1,8 @@
 function export_flight_error(settings_list)
     global dispersion_error_file
+        % Converts the struct in text (equivalent to str() in python)
+        str_to_write = evalc('disp(settings_list)');
 
-    for i = 1:numel(settings_list)
-        % Converto il contenuto della cell in stringa leggibile
-        str_to_write = evalc('disp(settings_list)');  
-        fprintf(dispersion_error_file, "%s\n", str_to_write);
-    end
+        % Writes the error in the log file
+        fprintf(dispersion_error_file, "%s\n", str_to_write); 
 end

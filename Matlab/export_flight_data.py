@@ -12,7 +12,7 @@ def convert_numpy(obj):
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 def export_flight_data(flight_setting, flight_data, exec_time, dispersion_input_file, dispersion_output_file):
-    # Flight results
+    # Generate flight results
     flight_result = {
         "out_of_rail_time": flight_data.out_of_rail_time,
         "out_of_rail_velocity": flight_data.out_of_rail_velocity,
