@@ -4,7 +4,7 @@ Simulazioni di volo del team Aurora Rocketry con [RocketPy](https://github.com/R
 
 ## Cartelle
 - `Atlas/`: razzo per EuRoC. Monte Carlo, reanalysis e studio paracadute usano tutti `atlas_model.py`, con i dati versionati in `simulation_inputs/` (vedi `Atlas/README.md`); `Airbrake/` è il vecchio studio degli airbrake.
-- `FRED/`: prototipo per i test flight dell'avionica.
+- `FRED/`: prototipo per i test flight dell'avionica. `FRED2.0/` usa `fred_model.py` con i dati versionati in `simulation_inputs/`, come Atlas (vedi `FRED/FRED2.0/README.md`); `FRED1.0/` contiene le vecchie versioni lasciate com'erano, compresa quella usata per il lancio del 23 maggio 2026 (`FRED_v2.2_launch/`); `Fred_connected/` contiene il vecchio script `FRED_connected.py` (prima in `Matlab/`).
 - `Nemesis/`: razzo già lanciato, progetto chiuso.
 - `RealTimeSimulation/`: reanalysis sulla telemetria di volo, in sviluppo.
 - `Matlab/`: script Matlab per Monte Carlo ed esportazione dei dati, in sviluppo.

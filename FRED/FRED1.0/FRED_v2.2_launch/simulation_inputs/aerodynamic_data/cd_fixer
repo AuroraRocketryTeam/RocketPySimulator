@@ -1,0 +1,59 @@
+import csv
+from pathlib import Path
+import os
+
+# set path
+BASE_DIR = Path(__file__).resolve().parent
+
+input_file_path = str(BASE_DIR/'CD Test_FRED_V_2.0.CSV')
+
+def process_aerodynamics_from_file(file_path):
+    if not os.path.exists(file_path):
+        print(f"Errore: Il file {file_path} non esiste.")
+        return
+
+    power_off_data = []
+    power_on_data = []
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        # Leggiamo tutte le righe
+        lines = f.readlines()
+        
+        # Saltiamo l'intestazione
+        for line in lines[1:]:
+            # Rimuoviamo spazi bianchi e dividiamo per virgola
+            parts = [p.strip() for p in line.split(',')]
+            
+            if len(parts) < 10:
+                continue
+
+            try:
+                # Ricostruzione Mach (unisce la colonna 0 e 1, es: "0" e "01" -> "0.01")
+                mach = f"{parts[0]}.{parts[1]}"
+                
+                # In base alla struttura CSV fornita:
+                # parts[3] è CD Power-Off 
+                # parts[4] è CD Power-On
+                # (Nota: se il file ha virgole extra nei numeri, gli indici potrebbero traslare)
+                cd_off = f"{parts[3]}.{parts[4]}"
+                cd_on = f"{parts[5]}.{parts[6]}"
+
+                power_off_data.append([mach, cd_off])
+                power_on_data.append([mach, cd_on])
+            except IndexError:
+                continue
+
+    # Salvataggio dei risultati
+    save_csv(str(BASE_DIR/'FRED_v2.0_CD_power_off.csv'), ['Mach', 'CD_Power_Off'], power_off_data)
+    save_csv(str(BASE_DIR/'FRED_v2.0_CD_power_on.csv'), ['Mach', 'CD_Power_On'], power_on_data)
+
+def save_csv(filename, header, data):
+    with open(filename, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        # writer.writerow(header)
+        writer.writerows(data)
+    print(f"File creato: {filename}")
+
+# Esecuzione
+if __name__ == "__main__":
+    process_aerodynamics_from_file(input_file_path)
