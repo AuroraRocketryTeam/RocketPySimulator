@@ -16,3 +16,5 @@ Lo script scrive accanto al file dei parametri `mass_properties.csv` e il disegn
 |---|---|---|---|---|---|
 | 7 mm | 0,7775 | 0,0875 | 0,00486 / 0,000231 | 0,1282 | 0,2367 |
 | 8 mm | 0,7372 | 0,0873 | 0,00455 / 0,000223 | 0,1235 | 0,2320 |
+
+Massa a secco: il motore da 7 mm pesato pieno è 818 g, quindi a secco 0,621 kg (818 g meno il grain da 196,9 g alla densità teorica), circa 156 g meno del modello. Nel modello il pezzo più pesante è l'ugello in acciaio pieno (0,382 kg); al modello mancano solo le viti in testa che tengono il bulkhead. In `simulation_inputs/propulsion_data/SRAD/7mm/motor.csv` c'è la massa pesata; baricentro e inerzie sono quelli del modello, da sostituire con quelli del CAD. Per l'8 mm, non pesato, la massa a secco è stimata come quella del 7 mm meno la differenza di ugello del modello: 0,581 kg.

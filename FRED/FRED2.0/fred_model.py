@@ -21,7 +21,7 @@ import pandas as pd
 #-------------------------------------------------------------------------------------------------------- VERSIONS
 GEOMETRY = "v0_lancio23maggio"                      # simulation_inputs/geometry_data/<version>/
 AERODYNAMICS = "v0_lancio23maggio"                  # simulation_inputs/aerodynamic_data/<version>/
-MOTOR = "SRAD/v0_lancio23maggio"                    # simulation_inputs/propulsion_data/<motor>/
+MOTOR = "SRAD/7mm"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
 LAUNCH_SITE = "v0_lancio23maggio"                   # simulation_inputs/environment_data/<version>/
 LAUNCH_DATE = (2026, 5, 23, 14)                     # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
@@ -33,6 +33,9 @@ DRAG_FACTOR = (1.0, 0.001)
 # wind goes: a wind from north has heading 180). The speed grows of 5% every 50 m up to 300 m.
 MANUAL_WIND = (8.7, 315)
 #--------------------------------------------------------------------------------------------------------
+
+# Longest integration step (s), shorter than any burn: see simulate()
+MAX_TIME_STEP = 0.1
 
 INPUTS = Path(__file__).resolve().parent / "simulation_inputs"
 
@@ -261,6 +264,10 @@ def simulate(s, env, recovery=True, **rocket_options):
         inclination=s["inclination"],
         heading=s["heading"],
         max_time=1200,
+        # At ignition the thrust is below the weight: on the rail every derivative is zero and the
+        # integrator tries a first step of 1.2 s. With a burn shorter than that (8 mm nozzle, 0.68 s)
+        # the step lands after burnout, is accepted and the rocket never leaves the rail.
+        max_time_step=MAX_TIME_STEP,
     )
 
 

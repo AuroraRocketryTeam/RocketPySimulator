@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 # set path
-BASE_DIR = Path(__file__).resolve().parent / "v0_lancio23maggio"   # cartella della versione con i dati del test
+BASE_DIR = Path(__file__).resolve().parent / "7mm"   # cartella dell'ugello con i dati del test (7mm o 8mm)
 
 filename = "test_2026-05-21_21-07-43"
 

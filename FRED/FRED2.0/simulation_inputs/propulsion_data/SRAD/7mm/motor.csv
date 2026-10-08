@@ -1,6 +1,7 @@
 # SRAD BRICO 45 ugello 7 mm - motore del lancio del 23 maggio
-# thrust_curve.csv: test al banco del 21/05/2026 (tools/propulsion/thrust_curve/v0_lancio23maggio/) tagliato e chiuso a zero a mano
-# Geometria e masse da FRED_45_PARAMETERS_7mm.txt (propulsione): motore pieno 0.974 kg / a secco 0.777 kg / propellente 0.197 kg.
+# thrust_curve.csv: test al banco del 21/05/2026 (tools/propulsion/thrust_curve/7mm/) tagliato e chiuso a zero a mano
+# Geometria da FRED_45_PARAMETERS_7mm.txt (propulsione); il file dà motore a secco 0.777 kg / propellente 0.197 kg / pieno 0.974 kg.
+# Massa a secco: quella reale (motore pieno pesato 818 g meno il grain da 196.9 g). Il modello di propulsione pesa circa 156 g in più (ugello in acciaio pieno); baricentro e inerzie a secco restano quelli del modello finché non c'è il CAD.
 # Baricentri e inerzie a secco ricavati con tools/propulsion/motor_geometry/motor_mass_properties.py (risultati in tools/propulsion/motor_geometry/7mm/).
 # L'hardware del motore è la motor_dry_mass: è escluso dalla rocket_dry_mass (vedi geometry)
 # La fine dell'ugello coincide con la fine del razzo
@@ -18,7 +19,7 @@ grain_outer_radius,0.0165,0.0001,m,
 grain_initial_inner_radius,0.0065,0.0001,m,
 grain_initial_height,0.147,0.0001,m,
 grains_center_of_mass_position,0.128196,0.001,m,centro del grain (motore lungo 0.2367 m)
-motor_dry_mass,0.777474,0.005,kg,case + bulkhead + protezioni termiche + ugello in acciaio C45
+motor_dry_mass,0.6211,0.01,kg,motore pieno pesato 818 g meno il grain (densità teorica); std per un grain meno denso
 motor_dry_mass_position,0.0874568,0.001,m,
 motor_inertia_11,0.0048559,0,kg*m^2,perpendicolare all'asse attorno al baricentro a secco
 motor_inertia_33,0.00023119,0,kg*m^2,attorno all'asse
