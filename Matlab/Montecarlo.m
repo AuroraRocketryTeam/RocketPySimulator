@@ -115,8 +115,8 @@ number_of_simulations = 10;
 %% Crea file per input, output ed errori e mantienili aperti
 global dispersion_error_file dispersion_input_file dispersion_output_file
 dispersion_error_file  = fopen(filename + ".disp_errors.txt", "w");
-dispersion_input_file  = fopen(filename + ".disp_inputs.json", "w");
-dispersion_output_file = fopen(filename + ".disp_outputs.json", "w");
+dispersion_input_file  = filename + ".disp_inputs.json";
+dispersion_output_file = filename + ".disp_outputs.json";
 
 %% Inizializza contatore e timer
 i = 0;
@@ -217,6 +217,7 @@ flights = {};  % Lista di risultati
 % Iterate over flight settings
 settings_list = flight_settings(analysis_parameters, number_of_simulations);
 
+t_vec=[]; %rimuovere
 for idx = 1:length(settings_list)
     global last_negative_time apogee_detected
 
@@ -391,11 +392,6 @@ comparison.stability_margin();
 final_string = sprintf('Completed %d iterations successfully. Total CPU time: %.2f s. Total wall time: %.2f s', ...
     i, cputime - initial_cpu_time, toc(initial_wall_time));
 disp(final_string);
-
-% Close files (se erano aperti come file Python, in MATLAB basta non averli aperti in append)
-fclose(dispersion_input_file); 
-fclose(dispersion_output_file); 
-fclose(dispersion_error_file);
 
 filename = fullfile(BASE_DIR, 'Atlas');
 

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+
+# Editor
+.vscode/
+
+# Output di prova delle Monte Carlo (output_dir_name = 'prova'): si sovrascrive a ogni run.
+# Per salvare dei risultati usare un output_dir_name nuovo e fare il push di quella cartella.
+**/montecarlo_output/prova/
+
+# File ausiliari LaTeX
+*.aux
+*.log
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.synctex.gz
+
+# Output del notebook di propulsione (si rigenera con run_motor_notebook.py)
+Atlas/tools/propulsion/thrust_curve/output/

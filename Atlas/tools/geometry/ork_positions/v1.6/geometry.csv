@@ -1,0 +1,25 @@
+# Atlas v1.6 - geometria del modello OpenRocket rocket.ork, scritta da tools/geometry/ork_positions/ork_positions.py
+# Posizioni misurate dalla punta dell'ogiva verso la coda.
+# std = deviazione standard usata dalle Monte Carlo (0 = valore fisso); --- = da completare a mano
+name,value,std,unit,note
+rocket_dry_mass,---,---,kg,razzo senza motore (simulazione OpenRocket meno il motore)
+rocket_dry_inertia_11,---,---,kg*m^2,perpendicolare all'asse; razzo senza motore
+rocket_dry_inertia_33,---,---,kg*m^2,attorno all'asse; razzo senza motore
+center_of_mass_without_motor,---,---,m,razzo senza motore
+motor_position,3.225,0,m,uscita dell'ugello = fine del razzo
+radius,0.075,0.0001,m,
+nose_length,0.44,0.0005,m,ogiva von karman
+nose_position,0,0,m,
+fin_number,3,0,-,
+fin_span,0.195,0.0005,m,
+fin_root_chord,0.35,0.0005,m,
+fin_tip_chord,0.035,0.0005,m,
+fin_position,2.707,0.0005,m,inizio della root chord
+fin_sweep_angle,60.9,0.0005,deg,
+tail_top_radius,0.075,0.0005,m,
+tail_bottom_radius,0.06,0.0005,m,
+tail_length,0.556,0.0005,m,forma ogive nel .ork; conica in RocketPy
+tail_position,2.669,0.0005,m,
+upper_button_position,0.60185,0.0005,m,centro del pattino
+lower_button_position,2.1469,0.0005,m,centro del pattino
+button_angular_position,0,0.001,deg,

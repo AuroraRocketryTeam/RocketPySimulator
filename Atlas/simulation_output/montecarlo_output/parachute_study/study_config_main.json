@@ -1,0 +1,205 @@
+{
+  "campaign": "main",
+  "masses": [
+    20.0,
+    22.5,
+    25.0,
+    27.5,
+    30.0
+  ],
+  "delay_cases": [
+    "0.75",
+    "1.5",
+    "2.25",
+    "3",
+    "3.75"
+  ],
+  "n_sims": 100,
+  "seed": 42,
+  "fixed_drogue_delay": 4.0,
+  "weather_data": "c",
+  "drag_case": "CD_Test_45_square",
+  "propellant_mass": 5.309,
+  "analysis_parameters": {
+    "rocket_dry_mass": [
+      26.47,
+      0.3
+    ],
+    "motor_dry_mass": [
+      0.0001,
+      0.0001
+    ],
+    "motor_inertia_11": [
+      0,
+      0
+    ],
+    "motor_inertia_33": [
+      0.0,
+      0.0
+    ],
+    "motor_dry_mass_position": [
+      0.0,
+      0.001
+    ],
+    "impulse": [
+      9977,
+      5
+    ],
+    "burn_time": [
+      4.3,
+      0.1
+    ],
+    "nozzle_radius": [
+      0.029,
+      0.0005
+    ],
+    "throat_radius": [
+      0.02,
+      0.0005
+    ],
+    "grain_separation": [
+      0.003,
+      1e-05
+    ],
+    "grain_density": [
+      1876.3,
+      5
+    ],
+    "grain_outer_radius": [
+      0.0359,
+      0.0001
+    ],
+    "grain_initial_inner_radius": [
+      0.0181,
+      0.0001
+    ],
+    "grain_initial_height": [
+      0.15616999999999998,
+      0.0001
+    ],
+    "radius": [
+      0.075,
+      0.001
+    ],
+    "nozzle_position": [
+      0,
+      0.0001
+    ],
+    "grains_center_of_mass_position": [
+      0.5125,
+      0.01
+    ],
+    "power_off_drag_corr": [
+      1.0,
+      0.001
+    ],
+    "power_on_drag_corr": [
+      1.0,
+      0.001
+    ],
+    "nose_length": [
+      0.6,
+      0.001
+    ],
+    "tail_position": [
+      2.99,
+      0.001
+    ],
+    "nose_position": [
+      0,
+      0
+    ],
+    "fin_span": [
+      0.145,
+      0.0005
+    ],
+    "fin_root_chord": [
+      0.2,
+      0.0005
+    ],
+    "fin_tip_chord": [
+      0.1,
+      0.0005
+    ],
+    "fin_position": [
+      2.99,
+      0.005
+    ],
+    "fin_sweep_angle": [
+      45.1,
+      0.005
+    ],
+    "tail_length": [
+      0.326,
+      0.001
+    ],
+    "tail_bottom_radius": [
+      0.045,
+      0.001
+    ],
+    "tail_top_radius": [
+      0.075,
+      0.001
+    ],
+    "inclination": [
+      84,
+      0.5
+    ],
+    "heading": [
+      145,
+      1
+    ],
+    "rail_length": [
+      12,
+      0.005
+    ],
+    "cd_s_drogue": [
+      0.636999,
+      0.03184995
+    ],
+    "cd_s_main": [
+      13.872261,
+      0.6936130500000001
+    ],
+    "t_sw_drogue": [
+      1.0,
+      0.15
+    ],
+    "t_sw_main": [
+      1.0,
+      0.15
+    ],
+    "t_infl_drogue": [
+      3.0,
+      0.5
+    ],
+    "t_infl_main": [
+      3.0,
+      0.5
+    ],
+    "upper_button_y": [
+      0.57,
+      0.005
+    ],
+    "lower_button_y": [
+      2.14,
+      0.005
+    ],
+    "angular_button": [
+      0,
+      0.01
+    ],
+    "noise_mean": [
+      0,
+      0.001
+    ],
+    "noise_p_stdev": [
+      6.5,
+      0.01
+    ],
+    "noise_p_tc": [
+      0.3,
+      0.01
+    ]
+  }
+}

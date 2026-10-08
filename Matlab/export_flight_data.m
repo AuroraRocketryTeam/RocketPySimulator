@@ -1,71 +1,9 @@
 function flight_result = export_flight_data(flight_setting, flight_data, time)
     global dispersion_input_file dispersion_output_file
-    
-    % Converti in array MATLAB double
+    % Importa o ricarica il modulo Python
+    mod = py.importlib.import_module('export_flight_data');
+    mod = py.importlib.reload(mod);
 
-    vel_func = py.getattr(flight_data, 'speed');
-    max_vel  = double(py.getattr(vel_func, 'max'));
-    acc_func = py.getattr(flight_data, 'acceleration');
-    max_acc  = double(py.getattr(acc_func, 'max'));
-    drag_func = py.getattr(flight_data, 'aerodynamic_drag');
-    max_drag  = double(py.getattr(drag_func, 'max'));
-    lift_func = py.getattr(flight_data, 'aerodynamic_lift');
-    max_lift  = double(py.getattr(lift_func, 'max'));
-    spin_moment_func = py.getattr(flight_data, 'aerodynamic_spin_moment');
-    max_spin_moment  = double(py.getattr(spin_moment_func, 'max'));
-    bending_func = py.getattr(flight_data, 'aerodynamic_bending_moment');
-    max_bending_moment  = double(py.getattr(bending_func, 'max'));
-
-    % --- Copia i valori già calcolati in RocketPy ---
-    flight_result = struct( ...
-        'out_of_rail_time',                 double(flight_data.out_of_rail_time), ...
-        'out_of_rail_velocity',             double(flight_data.out_of_rail_velocity), ...
-        'max_velocity',                     max_vel, ...
-        'max_acceleration',                 max_acc, ...
-        'max_aerodynamic_drag',             max_drag, ...
-        'max_aerodynamic_lift',             max_lift, ...
-        'max_aerodynamic_spin_moment',      max_spin_moment, ...
-        'max_aerodynamic_bending_moment',   max_bending_moment, ...
-        'apogee_time',                      double(flight_data.apogee_time), ...
-        'apogee_altitude',                  double(flight_data.apogee - flight_data.env.elevation), ...
-        'apogee_x',                         double(flight_data.apogee_x), ...
-        'apogee_y',                         double(flight_data.apogee_y), ...
-        'impact_time',                      double(flight_data.t_final), ...
-        'impact_x',                         double(flight_data.x_impact), ...
-        'impact_y',                         double(flight_data.y_impact), ...
-        'impact_velocity',                  double(flight_data.impact_velocity), ...
-        'initial_static_margin',            double(flight_data.rocket.static_margin(0)), ...
-        'out_of_rail_static_margin',        double(flight_data.rocket.static_margin(double(flight_data.out_of_rail_time))), ...
-        'final_static_margin',              double(flight_data.rocket.static_margin(double(flight_data.rocket.motor.burn_out_time))), ...
-        'number_of_events',                 double(py.len(flight_data.parachute_events)), ...
-        'execution_time',                   double(time) ...
-    );
-    
-    % Risultati paracadute
-
-    if numel(flight_data.parachute_events)>0
-        trigger = double(flight_data.parachute_events{1}{1});
-        lag     = double(flight_data.parachute_events{1}{2}.lag);
-
-        flight_result.drogue_triggerTime       = trigger;
-        flight_result.drogue_inflated_time     = trigger + lag;
-        flight_result.drogue_inflated_velocity = vel_func(trigger + lag);
-    else
-        flight_result.drogue_triggerTime       = 0;
-        flight_result.drogue_inflated_time     = 0;
-        flight_result.drogue_inflated_velocity = 0;
-    end
-
-    % --- Scrittura JSON output ---
-    fprintf(dispersion_output_file, "%s\n", jsonencode(flight_result));
-
-    % --- Scrittura JSON input ---
-    if iscell(flight_setting)
-        for i = 1:numel(flight_setting)
-            fprintf(dispersion_input_file, "%s\n", jsonencode(flight_setting{i}));
-        end
-    else
-        fprintf(dispersion_input_file, "%s\n", jsonencode(flight_setting));
-    end
-
+    % Chiama la funzione Python
+    flight_result = mod.export_flight_data(flight_setting, flight_data, time,dispersion_input_file,dispersion_output_file);
 end
