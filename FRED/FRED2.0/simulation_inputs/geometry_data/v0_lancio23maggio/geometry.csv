@@ -1,0 +1,26 @@
+# FRED v0_lancio23maggio - valori scritti nello script della simulazione di lancio (FRED1.0/FRED_v2.2_launch/FRED_v2.2_launch.py)
+# Il .ork usato non è stato trovato: le posizioni sono circa 2 cm più corte di quelle dei .ork FRED_V_2.2 e 2.3.
+# Posizioni misurate dalla punta dell'ogiva verso la coda.
+# std = deviazione standard usata dalle Monte Carlo (0 = valore fisso)
+name,value,std,unit,note
+rocket_dry_mass,2.201,0.03,kg,configurazione v2.3_super_lite; razzo senza motore
+rocket_dry_inertia_11,1.49,0.00187,kg*m^2,perpendicolare all'asse; da verificare: OpenRocket dà circa 0.2
+rocket_dry_inertia_33,0.01,0.000122,kg*m^2,attorno all'asse
+center_of_mass_without_motor,0.409,0,m,configurazione v2.3_super_lite
+motor_position,0.853,0,m,uscita dell'ugello = fine della coda (tail_position + tail_length)
+radius,0.0425,0.001,m,
+nose_length,0.14,0.001,m,ogiva ellittica
+nose_position,0,0,m,
+fin_number,3,0,-,
+fin_span,0.12,0.0005,m,
+fin_root_chord,0.12,0.0005,m,
+fin_tip_chord,0.03,0.0005,m,
+fin_position,0.686,0.005,m,inizio della root chord
+fin_sweep_angle,30.3,0.005,deg,
+tail_top_radius,0.0425,0.001,m,
+tail_bottom_radius,0.03,0.001,m,
+tail_length,0.043,0.001,m,conica
+tail_position,0.81,0.001,m,
+upper_button_position,0.424,0.005,m,
+lower_button_position,0.625,0.005,m,
+button_angular_position,0,0.01,deg,

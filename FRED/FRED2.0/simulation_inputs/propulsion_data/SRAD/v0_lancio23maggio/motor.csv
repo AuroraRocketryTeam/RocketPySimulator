@@ -1,0 +1,21 @@
+# SRAD BRICO 45 ugello 7 mm (nozzle 7mm test) - valori dello script della simulazione di lancio (FRED1.0/FRED_v2.2_launch/FRED_v2.2_launch.py)
+# thrust_curve.csv = reshape_test_2026-05-21_21-07-43.csv: test al banco del 21/05/2026 tagliato con thrust_curve_visualizer.py
+# L'hardware del motore è la motor_dry_mass: è escluso dalla rocket_dry_mass (vedi geometry)
+# Posizioni misurate dall'ugello verso la camera di combustione.
+name,value,std,unit,note
+impulse,202.054,1,N*s,dal test al banco del 21/05/2026
+burn_time,2.37,0.001,s,durata di thrust_curve.csv
+nozzle_radius,0.01371,0.001,m,preso da Borealis
+throat_radius,0.0095,0.001,m,preso da Borealis
+nozzle_position,0,0.001,m,
+grain_number,1,0,-,
+grain_separation,0.003,0.0001,m,
+grain_density,1850.92,1,kg/m^3,grain da 196.6 g; lo script di lancio usava un volume sbagliato e dava circa 21 kg/m^3
+grain_outer_radius,0.0165,0.0001,m,
+grain_initial_inner_radius,0.0065,0.001,m,
+grain_initial_height,0.147,0.001,m,
+grains_center_of_mass_position,0.125,0.001,m,
+motor_dry_mass,0.622,0.0001,kg,motore pieno reale 818 g meno il grain simulato da 196 g
+motor_dry_mass_position,0.09941,0.001,m,
+motor_inertia_11,0.66,1e-05,kg*m^2,perpendicolare all'asse; da verificare: per 0.6 kg lunghi circa 0.2 m ci si aspetta circa 0.002
+motor_inertia_33,1e-05,1e-05,kg*m^2,attorno all'asse; da verificare
