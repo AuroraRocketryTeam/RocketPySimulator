@@ -1,0 +1,14 @@
+"# from FRED_45_PARAMETERS_7mm.txt; positions from the nozzle exit, inertias about the center of mass of each group"
+group,mass [kg],CG [m],I_11 [kg*m^2],I_33 [kg*m^2]
+dry,0.777474,0.0874568,0.0048559,0.00023119
+propellant,0.1969,0.128196,0.000370049,3.09625e-05
+loaded,0.974374,0.0956893,0.00548671,0.000262152
+
+part,mass [kg],from [m],to [m],CG [m]
+nozzle,0.381991,0,0.0526963,0.0235037
+casing tube,0.229786,0.0216963,0.236696,0.129196
+thermal protection liner,0.0768496,0.0526963,0.203696,0.128196
+thermal protection closure,0.00537566,0.203696,0.206696,0.205196
+bulkhead,0.073796,0.206696,0.236696,0.221696
+casing closure,0.00967618,0.206696,0.209696,0.208196
+grain 1,0.1969,0.0546963,0.201696,0.128196

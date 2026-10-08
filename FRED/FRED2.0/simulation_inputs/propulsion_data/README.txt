@@ -10,5 +10,6 @@ l'hardware del motore è nella motor_dry_mass ed è escluso dalla massa del razz
 
 versioni:
 - SRAD/v0_lancio23maggio: ugello 7 mm, curva del test al banco del 21/05/2026 (tagliata con tools/propulsion/thrust_curve/thrust_curve_visualizer.py)
+  geometria e masse dal file di propulsione in tools/propulsion/motor_geometry/7mm/; baricentri e inerzie a secco con motor_mass_properties.py
 
 formato dei file parametri: vedi geometry_data/README.txt

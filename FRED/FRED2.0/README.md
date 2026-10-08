@@ -24,6 +24,8 @@ LAUNCH_SITE = "v0_lancio23maggio"                   # simulation_inputs/environm
 - `tools/`: strumenti divisi per argomento.
   - `aerodynamic/cd_mach_rasaero_convert/<versione>/`: export di RASAero da cui vengono i CD.
   - `propulsion/thrust_curve/`: dati del test al banco e `thrust_curve_visualizer.py` per tagliarli.
+  - `propulsion/motor_simulator/`: simulatore del motore SRAD del team propulsione.
+  - `propulsion/motor_geometry/motor_mass_properties.py`: massa, baricentri e inerzie del motore dal file dei parametri di propulsione (`7mm/`, `8mm/`), con il disegno della sezione (come in Atlas).
   - `others/pickle_opener.py`: apre un grafico salvato in `.pickle`; `others/compare_plot_saver.py` salva i grafici di confronto della Monte Carlo.
 
 Le posizioni dal file OpenRocket si leggono con `Atlas/tools/geometry/ork_positions/ork_positions.py`. Gli script si lanciano da qualsiasi cartella: i percorsi sono relativi alla posizione dello script.
