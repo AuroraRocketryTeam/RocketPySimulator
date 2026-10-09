@@ -23,8 +23,8 @@ GEOMETRY = "v0_lancio23maggio"                      # simulation_inputs/geometry
 AERODYNAMICS = "v0_lancio23maggio"                  # simulation_inputs/aerodynamic_data/<version>/
 MOTOR = "SRAD/7mm"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
-LAUNCH_SITE = "Villafranca"                        # simulation_inputs/environment_data/<site>/
-LAUNCH_DATE = (2026, 5, 23, 14)                     # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
+LAUNCH_SITE = "Villafranca"                         # simulation_inputs/environment_data/<site>/
+LAUNCH_DATE = (2025, 10, 23, 14)                    # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
 
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
 DRAG_FACTOR = (1.0, 0.001)

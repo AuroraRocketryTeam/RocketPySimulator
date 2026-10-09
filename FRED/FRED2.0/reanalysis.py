@@ -10,7 +10,7 @@ import fred_model as model
 BASE_DIR = Path(__file__).resolve().parent
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
-weather_data = 'm'          # e = ensemble, r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
+weather_data = 'r'          # e = ensemble, r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
 
 # OPTIONS:
 ballistic = False           # True = flight without parachute
@@ -41,10 +41,12 @@ if show_graph:
     rocket_flight.plots.aerodynamic_forces()
     rocket_flight.plots.rail_buttons_forces()
 
+from rocketpy.simulation import FlightDataExporter
+
 # save trajectory, .kml can be open in google earth
 OUTPUT_DIR = BASE_DIR / "simulation_output" / "reanalysis_output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-rocket_flight.export_kml(
+FlightDataExporter(rocket_flight).export_kml(
     file_name=str(OUTPUT_DIR / "trajectory.kml"),
     extrude=True,
     altitude_mode="relative_to_ground",
