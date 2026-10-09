@@ -10,7 +10,8 @@ import fred_model as model
 BASE_DIR = Path(__file__).resolve().parent
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
-weather_data = 'r'          # e = ensemble, r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
+weather_data = 'r'          # c = typical day of the climatological data at the hour of LAUNCH_DATE, e = ensemble,
+                            # r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
 
 # OPTIONS:
 ballistic = False           # True = flight without parachute

@@ -16,6 +16,7 @@ Typical use:
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
@@ -32,6 +33,11 @@ DRAG_FACTOR = (1.0, 0.001)
 # Manual wind (weather_data = "m"): speed on the ground (m/s) and heading (deg from north, where the
 # wind goes: a wind from north has heading 180). The speed grows of 5% every 50 m up to 300 m.
 MANUAL_WIND = (8.7, 315)
+
+# Climatological weather (weather_data = "c"): ERA5 near-ground weather of the launch site,
+# simulation_inputs/environment_data/<site>/<site>_surface_<CLIMATE>.csv, and the UTC hours to use
+CLIMATE = "20to30oct2010to2025"
+CLIMATE_HOURS = range(12, 19)
 #--------------------------------------------------------------------------------------------------------
 
 # Longest integration step (s), shorter than any burn: see simulate()
@@ -46,6 +52,7 @@ THRUST_FILE = INPUTS / "propulsion_data" / MOTOR / "thrust_curve.csv"
 RECOVERY_FILE = INPUTS / "recovery_data" / RECOVERY / "recovery.csv"
 SITE_DIR = INPUTS / "environment_data" / LAUNCH_SITE
 SITE_FILE = SITE_DIR / "launch_site.csv"
+CLIMATE_FILE = SITE_DIR / f"{LAUNCH_SITE}_surface_{CLIMATE}.csv"
 
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
@@ -158,8 +165,50 @@ def weather_file(product, date):
                      + ("; ".join(available) or "no file"))
 
 
-def build_environment(weather_data="m", date=LAUNCH_DATE):
+def load_climate():
+    """Hourly ERA5 near-ground weather at the launch point (wind at 10 m and 100 m, temperature at 2 m,
+    surface pressure), only the CLIMATE_HOURS. Written by tools/environment/surface_wind/surface_wind.py."""
+    table = pd.read_csv(CLIMATE_FILE, parse_dates=["time"], index_col="time")
+    return table[table.index.hour.isin(list(CLIMATE_HOURS))]
+
+
+def typical_climate(hour):
+    """One row like the ones of load_climate() for a typical day at `hour` (UTC): mean speed at 10 m and
+    100 m with the direction of the mean wind vector (a plain mean of u and v would lower the speed,
+    because the directions of the different days cancel out), mean temperature and pressure."""
+    rows = load_climate()
+    rows = rows[rows.index.hour == hour]
+    if rows.empty:
+        raise ValueError(f"No climatological data at {hour} UTC in {CLIMATE_FILE.name} (hours {list(CLIMATE_HOURS)})")
+    typical = {"t2m": rows["t2m"].mean(), "sp": rows["sp"].mean()}
+    for h in ("10", "100"):
+        speed = np.hypot(rows[f"u{h}"], rows[f"v{h}"]).mean()
+        angle = np.arctan2(rows[f"u{h}"].mean(), rows[f"v{h}"].mean())
+        typical[f"u{h}"], typical[f"v{h}"] = speed * np.sin(angle), speed * np.cos(angle)
+    return pd.Series(typical)
+
+
+def surface_wind(row, heights):
+    """Wind (u, v) at `heights` (m above the ground) from the ERA5 wind at 10 m and 100 m of one row of
+    load_climate(). Speed: power law through the two values between 10 and 100 m; below 10 m (down to
+    1 m) and above 100 m (up to 200 m, constant higher) the same law with the exponent kept between 0 and
+    0.6. Direction: from the one at 10 m to the one at 100 m (on the log of the height), constant outside."""
+    h = np.clip(np.asarray(heights, dtype=float), 1, 200)
+    s10, s100 = max(np.hypot(row.u10, row.v10), 0.01), max(np.hypot(row.u100, row.v100), 0.01)
+    exponent = np.log(s100 / s10) / np.log(10)
+    outside = np.clip(exponent, 0, 0.6)
+    speed = np.where(h < 10, s10 * (h / 10) ** outside,
+                     np.where(h > 100, s100 * (h / 100) ** outside, s10 * (h / 10) ** exponent))
+    to10, to100 = np.arctan2(row.u10, row.v10), np.arctan2(row.u100, row.v100)   # where the wind goes
+    turn = (to100 - to10 + np.pi) % (2 * np.pi) - np.pi
+    angle = to10 + turn * np.clip(np.log10(h / 10), 0, 1)
+    return np.array([speed * np.sin(angle), speed * np.cos(angle)])
+
+
+def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
     """Launch site with the chosen weather data:
+    c = climatological near-ground weather (load_climate): the row `climate` (a random one for every
+        Monte Carlo run) or, if None, the typical day at the hour of `date` (typical_climate)
     e = ERA5 ensemble (10 members, every 3 hours; select the member with env.select_ensemble_member)
     r = ERA5 reanalysis (one member, every hour)
     f = GFS forecast (date in the future)
@@ -189,15 +238,30 @@ def build_environment(weather_data="m", date=LAUNCH_DATE):
         env.set_atmospheric_model(type="Forecast", file="GFS")
     elif weather_data == "m":
         speed, heading = MANUAL_WIND
-        heights = range(0, 301, 50)
+        heights = range(0, 301, 50)                     # above the ground; RocketPy wants them above sea level
         east, north = math.sin(math.radians(heading)), math.cos(math.radians(heading))
         env.set_atmospheric_model(
             type="custom_atmosphere",
-            wind_u=[(h, speed * (1 + h / 1000) * east) for h in heights],
-            wind_v=[(h, speed * (1 + h / 1000) * north) for h in heights],
+            wind_u=[(site["elevation"] + h, speed * (1 + h / 1000) * east) for h in heights],
+            wind_v=[(site["elevation"] + h, speed * (1 + h / 1000) * north) for h in heights],
+        )
+    elif weather_data == "c":
+        row = typical_climate(date[3]) if climate is None else climate
+        heights = np.array([0, 2, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200, 300, 500, 1000, 1500])
+        u, v = surface_wind(row, heights)
+        asl = site["elevation"] + heights
+        # Temperature from the one at 2 m with the standard lapse rate, pressure from the surface one
+        temperature = row.t2m - 0.0065 * (heights - 2)
+        pressure = row.sp * (1 - 0.0065 * heights / row.t2m) ** 5.2559
+        env.set_atmospheric_model(
+            type="custom_atmosphere",
+            pressure=list(zip(asl, pressure)),
+            temperature=list(zip(asl, temperature)),
+            wind_u=list(zip(asl, u)),
+            wind_v=list(zip(asl, v)),
         )
     elif weather_data != "i":
-        raise ValueError(f"Unknown weather data '{weather_data}' (use e, r, f, i or m)")
+        raise ValueError(f"Unknown weather data '{weather_data}' (use c, e, r, f, i or m)")
     return env
 
 
