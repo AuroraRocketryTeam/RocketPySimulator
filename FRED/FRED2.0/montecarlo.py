@@ -33,7 +33,7 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'prova'
 number_of_simulations = 200
-weather_data = 'm'          # e = ensemble, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
+weather_data = 'm'          # e = ensemble, r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
 seed = None                 # integer to repeat exactly the same runs
 multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
 

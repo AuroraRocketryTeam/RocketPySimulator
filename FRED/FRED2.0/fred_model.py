@@ -23,7 +23,7 @@ GEOMETRY = "v0_lancio23maggio"                      # simulation_inputs/geometry
 AERODYNAMICS = "v0_lancio23maggio"                  # simulation_inputs/aerodynamic_data/<version>/
 MOTOR = "SRAD/7mm"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
-LAUNCH_SITE = "v0_lancio23maggio"                   # simulation_inputs/environment_data/<version>/
+LAUNCH_SITE = "Villafranca"                        # simulation_inputs/environment_data/<site>/
 LAUNCH_DATE = (2026, 5, 23, 14)                     # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
 
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
@@ -121,13 +121,51 @@ class RecoveryLogic:
 
 
 #-------------------------------------------------------------------------------------------------------- MODEL
+# ERA5 netCDF files of the Copernicus CDS: the built-in ECMWF dictionary of RocketPy can't read the new format
+ERA5_DICTIONARY = {
+    "time": "valid_time",
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "level": "pressure_level",
+    "temperature": "t",
+    "surface_geopotential_height": None,
+    "geopotential_height": None,
+    "geopotential": "z",
+    "u_wind": "u",
+    "v_wind": "v",
+}
+
+
+def weather_file(product, date):
+    """The .nc of the launch site with `product` (ensemble or reanalysis) in its name that holds `date`.
+
+    RocketPy silently takes the nearest time in the file, so a date outside every file is an error."""
+    from datetime import datetime
+
+    import netCDF4
+
+    target = datetime(*date)
+    available = []
+    for path in sorted(SITE_DIR.glob(f"*{product}*.nc")):
+        with netCDF4.Dataset(path) as data:
+            times = data.variables["valid_time"]
+            dates = netCDF4.num2date(times[:], times.units, getattr(times, "calendar", "standard"),
+                                     only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+        if target in dates:
+            return path
+        available.append(f"{path.name} ({min(dates)} - {max(dates)})")
+    raise ValueError(f"No {product} file of {LAUNCH_SITE} holds {target} (hours in UTC): "
+                     + ("; ".join(available) or "no file"))
+
+
 def build_environment(weather_data="m", date=LAUNCH_DATE):
     """Launch site with the chosen weather data:
-    e = ensemble of the .nc file in the site folder (select the member with env.select_ensemble_member);
-        the date must be inside the file (Villafranca: 5-11 May, 2020-2026)
+    e = ERA5 ensemble (10 members, every 3 hours; select the member with env.select_ensemble_member)
+    r = ERA5 reanalysis (one member, every hour)
     f = GFS forecast (date in the future)
     i = International Standard Atmosphere
     m = ISA with the manual wind of MANUAL_WIND (worst case against houses and spectators)
+    With e and r the date must be one of the times of a file in the site folder (see weather_file).
     """
     import math
 
@@ -142,24 +180,11 @@ def build_environment(weather_data="m", date=LAUNCH_DATE):
         max_expected_height=1500,
     )
     if weather_data == "e":
-        env.set_atmospheric_model(
-            type="Ensemble",
-            file=str(next(SITE_DIR.glob("*.nc"))),
-            # The built-in ECMWF dictionary of RocketPy can't read the new NetCDF4 format
-            dictionary={
-                "ensemble": "number",
-                "time": "valid_time",
-                "latitude": "latitude",
-                "longitude": "longitude",
-                "level": "pressure_level",
-                "temperature": "t",
-                "surface_geopotential_height": None,
-                "geopotential_height": None,
-                "geopotential": "z",
-                "u_wind": "u",
-                "v_wind": "v",
-            },
-        )
+        env.set_atmospheric_model(type="Ensemble", file=str(weather_file("ensemble", date)),
+                                  dictionary={"ensemble": "number", **ERA5_DICTIONARY})
+    elif weather_data == "r":
+        env.set_atmospheric_model(type="Reanalysis", file=str(weather_file("reanalysis", date)),
+                                  dictionary=ERA5_DICTIONARY)
     elif weather_data == "f":
         env.set_atmospheric_model(type="Forecast", file="GFS")
     elif weather_data == "m":
@@ -172,7 +197,7 @@ def build_environment(weather_data="m", date=LAUNCH_DATE):
             wind_v=[(h, speed * (1 + h / 1000) * north) for h in heights],
         )
     elif weather_data != "i":
-        raise ValueError(f"Unknown weather data '{weather_data}' (use e, f, i or m)")
+        raise ValueError(f"Unknown weather data '{weather_data}' (use e, r, f, i or m)")
     return env
 
 

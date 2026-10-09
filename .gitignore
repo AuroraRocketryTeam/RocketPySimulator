@@ -7,6 +7,9 @@ __pycache__/
 # Editor
 .vscode/
 
+# macOS
+.DS_Store
+
 # Output di prova delle Monte Carlo (output_dir_name = 'prova'): si sovrascrive a ogni run.
 # Per salvare dei risultati usare un output_dir_name nuovo e fare il push di quella cartella.
 **/montecarlo_output/prova/
