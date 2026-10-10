@@ -2,7 +2,7 @@
 # I ritardi vanno dal segnale di espulsione al paracadute completamente aperto.
 name,value,std,unit,note
 cd_s_main,1.13296,0.0277,m^2,0.97 * 1.168
-main_lag,0,0.05,s,conservativo; prima era 1.73 +- 0.2
+main_lag,2,0.05,s,conservativo; prima era 1.73 +- 0.2
 electronics_lag,0,0.001,s,sensore -> segnale di espulsione; conservativo
 sampling_rate,105,0,Hz,frequenza dell'algoritmo di recupero
 apogee_threshold,0.1,0,s,discesa continua prima di riconoscere l'apogeo

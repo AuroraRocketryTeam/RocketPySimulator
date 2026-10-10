@@ -128,6 +128,22 @@ class RecoveryLogic:
 
 
 #-------------------------------------------------------------------------------------------------------- MODEL
+def _nutation(e1, e2):
+    """RocketPy's quaternions_to_nutation with the argument of arcsin clipped to 1.
+
+    Under the parachute the rocket hangs upside down (nutation 180 deg): e1^2 + e2^2 is 1, and the
+    integration error on the quaternion (1e-6) makes it slightly larger, so arcsin gives NaN and the
+    spline of flight.theta fails (comparison.euler_angles()). Only the post-processed Euler angle is
+    affected, not the integrated state (position, velocity, attitude)."""
+    return (180 / np.pi) * 2 * np.arcsin(-np.clip((e1**2 + e2**2) ** 0.5, 0, 1))
+
+
+def _patch_rocketpy():
+    import rocketpy.simulation.flight as flight_module
+
+    flight_module.quaternions_to_nutation = _nutation
+
+
 # ERA5 netCDF files of the Copernicus CDS: the built-in ECMWF dictionary of RocketPy can't read the new format
 ERA5_DICTIONARY = {
     "time": "valid_time",
@@ -346,6 +362,7 @@ def simulate(s, env, recovery=True, **rocket_options):
     """Build FRED2.0 and fly it from the launch rail."""
     from rocketpy import Flight
 
+    _patch_rocketpy()
     return Flight(
         rocket=build_rocket(s, recovery=recovery, **rocket_options),
         environment=env,
