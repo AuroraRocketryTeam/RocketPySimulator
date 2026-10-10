@@ -31,8 +31,8 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'prova'
-number_of_simulations = 200
+output_dir_name = 'v1.0_0s'
+number_of_simulations = 770
 weather_data = 'c'          # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
                             # r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
 seed = None                 # integer to repeat exactly the same runs
@@ -41,7 +41,7 @@ multiple_core = True        # True = runs in parallel on all the cores, False = 
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
 show_dispersion_graph = False
-show_compare_graph = False
+show_compare_graph = True
 save_compare_graph = False
 sensitivity_analysis = False
 #--------------------------------------------------------------------------------------------------------
