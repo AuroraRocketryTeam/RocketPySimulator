@@ -25,7 +25,7 @@ AERODYNAMICS = "v0_lancio23maggio"                  # simulation_inputs/aerodyna
 MOTOR = "SRAD/8mm"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
 LAUNCH_SITE = "Villafranca"                         # simulation_inputs/environment_data/<site>/
-LAUNCH_DATE = (2025, 10, 23, 14)                    # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
+LAUNCH_DATE = (2026, 10, 25, 14)                    # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
 
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
 DRAG_FACTOR = (1.0, 0.001)
@@ -33,6 +33,10 @@ DRAG_FACTOR = (1.0, 0.001)
 # Manual wind (weather_data = "m"): speed on the ground (m/s) and heading (deg from north, where the
 # wind goes: a wind from north has heading 180). The speed grows of 5% every 50 m up to 300 m.
 MANUAL_WIND = (8.7, 315)
+
+# Constant manual wind (weather_data = "mc"): speed on the ground (m/s) and heading (deg from north, where the
+# wind goes: a wind from north has heading 180). The speed is CONSTANT with height.
+MANUAL_CONSTANT_WIND = (8, 315)
 
 # Climatological weather (weather_data = "c"): ERA5 near-ground weather of the launch site,
 # simulation_inputs/environment_data/<site>/<site>_surface_<CLIMATE>.csv, and the UTC hours to use
@@ -230,6 +234,7 @@ def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
     f = GFS forecast (date in the future)
     i = International Standard Atmosphere
     m = ISA with the manual wind of MANUAL_WIND (worst case against houses and spectators)
+    mc = ISA with a manual constant wind of MANUAL_CONSTANT_WIND (same speed and heading at every height)
     With e and r the date must be one of the times of a file in the site folder (see weather_file).
     """
     import math
@@ -261,6 +266,16 @@ def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
             wind_u=[(site["elevation"] + h, speed * (1 + h / 1000) * east) for h in heights],
             wind_v=[(site["elevation"] + h, speed * (1 + h / 1000) * north) for h in heights],
         )
+    elif weather_data == "mc":
+        # keep in sync with "m" (heights, heading convention)
+        speed, heading = MANUAL_CONSTANT_WIND
+        heights = range(0, 301, 50)                     # above the ground; RocketPy wants them above sea level
+        east, north = math.sin(math.radians(heading)), math.cos(math.radians(heading))
+        env.set_atmospheric_model(
+            type="custom_atmosphere",
+            wind_u=[(site["elevation"] + h, speed * east) for h in heights],
+            wind_v=[(site["elevation"] + h, speed * north) for h in heights],
+        )
     elif weather_data == "c":
         row = typical_climate(date[3]) if climate is None else climate
         heights = np.array([0, 2, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200, 300, 500, 1000, 1500])
@@ -277,7 +292,7 @@ def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
             wind_v=list(zip(asl, v)),
         )
     elif weather_data != "i":
-        raise ValueError(f"Unknown weather data '{weather_data}' (use c, e, r, f, i or m)")
+        raise ValueError(f"Unknown weather data '{weather_data}' (use c, e, r, f, i, m or mc)")
     return env
 
 

@@ -31,10 +31,11 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'v1.0_2s_comparetest'
-number_of_simulations = 700
-weather_data = 'c'          # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
+output_dir_name = 'prova_v1.0_weather_forecast'
+number_of_simulations = 200
+weather_data = 'f'          # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
                             # r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
+                            # mc = manual constant wind (MANUAL_CONSTANT_WIND in fred_model.py)
 seed = None                 # integer to repeat exactly the same runs
 multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
 
@@ -42,7 +43,7 @@ multiple_core = True        # True = runs in parallel on all the cores, False = 
 ballistic = False           # True = flight without parachutes
 show_dispersion_graph = False
 show_compare_graph = True
-save_compare_graph = True
+save_compare_graph = False
 sensitivity_analysis = False
 #--------------------------------------------------------------------------------------------------------
 
@@ -483,16 +484,16 @@ def main():
         print(colored('\n\nComparison graphs:'))
         comparison = CompareFlights(flights)
         if show_compare_graph:
-            #comparison.velocities()
-            #comparison.accelerations()
-            #comparison.attitude_angles()
-            #comparison.euler_angles()
-            #comparison.attitude_frequency()
+            comparison.velocities()
+            comparison.accelerations()
+            comparison.attitude_angles()
+            comparison.euler_angles()
+            comparison.attitude_frequency()
             comparison.aerodynamic_forces()
-            #comparison.aerodynamic_moments()
-            #comparison.angular_velocities()
+            comparison.aerodynamic_moments()
+            comparison.angular_velocities()
             comparison.trajectories_3d()
-            #comparison.rail_buttons_forces()
+            comparison.rail_buttons_forces()
             comparison.stability_margin()
         if save_compare_graph:
             save_compare_plots(

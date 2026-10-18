@@ -21,7 +21,8 @@ siti:
   - ensemble e reanalysis 20-30 ottobre 2022-2025: ensemble ore 12 / 15 / 18 UTC, reanalysis ogni ora 12-18 UTC, 1000-925 hPa (fino a circa 800 m)
   - vicino al suolo (opzione c) 20-30 ottobre 2010-2025, ogni ora 12-18 UTC
 
-il tipo di atmosfera (c = climatologica, e = ensemble, r = reanalysis, f = previsione, i = ISA, m = vento manuale) si sceglie in ogni simulazione.
-i file a livelli di pressione (e, r) non hanno il vento sotto il livello di 1000 hPa (circa 130 m a Villafranca): per FRED la c è la più adatta.
+il tipo di atmosfera (c = climatologica, e = ensemble, r = reanalysis, f = previsione, i = ISA, m = vento manuale, 
+mc = vento manuale a velocità e direzione costante con la quota) si sceglie in ogni simulazione.
+I file a livelli di pressione (e, r) non hanno il vento sotto il livello di 1000 hPa (circa 130 m a Villafranca): per FRED la c è la più adatta.
 
 formato dei file parametri: vedi geometry_data/README.txt
