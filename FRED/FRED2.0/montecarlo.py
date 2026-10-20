@@ -31,8 +31,8 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'prova_v1.0_weather_forecast'
-number_of_simulations = 200
+output_dir_name = 'v1.0_forecast_15h_rail_hdg160inc80'
+number_of_simulations = 500
 weather_data = 'f'          # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
                             # r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
                             # mc = manual constant wind (MANUAL_CONSTANT_WIND in fred_model.py)
