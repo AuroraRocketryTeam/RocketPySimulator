@@ -20,12 +20,12 @@ import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
-GEOMETRY = "v1.0"                      # simulation_inputs/geometry_data/<version>/
-AERODYNAMICS = "v0_lancio23maggio"                  # simulation_inputs/aerodynamic_data/<version>/
-MOTOR = "SRAD/8mm"                                  # simulation_inputs/propulsion_data/<motor>/
+GEOMETRY = "v1.1_AMI"                      # simulation_inputs/geometry_data/<version>/
+AERODYNAMICS = "v1.0"                  # simulation_inputs/aerodynamic_data/<version>/
+MOTOR = "SRAD/7mm"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
 LAUNCH_SITE = "Villafranca"                         # simulation_inputs/environment_data/<site>/
-LAUNCH_DATE = (2026, 10, 25, 15)                    # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
+LAUNCH_DATE = (2026, 10, 25, 18)                    # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
 
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
 DRAG_FACTOR = (1.0, 0.001)
