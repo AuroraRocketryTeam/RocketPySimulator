@@ -20,9 +20,9 @@ import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
-GEOMETRY = "v1.1_AMI"                      # simulation_inputs/geometry_data/<version>/
+GEOMETRY = "v1.0"                      # simulation_inputs/geometry_data/<version>/
 AERODYNAMICS = "v1.0"                  # simulation_inputs/aerodynamic_data/<version>/
-MOTOR = "SRAD/7mm"                                  # simulation_inputs/propulsion_data/<motor>/
+MOTOR = "SRAD/8mm"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
 LAUNCH_SITE = "Villafranca"                         # simulation_inputs/environment_data/<site>/
 LAUNCH_DATE = (2026, 10, 25, 18)                    # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
@@ -33,6 +33,23 @@ DRAG_FACTOR = (1.0, 0.001)
 # Manual wind (weather_data = "m"): speed on the ground (m/s) and heading (deg from north, where the
 # wind goes: a wind from north has heading 180). The speed grows of 5% every 50 m up to 300 m.
 MANUAL_WIND = (8.7, 315)
+
+# Manual wind (weather_data = "mbl"): boundary layer power-law profile, 0-200 m above ground.
+# Speed (m/s) at MANUAL_WIND_BL_REF_HEIGHT and heading (deg from north, where the wind GOES;
+# a wind from north has heading 180). The direction is the same at every height.
+MANUAL_BL_WIND = (5.0, 45)
+
+# Height above ground (m) at which the speed of MANUAL_BL_WIND is measured.
+MANUAL_WIND_BL_REF_HEIGHT = 10.0
+
+# Shear exponent ALPHA (no unit). Depends on the ground and on the stability of the air:
+#   0.10          sunny day, strong mixing, or flat smooth terrain (wind grows slowly)
+#   0.14          open grass or fields, neutral air (default)
+#   0.20 - 0.30   evening or night, stable air, or rough terrain (wind grows fast)
+MANUAL_WIND_BL_ALPHA = 0.14
+
+# Heights (m above ground) where the wind is defined. RocketPy interpolates linearly between them.
+MANUAL_WIND_BL_HEIGHTS = [0, 2, 5, 10, 20, 50, 100, 200]
 
 # Constant manual wind (weather_data = "mc"): speed on the ground (m/s) and heading (deg from north, where the
 # wind goes: a wind from north has heading 180). The speed is CONSTANT with height.
@@ -266,6 +283,17 @@ def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
             wind_u=[(site["elevation"] + h, speed * (1 + h / 1000) * east) for h in heights],
             wind_v=[(site["elevation"] + h, speed * (1 + h / 1000) * north) for h in heights],
         )
+    elif weather_data == "mbl":
+        speed_ref, heading = MANUAL_BL_WIND
+        z = np.maximum(MANUAL_WIND_BL_HEIGHTS, 1.0)     # Never use z below 1 m: the formula goes to zero at the ground, but a real wind no
+        speed = speed_ref * (z / MANUAL_WIND_BL_REF_HEIGHT) ** MANUAL_WIND_BL_ALPHA     # Power law
+        east, north = np.sin(np.radians(heading)), np.cos(np.radians(heading))
+        asl = site["elevation"] + np.array(MANUAL_WIND_BL_HEIGHTS)
+        env.set_atmospheric_model(
+            type="custom_atmosphere",
+            wind_u=list(zip(asl, speed * east)),
+            wind_v=list(zip(asl, speed * north)))
+        
     elif weather_data == "mc":
         # keep in sync with "m" (heights, heading convention)
         speed, heading = MANUAL_CONSTANT_WIND
@@ -292,7 +320,7 @@ def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
             wind_v=list(zip(asl, v)),
         )
     elif weather_data != "i":
-        raise ValueError(f"Unknown weather data '{weather_data}' (use c, e, r, f, i, m or mc)")
+        raise ValueError(f"Unknown weather data '{weather_data}' (use c, e, r, f, i, m, mbl or mc)")
     return env
 
 

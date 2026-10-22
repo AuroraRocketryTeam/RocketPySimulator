@@ -31,11 +31,15 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'v1.1_AMI_f18h_rail_hdg160inc70'
-number_of_simulations = 1000
-weather_data = 'f'          # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
-                            # r = reanalysis, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
-                            # mc = manual constant wind (MANUAL_CONSTANT_WIND in fred_model.py)
+output_dir_name = 'prova_weather_mbl_5msSW'
+number_of_simulations = 200
+weather_data = 'mbl'        # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
+                            # r = reanalysis, 
+                            # f = forecast, 
+                            # i = ISA, 
+                            # m = manual wind (modify MANUAL_WIND in fred_model.py)
+                            # mbl = manual boundary layer wind following power law (modify MANUAL_BL in fred_model.py)
+                            # mc = manual constant wind (modify MANUAL_CONSTANT_WIND in fred_model.py)
 seed = None                 # integer to repeat exactly the same runs
 multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
 
