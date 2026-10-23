@@ -20,12 +20,13 @@ import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
-GEOMETRY = "v1.1"                      # simulation_inputs/geometry_data/<version>/
+GEOMETRY = "v1.2_AMI"                      # simulation_inputs/geometry_data/<version>/
 AERODYNAMICS = "v1.0"                  # simulation_inputs/aerodynamic_data/<version>/
-MOTOR = "SRAD/8mm_ott26"                                  # simulation_inputs/propulsion_data/<motor>/
+MOTOR = "SRAD/7mm_ott23"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
 LAUNCH_SITE = "Villafranca"                         # simulation_inputs/environment_data/<site>/
-LAUNCH_DATE = (2026, 10, 25, 18)                    # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
+LAUNCH_DATE = (2026, 10, 25, 17)                    # (Year, Month, Day, Hour UTC); Italy is UTC + 2 in summer time,
+                                                    # UTC + 1 from the last Sunday of October (25/10/2026)
 
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
 DRAG_FACTOR = (1.0, 0.001)
@@ -59,6 +60,12 @@ MANUAL_CONSTANT_WIND = (8, 315)
 # simulation_inputs/environment_data/<site>/<site>_surface_<CLIMATE>.csv, and the UTC hours to use
 CLIMATE = "20to30oct2010to2025"
 CLIMATE_HOURS = range(12, 19)
+
+# Forecast weather (weather_data = "f"): Open-Meteo forecast (https://open-meteo.com, free, no key) of this model
+# at LAUNCH_DATE: icon_d2 (DWD, 2 km, up to 48 h ahead), icon_eu, ecmwf_ifs025, gfs_seamless, meteofrance_seamless...
+# The download is saved in the site folder (<site>_forecast_<model>_<day>.json) and used again by every run:
+# delete the file to download a newer forecast.
+FORECAST_MODEL = "icon_d2"
 #--------------------------------------------------------------------------------------------------------
 
 # Longest integration step (s), shorter than any burn: see simulate()
@@ -242,13 +249,80 @@ def surface_wind(row, heights):
     return np.array([speed * np.sin(angle), speed * np.cos(angle)])
 
 
+def forecast_file(site, date):
+    """Open-Meteo forecast of FORECAST_MODEL for the day of `date` (UTC), downloaded once and kept in SITE_DIR."""
+    import json
+    import urllib.request
+    from datetime import datetime, timezone
+
+    day = f"{date[0]:04d}-{date[1]:02d}-{date[2]:02d}"
+    path = SITE_DIR / f"{LAUNCH_SITE}_forecast_{FORECAST_MODEL}_{day.replace('-', '')}.json"
+    if not path.is_file():
+        near = [f"{v}_{h}m" for h in FORECAST_NEAR_GROUND for v in ("wind_speed", "wind_direction")]
+        levels = [f"{v}_{p}hPa" for p in FORECAST_LEVELS
+                  for v in ("wind_speed", "wind_direction", "temperature", "geopotential_height")]
+        url = ("https://api.open-meteo.com/v1/forecast"
+               f"?latitude={site['latitude']}&longitude={site['longitude']}&models={FORECAST_MODEL}"
+               f"&hourly={','.join(['temperature_2m', 'surface_pressure'] + near + levels)}"
+               f"&wind_speed_unit=ms&timezone=GMT&start_date={day}&end_date={day}")
+        with urllib.request.urlopen(url, timeout=60) as response:
+            data = json.load(response)
+        data["downloaded"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        temporary = path.with_suffix(".tmp")         # the parallel workers may download at the same time
+        temporary.write_text(json.dumps(data))
+        temporary.replace(path)
+    return path
+
+
+# Open-Meteo heights (m above ground) and pressure levels (hPa) used by forecast_profile
+FORECAST_NEAR_GROUND = (10, 80, 120, 180)
+FORECAST_LEVELS = (1000, 975, 950, 925, 900, 850)
+
+
+def forecast_profile(site, date):
+    """Pressure, temperature and wind (lists of (height above sea level, value)) of the Open-Meteo forecast at
+    the hour of `date` (UTC). Wind near the ground from the 10-180 m values, higher from the pressure levels
+    more than 200 m above the ground; the 10 m wind is used down to the ground."""
+    import json
+
+    data = json.loads(forecast_file(site, date).read_text())
+    hourly = data["hourly"]
+    i = hourly["time"].index(f"{date[0]:04d}-{date[1]:02d}-{date[2]:02d}T{date[3]:02d}:00")
+    value = lambda name: hourly.get(name, [None] * (i + 1))[i]
+    ground = site["elevation"]
+
+    wind = [(ground, value("wind_speed_10m"), value("wind_direction_10m"))]
+    wind += [(ground + h, value(f"wind_speed_{h}m"), value(f"wind_direction_{h}m")) for h in FORECAST_NEAR_GROUND]
+    pressure = [(ground, value("surface_pressure") * 100)]
+    temperature = [(ground, value("temperature_2m") + 273.15)]
+    for p in FORECAST_LEVELS:
+        height = value(f"geopotential_height_{p}hPa")
+        if height is None or height < ground:
+            continue
+        pressure.append((height, p * 100))
+        if value(f"temperature_{p}hPa") is not None:
+            temperature.append((height, value(f"temperature_{p}hPa") + 273.15))
+        if height > ground + 200:
+            wind.append((height, value(f"wind_speed_{p}hPa"), value(f"wind_direction_{p}hPa")))
+    wind = sorted(w for w in wind if None not in w)
+    if len(wind) < 2:
+        raise ValueError(f"{FORECAST_MODEL}: no wind in the forecast for {date} (too far ahead for this model?)")
+    # Open-Meteo gives where the wind comes from; u, v are the components of where it goes
+    u = [(h, -speed * np.sin(np.radians(direction))) for h, speed, direction in wind]
+    v = [(h, -speed * np.cos(np.radians(direction))) for h, speed, direction in wind]
+    print(f"Forecast {FORECAST_MODEL} downloaded {data['downloaded']}: wind at 10 m {wind[0][1]:.1f} m/s "
+          f"from {wind[0][2]:.0f} deg")
+    return {"pressure": sorted(pressure), "temperature": sorted(temperature), "wind_u": u, "wind_v": v}
+
+
 def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
     """Launch site with the chosen weather data:
     c = climatological near-ground weather (load_climate): the row `climate` (a random one for every
         Monte Carlo run) or, if None, the typical day at the hour of `date` (typical_climate)
     e = ERA5 ensemble (10 members, every 3 hours; select the member with env.select_ensemble_member)
     r = ERA5 reanalysis (one member, every hour)
-    f = GFS forecast (date in the future)
+    f = Open-Meteo forecast of FORECAST_MODEL (forecast_profile); the GFS of RocketPy no longer works, NOAA
+        retired the OpenDAP service it used
     i = International Standard Atmosphere
     m = ISA with the manual wind of MANUAL_WIND (worst case against houses and spectators)
     mc = ISA with a manual constant wind of MANUAL_CONSTANT_WIND (same speed and heading at every height)
@@ -273,7 +347,8 @@ def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
         env.set_atmospheric_model(type="Reanalysis", file=str(weather_file("reanalysis", date)),
                                   dictionary=ERA5_DICTIONARY)
     elif weather_data == "f":
-        env.set_atmospheric_model(type="Forecast", file="GFS")
+        profile = forecast_profile(site, date)
+        env.set_atmospheric_model(type="custom_atmosphere", **profile)
     elif weather_data == "m":
         speed, heading = MANUAL_WIND
         heights = range(0, 301, 50)                     # above the ground; RocketPy wants them above sea level

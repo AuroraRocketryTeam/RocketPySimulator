@@ -31,11 +31,11 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'prova_weather_mbl_5msSW'
-number_of_simulations = 200
-weather_data = 'mbl'        # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
+output_dir_name = 'v1.2_AMI_7mm23ott'
+number_of_simulations = 1000
+weather_data = 'f'        # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
                             # r = reanalysis, 
-                            # f = forecast, 
+                            # f = forecast (Open-Meteo, FORECAST_MODEL in fred_model.py),
                             # i = ISA, 
                             # m = manual wind (modify MANUAL_WIND in fred_model.py)
                             # mbl = manual boundary layer wind following power law (modify MANUAL_BL in fred_model.py)
@@ -46,7 +46,7 @@ multiple_core = True        # True = runs in parallel on all the cores, False = 
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
 show_dispersion_graph = False
-show_compare_graph = True
+show_compare_graph = False
 save_compare_graph = False
 sensitivity_analysis = False
 #--------------------------------------------------------------------------------------------------------
