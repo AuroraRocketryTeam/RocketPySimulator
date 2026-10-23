@@ -5,6 +5,7 @@ versioni:
 - v0_lancio23maggio: valori dello script della simulazione del lancio del 23 maggio (FRED 1.0, configurazione v2.3_super_lite). il .ork usato non è stato trovato.
 - v1.0: FRED2.0 (FRED2.0-V1.0.ork)
 - v1.0_AMI: FRED2.0 con il componente AMI nell'e-bay (FRED2.0-AMI-V1.0.ork)
+- v1.1: nuovo FRED2.0 senza AMI (rocket.ork del 23/10/2026); stesse posizioni della v1.0, masse interne diverse
 - v1.1_AMI: nuovo FRED2.0 con il componente AMI nell'e-bay (FRED2.0-AMI-V1.1.ork)
 
 dentro ogni versione:

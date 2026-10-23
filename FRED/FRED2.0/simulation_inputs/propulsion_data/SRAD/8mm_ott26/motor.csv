@@ -1,0 +1,24 @@
+# SRAD BRICO 45 ugello 8 mm - test al banco del 23/10/2026
+# thrust_curve.csv: test_2026-10-23_8mm.csv (tools/propulsion/thrust_curve/8mm_ott26/) nella finestra della propulsione 2.12-3.65 s spostata a 0 / valori negativi azzerati / chiusa a zero
+# Masse pesate (MASSE 8MM.txt): a secco 617.85 g (viti / casing / nozzle / bulkhead / o-ring / bachelite / grasso / colla) / grain 206.15 g / pieno 824 g.
+# Geometria da FRED_45_PARAMETERS_8mm.txt (propulsione). Baricentri e inerzie a secco dal modello (tools/propulsion/motor_geometry/8mm/) finché non c'è il CAD.
+# L'hardware del motore è la motor_dry_mass: è escluso dalla rocket_dry_mass (vedi geometry)
+# La fine dell'ugello coincide con la fine del razzo
+# Posizioni misurate dall'ugello verso la camera di combustione.
+name,value,std,unit,note
+impulse,224.81,1,N*s,integrale di thrust_curve.csv (propulsione: 224.817)
+burn_time,1.5198,0.001,s,durata di thrust_curve.csv
+nozzle_radius,0.0089443,0.0001,m,uscita: diametro 17.89 mm (rapporto di espansione 5)
+throat_radius,0.004,0.0001,m,gola: diametro 8 mm
+nozzle_position,0,0.0001,m,
+grain_number,1,0,-,
+grain_separation,0.002,0.0001,m,
+grain_density,1940.8,1,kg/m^3,dal grain pesato (206.15 g) sul volume di progetto; più della densità teorica (1853.75): da verificare le misure del grain
+grain_outer_radius,0.0165,0.0001,m,
+grain_initial_inner_radius,0.0065,0.0001,m,
+grain_initial_height,0.147,0.0001,m,
+grains_center_of_mass_position,0.123459,0.001,m,centro del grain (motore lungo 0.2320 m)
+motor_dry_mass,0.61785,0.001,kg,pesata
+motor_dry_mass_position,0.0873014,0.001,m,
+motor_inertia_11,0.00455276,0,kg*m^2,perpendicolare all'asse attorno al baricentro a secco
+motor_inertia_33,0.000222935,0,kg*m^2,attorno all'asse

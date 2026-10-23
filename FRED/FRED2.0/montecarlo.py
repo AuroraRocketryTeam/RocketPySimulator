@@ -284,8 +284,9 @@ all_plots = {
 
 #-------------------------------------------------------------------------------------------------------- LAUNCH SITE
 # Background map: the image in the launch site folder and its extent in m (west, east, south, north),
-# with the launch point in (0, 0)
-MAP_EXTENT = (-1100, 600, -350, 650)
+# with the launch point in (0, 0). Villafranca: fitted on the OpenStreetMap buildings and roads
+# (tools/safety/wind_limits/); the old extent (-1100, 600, -350, 650) was about 57 m off to the NW.
+MAP_EXTENT = (-1043, 657, -407, 593)
 
 
 def eigsorted(cov):

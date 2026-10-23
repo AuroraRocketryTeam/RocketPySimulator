@@ -20,9 +20,9 @@ import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
-GEOMETRY = "v1.0"                      # simulation_inputs/geometry_data/<version>/
+GEOMETRY = "v1.1"                      # simulation_inputs/geometry_data/<version>/
 AERODYNAMICS = "v1.0"                  # simulation_inputs/aerodynamic_data/<version>/
-MOTOR = "SRAD/8mm"                                  # simulation_inputs/propulsion_data/<motor>/
+MOTOR = "SRAD/8mm_ott26"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
 LAUNCH_SITE = "Villafranca"                         # simulation_inputs/environment_data/<site>/
 LAUNCH_DATE = (2026, 10, 25, 18)                    # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
@@ -49,7 +49,7 @@ MANUAL_WIND_BL_REF_HEIGHT = 10.0
 MANUAL_WIND_BL_ALPHA = 0.14
 
 # Heights (m above ground) where the wind is defined. RocketPy interpolates linearly between them.
-MANUAL_WIND_BL_HEIGHTS = [0, 2, 5, 10, 20, 50, 100, 200]
+MANUAL_WIND_BL_HEIGHTS = [0, 2, 5, 10, 20, 50, 100, 150, 200, 300, 500]
 
 # Constant manual wind (weather_data = "mc"): speed on the ground (m/s) and heading (deg from north, where the
 # wind goes: a wind from north has heading 180). The speed is CONSTANT with height.
