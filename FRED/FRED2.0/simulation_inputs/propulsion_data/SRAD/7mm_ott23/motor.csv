@@ -1,5 +1,5 @@
 # SRAD BRICO 45 ugello 7 mm - test al banco del 23/10/2026
-# thrust_curve.csv: test_2026-10-23_7mm.csv (tools/propulsion/thrust_curve/7mm_ott26/) nella finestra della propulsione 3.01-4.40 s spostata a 0 / valori negativi azzerati / chiusa a zero
+# thrust_curve.csv: test_2026-10-23_7mm.csv (tools/propulsion/thrust_curve/7mm_ott23/) nella finestra della propulsione 3.01-4.40 s spostata a 0 / valori negativi azzerati / chiusa a zero
 # Masse pesate (MASSE 7MM.txt): a secco 635.15 g (viti / casing / nozzle / bulkhead / o-ring / bachelite / colla / grasso) / grain 201.85 g / pieno 846 g.
 # Geometria da FRED_45_PARAMETERS_7mm.txt (propulsione). Baricentri e inerzie a secco dal modello (tools/propulsion/motor_geometry/7mm/) finché non c'è il CAD.
 # L'hardware del motore è la motor_dry_mass: è escluso dalla rocket_dry_mass (vedi geometry)

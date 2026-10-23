@@ -1,5 +1,5 @@
 # SRAD BRICO 45 ugello 8 mm - test al banco del 23/10/2026
-# thrust_curve.csv: test_2026-10-23_8mm.csv (tools/propulsion/thrust_curve/8mm_ott26/) nella finestra della propulsione 2.12-3.65 s spostata a 0 / valori negativi azzerati / chiusa a zero
+# thrust_curve.csv: test_2026-10-23_8mm.csv (tools/propulsion/thrust_curve/8mm_ott23/) nella finestra della propulsione 2.12-3.65 s spostata a 0 / valori negativi azzerati / chiusa a zero
 # Masse pesate (MASSE 8MM.txt): a secco 617.85 g (viti / casing / nozzle / bulkhead / o-ring / bachelite / grasso / colla) / grain 206.15 g / pieno 824 g.
 # Geometria da FRED_45_PARAMETERS_8mm.txt (propulsione). Baricentri e inerzie a secco dal modello (tools/propulsion/motor_geometry/8mm/) finché non c'è il CAD.
 # L'hardware del motore è la motor_dry_mass: è escluso dalla rocket_dry_mass (vedi geometry)

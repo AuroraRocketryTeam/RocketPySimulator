@@ -17,10 +17,12 @@ Colour of a cell:
   green  3-sigma ellipse outside the zone (the cell shows its minimum distance from the zone)
 
 Outputs in <site>/<RUN_NAME>/ next to this script:
+  config.json               versions of fred_model.py used by the flights (a resumed run must use the same)
   impacts.csv               one row per flight, landing points relative to the rail (resumable: the cells
                             already there are skipped)
   launch_points.csv/.png    every launch point of <site>/launch_area.csv (GRID_STEP m): highest gust admitted
                             from every direction, with the best heading of every cell and with each heading
+  launch_points_heading<h>.png   the same with one heading for every cell
   summary.csv               one row per cell for the chosen launch point: % in the zone, ellipse, distance, colour
   lookup_heading<h>.png     look-up table of every heading for the chosen launch point
   lookup_best_heading.png   look-up table with the best heading of every cell
@@ -29,12 +31,13 @@ Outputs in <site>/<RUN_NAME>/ next to this script:
 Launch point: moving the rail by (e, n) moves every landing point by (e, n) (flat ground, same wind
 everywhere), so one grid of flights serves every launch point. The chosen one is the point of the launch
 area with the highest gust admitted from every direction (heading chosen on the field for every cell), then
-the largest margin; --launch E N gives the tables of another point.
+the largest margin; --launch E N gives the tables of another point, in the subfolder launch_<E>E_<N>N.
 
 Usage:
     python FRED/FRED2.0/tools/safety/wind_limits/wind_limits.py            # simulate the missing cells, then tables
     python FRED/FRED2.0/tools/safety/wind_limits/wind_limits.py --tables   # only tables and maps from impacts.csv
     python FRED/FRED2.0/tools/safety/wind_limits/wind_limits.py --tables --launch 10 -5   # tables of that point
+    python FRED/FRED2.0/tools/safety/wind_limits/wind_limits.py --tables --run v1.1_8mm_ott26_inc80   # another run
 """
 import argparse
 import json
@@ -42,7 +45,6 @@ import multiprocessing as mp
 import os
 import sys
 import time
-from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -54,7 +56,7 @@ sys.path.insert(0, str(FRED_DIR))
 import fred_model as model  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
-RUN_NAME = "v1.1_8mm_ott26_inc80"   # output folder in <site>/
+RUN_NAME = None                     # output folder in <site>/; None = <geometry>_<motor>_inc<inclination> of fred_model.py
 HEADINGS = (140, 160, 180)          # rail heading (deg from north)
 INCLINATION = 80                    # rail inclination (deg from the horizontal)
 # Wind directions: where the wind COMES FROM (deg from north). At Villafranca only the winds from W to SE
@@ -75,8 +77,18 @@ GRID_STEP = 2                       # m, spacing of the launch points tried insi
 #--------------------------------------------------------------------------------------------------------
 
 SITE_DIR = HERE / model.LAUNCH_SITE
-RUN_DIR = SITE_DIR / RUN_NAME
-IMPACTS = RUN_DIR / "impacts.csv"
+
+
+def set_run(name):
+    """Output folder of the run (and its files) in SITE_DIR."""
+    global RUN_NAME, RUN_DIR, IMPACTS, CONFIG
+    RUN_NAME = name
+    RUN_DIR = SITE_DIR / RUN_NAME
+    IMPACTS = RUN_DIR / "impacts.csv"
+    CONFIG = RUN_DIR / "config.json"       # versions of fred_model.py used by the flights
+
+
+set_run(RUN_NAME or f"{model.GEOMETRY}_{model.MOTOR.split('/')[-1]}_inc{INCLINATION}")
 CELL = ["heading", "direction", "speed"]
 
 
@@ -111,8 +123,22 @@ def run_one(task):
     return row
 
 
+def configuration():
+    """Versions of fred_model.py used by the flights of the run."""
+    return {"geometry": model.GEOMETRY, "motor": model.MOTOR, "aerodynamics": model.AERODYNAMICS,
+            "recovery": model.RECOVERY}
+
+
 def simulate():
     RUN_DIR.mkdir(parents=True, exist_ok=True)
+    # The run keeps the versions of its flights: a resumed run must use the same ones, and the tables print them
+    if CONFIG.exists():
+        saved = json.loads(CONFIG.read_text())
+        if saved != configuration():
+            raise ValueError(f"{RUN_DIR.name} was simulated with {saved}, fred_model.py now has {configuration()}: "
+                             "use the same versions or a new RUN_NAME")
+    else:
+        CONFIG.write_text(json.dumps(configuration(), indent=1) + "\n")
     done = set()
     if IMPACTS.exists():
         done = set(map(tuple, pd.read_csv(IMPACTS)[CELL].drop_duplicates().itertuples(index=False)))
@@ -154,9 +180,9 @@ def houses_zone():
     line_file = SITE_DIR / "houses_line.csv"
     if line_file.exists():
         line = LineString(pd.read_csv(line_file, comment="#").to_numpy())
-        # Where the line is drawn it is the limit: the houses are on its left side
+        # Where the line is drawn it is the limit: the houses are on its left side, all the left side is closed
         field_side = line.buffer(-80, single_sided=True)
-        house_side = line.buffer(60, single_sided=True).intersection(inhabited.buffer(30))
+        house_side = line.buffer(60, single_sided=True)
         inhabited = unary_union([inhabited.difference(field_side), house_side])
     return footprints, inhabited.buffer(BUFFER), data["properties"], line, inhabited
 
@@ -268,22 +294,6 @@ LABELS = {"green": "GO", "yellow": "LIMITE", "red": "NO-GO"}
 INK, MUTED = "#1a1a19", "#6b6a63"
 
 
-def footnote(info):
-    import textwrap
-
-    text = (f"{info['config']}. Punto di lancio {info['launch_text']}.\n"
-            f"Vento a strato limite (legge di potenza, α {model.MANUAL_WIND_BL_ALPHA}, direzione costante con la quota) "
-            f"riferito a {WIND_REF_HEIGHT} m (anemometro); std {WIND_SPEED_STD} m/s e {WIND_DIRECTION_STD}°; rampa std "
-            f"{RAIL_STD}° su heading e inclinazione {INCLINATION}°; ritardo totale del paracadute {LAG_TOTAL} s; "
-            f"{info['flights']} voli per casella.\n"
-            f"Case = linea limite delle case (o edifici OpenStreetMap {info['osm_date']} + {ENVELOPE} m) + {BUFFER} m. "
-            f"NO-GO: almeno un atterraggio nella zona. LIMITE: nessuno, ma ellisse 3σ nella zona.\n"
-            f"GO: ellisse 3σ fuori, con la distanza minima dal limite (dalla linea delle case: + {BUFFER} m). "
-            f"Venti da E a NO (passando da N) non simulati: portano il razzo sui campi. "
-            f"Si entra in tabella con la RAFFICA MASSIMA degli ultimi 10 min. {date.today().isoformat()}")
-    return "\n".join(textwrap.fill(paragraph, 150) for paragraph in text.split("\n"))
-
-
 def lookup_table(table, title, path, info, show_heading=False):
     import matplotlib.pyplot as plt
     from matplotlib.patches import Rectangle
@@ -296,15 +306,12 @@ def lookup_table(table, title, path, info, show_heading=False):
             cell = table.loc[(direction, speed)]
             y = len(rows) - 1 - i
             ax.add_patch(Rectangle((j, y), 1, 1, facecolor=COLOURS[cell["colour"]], edgecolor="white", lw=3))
-            if cell["colour"] == "red":
-                text = f"{cell['in_zone_pct']:.1f}%\nnella zona"
-            elif cell["colour"] == "yellow":
-                text = "ellisse 3σ\nnella zona"
-            else:
-                text = f"{cell['ellipse_distance']:.0f} m\ndal limite"
+            text = {"red": f"{cell['in_zone_pct']:.1f}%", "yellow": "",
+                    "green": f"{cell['ellipse_distance']:.0f} m"}[cell["colour"]]
             label = LABELS[cell["colour"]] + (f"  {int(cell['heading'])}°" if show_heading and cell["colour"] == "green" else "")
-            ax.text(j + 0.5, y + 0.64, label, ha="center", va="center", color="white", fontsize=11, fontweight="bold")
-            ax.text(j + 0.5, y + 0.32, text, ha="center", va="center", color="white", fontsize=8.5)
+            ax.text(j + 0.5, y + (0.62 if text else 0.5), label, ha="center", va="center", color="white", fontsize=11,
+                    fontweight="bold")
+            ax.text(j + 0.5, y + 0.33, text, ha="center", va="center", color="white", fontsize=10)
     ax.set_xlim(0, len(cols))
     ax.set_ylim(0, len(rows))
     ax.set_xticks(np.arange(len(cols)) + 0.5, [f"{s} m/s\n{s * 3.6:.0f} km/h" for s in cols])
@@ -316,9 +323,18 @@ def lookup_table(table, title, path, info, show_heading=False):
     ax.minorticks_off()
     for spine in ax.spines.values():
         spine.set_visible(False)
-    fig.suptitle(title, x=0.03, ha="left", fontsize=13, color=INK)
-    fig.text(0.03, 0.015, footnote(info), fontsize=7, color=MUTED, va="bottom", linespacing=1.4)
-    fig.tight_layout(rect=(0, 0.15, 1, 0.95))
+    fig.suptitle(title, x=0.5, y=0.985, ha="center", fontsize=14, color=INK)
+    fig.text(0.5, 0.935, f"Punto di lancio {info['launch_text']}", ha="center", fontsize=10.5, color=MUTED)
+    # Meaning of the cells, centred, then limit and configuration, on the right
+    legend = [("GO", "l'ellisse 3σ degli atterraggi resta fuori dal limite; il numero è la distanza minima dal limite"),
+              ("LIMITE", "nessun atterraggio oltre il limite, ma l'ellisse 3σ lo tocca"),
+              ("NO-GO", "almeno un atterraggio oltre il limite; il numero è la percentuale di atterraggi oltre il limite")]
+    for k, (name, meaning) in enumerate(legend):
+        fig.text(0.5, 0.135 - 0.027 * k, f"{name}: {meaning}", ha="center", fontsize=8.5, color=INK)
+    fig.text(0.97, 0.045, f"limite = perimetro dell'abitato con {BUFFER} m di margine", ha="right", fontsize=8,
+             color=MUTED)
+    fig.text(0.97, 0.02, info["config"], ha="right", fontsize=8, color=MUTED)
+    fig.tight_layout(rect=(0, 0.16, 1, 0.92))
     fig.savefig(path, dpi=150)
     plt.close(fig)
 
@@ -334,15 +350,44 @@ def background(ax):
 
 
 def draw_houses(ax, footprints, zone, line, inhabited):
-    for polygon in getattr(zone, "geoms", [zone]):
-        ax.fill(*polygon.exterior.xy, color="#ffffff", alpha=0.25, lw=0)
-        ax.plot(*polygon.exterior.xy, color="white", lw=0.8)
+    """Safety zone (houses + BUFFER, white), OSM footprints, drawn line of the houses (black) and the mission
+    control (<site>/mission_control.csv, black box)."""
     for footprint in footprints:
         ax.plot(*footprint.exterior.xy, color="#86b6ef", lw=0.5)
-    for polygon in getattr(inhabited, "geoms", [inhabited]):
-        ax.plot(*polygon.exterior.xy, color="#ff8c00", lw=1.2)
+    for polygon in getattr(zone, "geoms", [zone]):
+        ax.fill(*polygon.exterior.xy, color="#ffffff", alpha=0.25, lw=0)
+        ax.plot(*polygon.exterior.xy, color="white", lw=1.2)
     if line is not None:
-        ax.plot(*line.xy, color="yellow", lw=2.5)
+        ax.plot(*line.xy, color="black", lw=2)
+    mission_control = SITE_DIR / "mission_control.csv"
+    if mission_control.exists():
+        ax.fill(*pd.read_csv(mission_control, comment="#").to_numpy().T, color="black", lw=0, zorder=5)
+
+
+def lat_lon_axes(ax):
+    """Axes in latitude / longitude instead of metres from the launch point (ticks every 0.0005 deg), and a
+    50 m scale bar. The local metres are flat-Earth around the point of launch_site.csv, as in to_lat_lon."""
+    from matplotlib.ticker import FixedLocator, FuncFormatter
+
+    lat0, lon0 = to_lat_lon(0, 0)
+    metres_per_deg_lat = np.radians(1) * 6371000
+    metres_per_deg_lon = metres_per_deg_lat * np.cos(np.radians(lat0))
+    step = 0.0005
+    (xmin, xmax), (ymin, ymax) = ax.get_xlim(), ax.get_ylim()
+    lons = np.arange(np.ceil((lon0 + xmin / metres_per_deg_lon) / step), (lon0 + xmax / metres_per_deg_lon) / step) * step
+    lats = np.arange(np.ceil((lat0 + ymin / metres_per_deg_lat) / step), (lat0 + ymax / metres_per_deg_lat) / step) * step
+    ax.xaxis.set_major_locator(FixedLocator((lons - lon0) * metres_per_deg_lon))
+    ax.yaxis.set_major_locator(FixedLocator((lats - lat0) * metres_per_deg_lat))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{lon0 + x / metres_per_deg_lon:.4f}°E"))
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f"{lat0 + y / metres_per_deg_lat:.4f}°N"))
+    ax.minorticks_off()
+    ax.set_xlabel("longitudine")
+    ax.set_ylabel("latitudine")
+    x0, y0 = xmin + 0.04 * (xmax - xmin), ymin + 0.05 * (ymax - ymin)
+    ax.plot([x0, x0 + 50], [y0, y0], color="black", lw=5, solid_capstyle="butt")
+    ax.plot([x0, x0 + 50], [y0, y0], color="white", lw=3, solid_capstyle="butt")
+    ax.text(x0 + 25, y0 + 0.02 * (ymax - ymin), "50 m", ha="center", va="bottom", fontsize=9, color="white",
+            fontweight="bold")
 
 
 def landing_map(cell_clouds, summary, heading, launch, houses, path):
@@ -372,72 +417,92 @@ def landing_map(cell_clouds, summary, heading, launch, houses, path):
     plt.close(fig)
 
 
-def scan_map(points, area, best, houses, path):
+def scan_map(points, area, houses, path, heading=None):
+    """Highest gust admitted from every direction at every launch point of the launch area, with the best
+    heading of every cell (heading None) or with one heading for all the cells."""
     import matplotlib.pyplot as plt
     from matplotlib.colors import BoundaryNorm, ListedColormap
+    from matplotlib.patches import Polygon as PolygonPatch
+    from scipy import ndimage
 
     fig, ax = plt.subplots(figsize=(11, 8))
     background(ax)
     draw_houses(ax, *houses)
-    ax.plot(*area.exterior.xy, color="white", lw=1.5)
     levels = [0, *SPEEDS]
     cmap = ListedColormap(["#d03b3b", "#f0a35e", "#f2d36b", "#bfe3a0", "#7fcf9f", "#3fb28a", "#127a5a"][:len(levels)])
     norm = BoundaryNorm(np.arange(-0.5, len(levels)), cmap.N)
-    sc = ax.scatter(points["east"], points["north"], c=[levels.index(v) for v in points["admitted"]], cmap=cmap,
-                    norm=norm, s=14, marker="s", lw=0)
-    ax.plot(0, 0, marker="o", color="white", markeredgecolor=INK, ms=8, label="punto di launch_site.csv")
-    ax.plot(best["east"], best["north"], marker="*", color="white", markeredgecolor=INK, ms=20, label="punto scelto")
-    bar = fig.colorbar(sc, ax=ax, ticks=range(len(levels)), shrink=0.8)
-    bar.ax.set_yticklabels([f"{v} m/s ({v * 3.6:.0f} km/h)" if v else "nessuno" for v in levels])
-    bar.set_label("raffica massima ammessa da tutte le direzioni (heading scelto sul campo)")
+    # The launch points are on a regular grid: one transparent cell each, cut on the border of the launch area
+    column = "admitted" if heading is None else f"admitted_{heading}"
+    grid = points.assign(level=[levels.index(v) for v in points[column]]).pivot(index="north", columns="east",
+                                                                                  values="level")
+    east, north = grid.columns.to_numpy(), grid.index.to_numpy()
+    # Cells without a point (centre just outside the area) take the nearest point, so the clipped border is full
+    values = grid.to_numpy()
+    nearest = ndimage.distance_transform_edt(np.isnan(values), return_distances=False, return_indices=True)
+    mesh = ax.pcolormesh(np.append(east, east[-1] + GRID_STEP) - GRID_STEP / 2,
+                         np.append(north, north[-1] + GRID_STEP) - GRID_STEP / 2,
+                         values[tuple(nearest)], cmap=cmap, norm=norm, lw=0,
+                         antialiased=False, rasterized=True)
+    outline = PolygonPatch(np.array(area.exterior.coords), closed=True, fill=False, ec="white", lw=1.2)
+    ax.add_patch(outline)
+    mesh.set_clip_path(outline)
+    bar = fig.colorbar(mesh, ax=ax, ticks=range(len(levels)), shrink=0.8)
+    bar.ax.set_yticklabels([f"{v * 3.6:.0f} km/h" if v else "nessuna" for v in levels])
+    bar.ax.minorticks_off()
+    bar.set_label("raffica massima ammessa da tutte le direzioni")
     xmin, ymin, xmax, ymax = area.bounds
     ax.set_xlim(xmin - 90, xmax + 90)
     ax.set_ylim(ymin - 60, ymax + 90)
     ax.set_aspect("equal")
-    ax.set_xlabel("est [m]")
-    ax.set_ylabel("nord [m]")
-    ax.legend(loc="lower left", fontsize=8)
-    ax.set_title(f"Punti di lancio nella zona della rampa: vento ammesso, inclinazione {INCLINATION}°",
-                 loc="left", fontsize=11)
+    lat_lon_axes(ax)
+    ax.set_title("Raffica massima ammessa da tutte le direzioni: "
+                 + ("heading migliore per ogni casella" if heading is None else f"rampa heading {heading}°")
+                 + f", inclinazione {INCLINATION}°", loc="left", fontsize=11)
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    fig.savefig(path, dpi=150)
     plt.close(fig)
 
 
 def tables(launch=None):
     """Tables and maps. launch = (east, north) of the rail; None = the best point of the launch area (or the
-    launch point of launch_site.csv when there is no launch area)."""
+    launch point of launch_site.csv when there is no launch area). The tables of a point given with launch
+    go in the subfolder launch_<east>E_<north>N."""
     impacts = pd.read_csv(IMPACTS)
     footprints, zone, osm, line, inhabited = houses_zone()
     houses = (footprints, zone, line, inhabited)
     cell_clouds = clouds(impacts)
     area = launch_area()
-    if launch is None and area is not None:
+    out = RUN_DIR if launch is None else RUN_DIR / f"launch_{launch[0]:+.0f}E_{launch[1]:+.0f}N"
+    out.mkdir(exist_ok=True)
+    if area is not None:
         print("Scanning the launch area...")
         points = scan(cell_clouds, zone, area)
-        points.round(3).to_csv(RUN_DIR / "launch_points.csv", index=False)
-        best = points.sort_values(["admitted", "margin"], ascending=False).iloc[0]
-        scan_map(points, area, best, houses, RUN_DIR / "launch_points.png")
-        launch = (float(best["east"]), float(best["north"]))
+        if launch is None:
+            points.round(3).to_csv(RUN_DIR / "launch_points.csv", index=False)
+            best = points.sort_values(["admitted", "margin"], ascending=False).iloc[0]
+            launch = (float(best["east"]), float(best["north"]))
+        scan_map(points, area, houses, out / "launch_points.png")
+        for heading in HEADINGS:
+            scan_map(points, area, houses, out / f"launch_points_heading{heading}.png", heading)
     launch = launch or (0.0, 0.0)
     lat, lon = to_lat_lon(*launch)
     summary = evaluate(cell_clouds, zone, launch)
-    summary.round(3).to_csv(RUN_DIR / "summary.csv", index=False)
+    summary.round(3).to_csv(out / "summary.csv", index=False)
     best = best_heading(summary)
     admitted, margin = admitted_wind(best)
-    info = {"config": f"Geometria {model.GEOMETRY}, motore {model.MOTOR}, aerodinamica {model.AERODYNAMICS}, "
-                      f"recupero {model.RECOVERY}",
-            "flights": int(summary["flights"].min()), "osm_date": osm.get("downloaded", ""),
-            "launch_text": f"{lat:.6f} N {lon:.6f} E ({launch[0]:+.0f} m E, {launch[1]:+.0f} m N di launch_site.csv)"}
+    config = json.loads(CONFIG.read_text()) if CONFIG.exists() else configuration()
+    info = {"config": f"Geometria: {config['geometry']}, Motore: {config['motor']}, Aerodinamica: "
+                      f"{config['aerodynamics']}, Ritardo: {LAG_TOTAL:g} s",
+            "launch_text": f"{lat:.6f} N, {lon:.6f} E"}
     for heading in HEADINGS:
         lookup_table(summary[summary["heading"] == heading],
                      f"FRED2.0 - limiti di vento: rampa heading {heading}°, inclinazione {INCLINATION}°",
-                     RUN_DIR / f"lookup_heading{heading}.png", info)
-        landing_map(cell_clouds, summary, heading, launch, houses, RUN_DIR / f"map_heading{heading}.png")
+                     out / f"lookup_heading{heading}.png", info)
+        landing_map(cell_clouds, summary, heading, launch, houses, out / f"map_heading{heading}.png")
     lookup_table(best, f"FRED2.0 - limiti di vento con l'heading migliore per ogni casella, inclinazione {INCLINATION}°",
-                 RUN_DIR / "lookup_best_heading.png", info, show_heading=True)
+                 out / "lookup_best_heading.png", info, show_heading=True)
     print(f"Launch point {lat:.6f} N {lon:.6f} E ({launch[0]:+.1f} m E, {launch[1]:+.1f} m N): admitted gust "
-          f"{admitted} m/s ({admitted * 3.6:.0f} km/h) from every direction, margin {margin:.0f} m -> {RUN_DIR}")
+          f"{admitted} m/s ({admitted * 3.6:.0f} km/h) from every direction, margin {margin:.0f} m -> {out}")
 
 
 def main():
@@ -445,7 +510,10 @@ def main():
     parser.add_argument("--tables", action="store_true", help="only tables and maps from impacts.csv")
     parser.add_argument("--launch", type=float, nargs=2, metavar=("EAST", "NORTH"),
                         help="tables for this rail position (m from launch_site.csv) instead of the best one")
+    parser.add_argument("--run", help=f"output folder in {SITE_DIR.name}/ (default {RUN_NAME}, from fred_model.py)")
     args = parser.parse_args()
+    if args.run:
+        set_run(args.run)
     if not args.tables:
         simulate()
     tables(tuple(args.launch) if args.launch else None)

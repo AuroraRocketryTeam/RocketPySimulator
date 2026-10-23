@@ -15,7 +15,7 @@ Per ogni heading della rampa, ogni direzione e ogni intensità del vento, una Mo
 - **Punto di lancio:** spostando la rampa di (e, n), con terreno piatto e lo stesso vento ovunque, ogni atterraggio si sposta di (e, n). Gli atterraggi sono salvati rispetto alla rampa, quindi una sola griglia di voli vale per tutti i punti della zona in cui si può mettere la rampa (`<sito>/launch_area.csv`).
   - Lo script prova un punto ogni `GRID_STEP` m e sceglie quello con la raffica più alta ammessa da tutte le direzioni (GO fino a quella intensità), usando per ogni casella l'heading migliore, che si sceglie sul campo; a parità, vince il margine più grande.
   - Per quel punto fa le tabelle dei tre heading e una tabella unica con l'heading da usare in ogni casella.
-  - `--launch E N` fa le tabelle di un altro punto.
+  - `--launch E N` fa le tabelle e le mappe di un altro punto, nella sottocartella `launch_<E>E_<N>N/`.
 - **Le case:** zona abitata allargata di `BUFFER` m.
   - Dove c'è la linea disegnata a mano (`<sito>/houses_line.csv`, case a sinistra nel verso dei vertici), il limite è quella linea.
   - Altrove il limite sono le sagome degli edifici di OpenStreetMap (`<sito>/buildings.geojson`, scritto da `buildings.py`), allargate di `ENVELOPE` m e unite dove le case sono vicine.
@@ -35,14 +35,16 @@ python FRED/FRED2.0/tools/safety/wind_limits/wind_limits.py --tables
 ```
 - `buildings.py` va lanciato una volta per sito: scarica gli edifici entro 1 km dalla rampa. Serve `shapely`.
 - `locate_screenshot.py <screenshot> <file>.csv` aggancia uno screenshot satellitare (Google Maps, nord in alto) con una linea gialla disegnata sopra alla foto del sito, e scrive i vertici della linea in metri dalla rampa. È servito per `houses_line.csv` e `launch_area.csv`. Il risultato va controllato su un disegno.
-- `wind_limits.py` simula le caselle mancanti e poi fa tabelle e mappe. È **riprendibile**: le caselle già in `impacts.csv` si saltano, e i seed dipendono solo dalla casella. Su un portatile a 2 core servono circa 0,4 s per volo.
+- `wind_limits.py` simula le caselle mancanti e poi fa tabelle e mappe. È **riprendibile**: le caselle già in `impacts.csv` si saltano, e i seed dipendono solo dalla casella. Le versioni di `fred_model.py` usate dai voli sono salvate in `config.json`: per riprendere una corsa servono le stesse, e le tabelle scrivono quelle anche se poi `fred_model.py` cambia. Su un portatile a 2 core servono circa 0,4 s per volo.
 - `--tables` rifà solo tabelle e mappe da `impacts.csv`, per esempio dopo aver cambiato `BUFFER`.
 
-Le griglie (heading, inclinazione, direzioni, intensità, voli per casella, margine) si scelgono in testa a `wind_limits.py`, con `RUN_NAME` per la cartella di uscita. Per la rampa a 70° basta `INCLINATION = 70` e un `RUN_NAME` nuovo.
+Le griglie (heading, inclinazione, direzioni, intensità, voli per casella, margine) si scelgono in testa a `wind_limits.py`. La cartella di uscita è `<geometria>_<motore>_inc<inclinazione>` con le versioni di `fred_model.py` (o `RUN_NAME`); `--run <cartella>` fa le tabelle di un'altra corsa. Per la rampa a 70° basta `INCLINATION = 70`.
 
 ## Uscite in `<sito>/<RUN_NAME>/`
+- `config.json`: versioni di geometria, motore, aerodinamica e recupero dei voli.
 - `impacts.csv`: un volo per riga (punto d'impatto, apogeo, velocità di uscita dalla rampa, seed, eventuale errore).
 - `launch_points.csv` / `.png`: tutti i punti provati nella zona della rampa, con la raffica ammessa (con l'heading migliore e con ciascun heading) e il margine.
+- `launch_points_heading<h>.png`: la stessa mappa con la rampa sempre a quell'heading.
 - `summary.csv`: per il punto scelto, una casella per riga (% nella zona, centro e dispersione degli atterraggi, distanza dell'ellisse, colore).
 - `lookup_heading<h>.png`: la tabella di consultazione di ogni heading.
 - `lookup_best_heading.png`: la tabella unica, con l'heading da usare in ogni casella.
