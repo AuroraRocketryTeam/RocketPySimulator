@@ -57,7 +57,7 @@ import fred_model as model  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 RUN_NAME = None                     # output folder in <site>/; None = <geometry>_<motor>_inc<inclination> of fred_model.py
-HEADINGS = (140, 160, 180)          # rail heading (deg from north)
+HEADINGS = (160, 180)               # rail heading (deg from north)
 INCLINATION = 80                    # rail inclination (deg from the horizontal)
 # Wind directions: where the wind COMES FROM (deg from north). At Villafranca only the winds from W to SE
 # (through S) can carry the rocket towards the houses; from E to NW (through N) it lands on the fields.
@@ -468,6 +468,7 @@ def tables(launch=None):
     launch point of launch_site.csv when there is no launch area). The tables of a point given with launch
     go in the subfolder launch_<east>E_<north>N."""
     impacts = pd.read_csv(IMPACTS)
+    impacts = impacts[impacts["heading"].isin(HEADINGS)]   # a run may hold other headings, simulated before
     footprints, zone, osm, line, inhabited = houses_zone()
     houses = (footprints, zone, line, inhabited)
     cell_clouds = clouds(impacts)
