@@ -31,8 +31,8 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'v1.2_AMI_7mm23ott'
-number_of_simulations = 1000
+output_dir_name = 'v1.2_AMI_masscorrected_24ott_ballistic'
+number_of_simulations = 200
 weather_data = 'f'        # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
                             # r = reanalysis, 
                             # f = forecast (Open-Meteo, FORECAST_MODEL in fred_model.py),

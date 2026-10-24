@@ -20,9 +20,9 @@ import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
-GEOMETRY = "v1.2_AMI"                      # simulation_inputs/geometry_data/<version>/
+GEOMETRY = "v1.2_AMI_masscorrected_24ott"                      # simulation_inputs/geometry_data/<version>/
 AERODYNAMICS = "v1.0"                  # simulation_inputs/aerodynamic_data/<version>/
-MOTOR = "SRAD/7mm_ott23"                                  # simulation_inputs/propulsion_data/<motor>/
+MOTOR = "SRAD/8mm_ott23"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
 LAUNCH_SITE = "Villafranca"                         # simulation_inputs/environment_data/<site>/
 LAUNCH_DATE = (2026, 10, 25, 17)                    # (Year, Month, Day, Hour UTC); Italy is UTC + 2 in summer time,
