@@ -343,10 +343,9 @@ def background(ax):
     from imageio.v2 import imread
 
     sys.path.insert(0, str(FRED_DIR))
-    from montecarlo import MAP_EXTENT  # same photo extent as the Monte Carlo maps
+    from montecarlo import MAP_EXTENT, MAP_IMAGE  # same background as the Monte Carlo maps
 
-    image = next(f for f in sorted(model.SITE_DIR.iterdir()) if f.suffix.lower() in (".jpg", ".png"))
-    ax.imshow(imread(image), extent=MAP_EXTENT)
+    ax.imshow(imread(model.SITE_DIR / MAP_IMAGE), extent=MAP_EXTENT)
 
 
 def draw_houses(ax, footprints, zone, line, inhabited):

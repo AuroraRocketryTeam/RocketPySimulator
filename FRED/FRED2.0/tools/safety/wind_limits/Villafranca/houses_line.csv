@@ -3,11 +3,13 @@
 # Primo e ultimo tratto: prolungamenti lungo il bordo del campo (direzione 123 gradi) disegnati da Giovanni sulla
 # mappa launch_points_heading160.png (24/10/2026), allungati fino a 300 m dai vertici.
 # Le case stanno a sinistra della linea percorsa nell'ordine dei vertici (verso nord-est).
+# Spostato sul satellite georeferenziato (Villafranca_satellite.jpg, 24/10/2026): la foto su cui era stato
+# ricavato era alta il 2 %; correzione dE = -0.79 +0.0016 e +0.0008 n, dN = 5.47 +0.0007 e -0.0208 n (m), residuo ~1 m.
 east,north
--235.1,209.5
-16.2,45.5
-31.9,69.5
-119.6,15.6
-99.9,-21.2
-142.9,-48.6
-351.6,-184.7
+-236.1,210.5
+15.5,50.0
+31.2,73.5
+119.0,20.8
+99.2,-15.2
+142.3,-42.0
+351.2,-175.1

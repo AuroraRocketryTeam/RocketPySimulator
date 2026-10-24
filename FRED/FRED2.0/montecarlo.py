@@ -283,10 +283,13 @@ all_plots = {
 
 
 #-------------------------------------------------------------------------------------------------------- LAUNCH SITE
-# Background map: the image in the launch site folder and its extent in m (west, east, south, north),
-# with the launch point in (0, 0). Villafranca: fitted on the OpenStreetMap buildings and roads
-# (tools/safety/wind_limits/); the old extent (-1100, 600, -350, 650) was about 57 m off to the NW.
-MAP_EXTENT = (-1043, 657, -407, 593)
+# Background map: image in the launch site folder and its extent in m (west, east, south, north), with the
+# launch point in (0, 0). Villafranca: Esri World Imagery tiles (zoom 18, 0.43 m/px; Esri, Maxar, Earthstar
+# Geographics), georeferenced from the tile coordinates; OpenStreetMap buildings fall on the roofs within 2 m.
+# The old photo (Villafranca_airfield_launch_site.jpg, extent (-1043, 657, -407, 593)) was 2 % too tall:
+# 5 m too far south at the rail, 10 m at 250 m south.
+MAP_IMAGE = "Villafranca_satellite.jpg"
+MAP_EXTENT = (-1043.10, 657.12, -407.15, 593.24)
 
 
 def eigsorted(cov):
@@ -297,8 +300,7 @@ def eigsorted(cov):
 
 def launch_site_graph(results, output_launch_site):
     # Import background map
-    map_file = next(f for f in model.SITE_DIR.iterdir() if f.suffix.lower() in (".jpg", ".png"))
-    img = imread(str(map_file))
+    img = imread(str(model.SITE_DIR / MAP_IMAGE))
 
     apogee_x = np.array([r["apogee_x"] for r in results])
     apogee_y = np.array([r["apogee_y"] for r in results])

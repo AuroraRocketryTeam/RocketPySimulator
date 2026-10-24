@@ -86,9 +86,9 @@ def main():
     parser.add_argument("--min", type=float, default=0.2, help="m/px of the screenshot, lowest tried")
     parser.add_argument("--max", type=float, default=0.8, help="m/px of the screenshot, highest tried")
     args = parser.parse_args()
-    from montecarlo import MAP_EXTENT
+    from montecarlo import MAP_EXTENT, MAP_IMAGE
 
-    photo_file = next(f for f in sorted(model.SITE_DIR.iterdir()) if f.suffix.lower() in (".jpg", ".png"))
+    photo_file = model.SITE_DIR / MAP_IMAGE
     photo = np.asarray(Image.open(photo_file).convert("RGB"))
     shot = np.asarray(Image.open(args.screenshot).convert("RGB"))
     height, width = photo.shape[:2]
