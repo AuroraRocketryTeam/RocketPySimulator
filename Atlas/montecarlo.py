@@ -78,10 +78,14 @@ def loading_bar(initial_time, number_of_iterations, iteration, bar_lenght=24):
     bar = f"{'█'*(bar_lenght*iteration//number_of_iterations):░<{bar_lenght}}"
     percentage = f"{100*iteration/number_of_iterations:.1f}%"
 
-    print(f"Current iteration: {colored(current_iteration)}",end=' ')
-    print(f"Average time per iteration: {colored(average_time)}",end=' ')
-    print(f"Time remaining: {colored(time_remaining)}",end=" ")
-    print(f"|{colored(bar)}|[{colored(percentage):<7}]",end="\r")
+    print(
+      f"Current iteration: {colored(current_iteration)} "
+      f"Average time per iteration: {colored(average_time)} "
+      f"Time remaining: {colored(time_remaining)} "
+      f"|{colored(bar)}|[{colored(percentage):<7}]",
+      end="\r",
+      flush=True,
+      )
 #--------------------------------------------------------------------------------------------------------
 
 
