@@ -7,6 +7,8 @@ from pathlib import Path
 
 import dill
 
+import os
+
 
 def _worker_main(payload_file):
     """
@@ -60,7 +62,7 @@ def _worker_main(payload_file):
 
             if fmt == "pickle":
                 with open(output_path, "wb") as f:
-                    pickle.dump(fig, f)
+                    dill.dump(fig, f)                         #pickle before
             else:
                 fig.savefig(output_path)
 
@@ -116,7 +118,12 @@ def save_compare_plots(comparison_object, plots, output_dir, formats=None):
             str(payload_file),
         ]
 
-        result = subprocess.run(command, check=False)
+        ###
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(p for p in sys.path if p)
+
+        result = subprocess.run(command, check=False, env=env)
+        #result = subprocess.run(command, check=False)
 
         if result.returncode != 0:
             raise RuntimeError(
