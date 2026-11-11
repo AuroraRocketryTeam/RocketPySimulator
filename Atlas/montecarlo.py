@@ -31,8 +31,8 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'Atlas_iterazione_2'
-number_of_simulations = 5
+output_dir_name = 'Atlas_prova'
+number_of_simulations = 80
 weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast, i = ISA
 seed = None                 # integer to repeat exactly the same runs
 multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
@@ -491,6 +491,22 @@ def main():
     print(f"Completed {len(results)} iterations successfully, {errors} errors. "
           f"Total CPU time (main process): {colored(cpu_time)} s. Total wall time: {colored(wall_time)} s")
     
+    # --- results.txt ---
+    results_txt_path = output_path / "results.txt"
+    with open(results_txt_path, "w", encoding="utf-8") as f_res:
+        f_res.write(f"- Number of simulations: {number_of_simulations}\n")
+        f_res.write(f"- Output directory: {output_dir_name}\n")
+        f_res.write(f"- Launch site: {SITE}\n")
+        f_res.write(f"- Geometry {model.GEOMETRY}, aerodynamics {model.AERODYNAMICS}, motor {model.MOTOR}, recovery {model.RECOVERY}, airbrakes {model.AIRBRAKES}\n\n")
+
+        for title, (key, x_label, unit) in all_plots.items():
+            data = [r[key] for r in results if key in r]
+            if len(data) > 1:
+                mu_out, std_out = norm.fit(data)
+                f_res.write(f"{title}\n")
+                f_res.write(f"\t- Mean Value: {round(mu_out, 3)} {unit}\n")
+                f_res.write(f"\t- Standard Deviation: {round(std_out, 3)} {unit}\n\n")
+
     # COMPARISON GRAPHS
     if keep_flights:
         from rocketpy import CompareFlights

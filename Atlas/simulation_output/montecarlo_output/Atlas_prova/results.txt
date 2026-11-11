@@ -1,0 +1,93 @@
+- Number of simulations: 80
+- Output directory: Atlas_prova
+- Launch site: santa_margarida
+- Geometry v1.6, aerodynamics v1.4/CD_Mach_Test_Atlas_v_1.2_SDRAD_cd_mach.csv, motor SRAD/vPROVA, recovery v1.0, airbrakes None
+
+Out of Rail Time
+	- Mean Value: 0.453 s
+	- Standard Deviation: 0.001 s
+
+Out of Rail Velocity
+	- Mean Value: 42.244 m/s
+	- Standard Deviation: 0.082 m/s
+
+Apogee Time
+	- Mean Value: 25.446 s
+	- Standard Deviation: 0.065 s
+
+Apogee Altitude
+	- Mean Value: 3163.37 m
+	- Standard Deviation: 18.945 m
+
+Apogee X Position
+	- Mean Value: 406.414 m
+	- Standard Deviation: 34.753 m
+
+Apogee Y Position
+	- Mean Value: -595.598 m
+	- Standard Deviation: 46.207 m
+
+Impact Time
+	- Mean Value: 192.015 s
+	- Standard Deviation: 1.343 s
+
+Impact X Position
+	- Mean Value: 650.414 m
+	- Standard Deviation: 40.194 m
+
+Impact Y Position
+	- Mean Value: -538.277 m
+	- Standard Deviation: 54.272 m
+
+Impact Velocity
+	- Mean Value: -5.687 m/s
+	- Standard Deviation: 0.054 m/s
+
+Initial Static Margin
+	- Mean Value: 2.367 c
+	- Standard Deviation: 0.038 c
+
+Out of Rail Static Margin
+	- Mean Value: 2.501 c
+	- Standard Deviation: 0.037 c
+
+Final Static Margin
+	- Mean Value: 3.384 c
+	- Standard Deviation: 0.038 c
+
+Maximum Velocity
+	- Mean Value: 280.665 m/s
+	- Standard Deviation: 1.132 m/s
+
+Maximum Acceleration
+	- Mean Value: 121.135 m/s^2
+	- Standard Deviation: 0.475 m/s^2
+
+Maximum Aerodynamic Drag
+	- Mean Value: 263.905 N
+	- Standard Deviation: 2.141 N
+
+Maximum Aerodynamic Lift
+	- Mean Value: 211.345 N
+	- Standard Deviation: 29.611 N
+
+Maximum Aerodynamic Spin Moment
+	- Mean Value: 0.0 N*m
+	- Standard Deviation: 0.0 N*m
+
+Maximum Aerodynamic Bending Moment
+	- Mean Value: 4.907 N*m
+	- Standard Deviation: 0.114 N*m
+
+Drogue Parachute Trigger Time
+	- Mean Value: 25.556 s
+	- Standard Deviation: 0.065 s
+
+Drogue Parachute Fully Inflated Time
+	- Mean Value: 27.35 s
+	- Standard Deviation: 0.111 s
+
+Drogue Parachute Fully Inflated Velocity
+	- Mean Value: 32.062 m/s
+	- Standard Deviation: 1.807 m/s
+
