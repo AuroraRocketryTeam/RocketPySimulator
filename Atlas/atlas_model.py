@@ -26,7 +26,7 @@ AERODYNAMICS = "v1.4/CD_Mach_Test_Atlas_v_1.2_SDRAD_cd_mach.csv"         # simul
 MOTOR = "SRAD/v1.0"             # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v1.0"                                   # simulation_inputs/recovery_data/<version>/
 AIRBRAKES = "v1.0"                                    # None = no airbrakes, or "v1.0"
-LAUNCH_SITE = "santa_margarida"                     # simulation_inputs/environment_data/<site>/
+LAUNCH_SITE = "santa_margarida"                     # simulation_inputs/environment_data/<site>/                   # simulation_inputs/environment_data/<site>/
 LAUNCH_DATE = (2024, 10, 11, 12)                    # (Year, Month, Day, Hour UTC)
 
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
@@ -327,4 +327,4 @@ def max_acceleration_power_on(flight, skip=1e-4):
     """
     t, a = flight.acceleration.source[:, 0], flight.acceleration.source[:, 1]
     return a[t < flight.rocket.motor.burn_out_time - skip].max()
-#--------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------------

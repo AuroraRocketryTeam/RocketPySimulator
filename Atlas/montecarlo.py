@@ -93,7 +93,32 @@ def loading_bar(initial_time, number_of_iterations, iteration, bar_lenght=24):
 
 
 #-------------------------------------------------------------------------------------------------------- SIMULATION
+# atlas_model.py computes SITE_DIR / SITE_FILE at import time from the raw LAUNCH_SITE ("xxx yyy").
+# They are recomputed here with the normalized name ("xxx_yyy"), BEFORE the model reads them.
+SITE_RAW = model.LAUNCH_SITE
+SITE = SITE_RAW.strip().lower().replace(" ", "_")
+model.SITE_DIR = model.INPUTS / "environment_data" / SITE
+model.SITE_FILE = model.SITE_DIR / "launch_site.csv"
+if not model.SITE_DIR.is_dir():
+    raise FileNotFoundError(f"Input directory for LAUNCH_SITE {SITE_RAW!r} not found: {model.SITE_DIR}")
+
 PARAMETERS = model.load_parameters()
+
+# Launch site dependent names and map geometry
+if SITE == "santa_margarida":
+    SITE_LABEL = "Santa Margarida"
+    SITE_IMAGE = "santa_margarida_military_shooting_range_launch_site.png"
+    SITE_HALF_X, SITE_HALF_Y = 2000, 2000
+    SITE_XLIM, SITE_YLIM = (-2000, 2000), (-1500, 1500)
+elif SITE == "rovigo":
+    SITE_LABEL = "Rovigo"
+    SITE_IMAGE = "rovigo_launch_site.png"
+    SITE_HALF_X, SITE_HALF_Y = 2000, 2000
+    SITE_XLIM, SITE_YLIM = (-2000, 2000), (-1500, 1500)
+else:
+    raise ValueError(f"Unknown LAUNCH_SITE: {SITE_RAW!r} (expected 'santa_margarida' or 'rovigo')")
+
+SITE_OUTPUT = SITE_LABEL.replace(" ", "_")   # Santa_Margarida / Rovigo (output)                            # santa_margarida / rovigo (input directory)
 
 # Environment of the current process (one per worker)
 _ENV = None
@@ -278,7 +303,7 @@ def eigsorted(cov):
 
 def launch_site_graph(results, output_launch_site):
     # Import background map
-    img = imread(str(model.SITE_DIR / "santa_margarida_military_shooting_range_launch_site.png"))
+    img = imread(str(model.SITE_DIR / SITE_IMAGE))
 
     apogee_x = np.array([r["apogee_x"] for r in results])
     apogee_y = np.array([r["apogee_y"] for r in results])
@@ -313,16 +338,16 @@ def launch_site_graph(results, output_launch_site):
     # You can translate the basemap by changing dx and dy (in meters)
     dx = 0
     dy = 0
-    plt.imshow(img, zorder=0, extent=[-2000-dx, 2000-dx, -2000-dy, 2000-dy])
+    plt.imshow(img, zorder=0, extent=[-SITE_HALF_X-dx, SITE_HALF_X-dx, -SITE_HALF_Y-dy, SITE_HALF_Y-dy])
     plt.axhline(0, color="black", linewidth=0.5)
     plt.axvline(0, color="black", linewidth=0.5)
-    plt.xlim(-2000, 2000)
-    plt.ylim(-1500, 1500)
+    plt.xlim(*SITE_XLIM)
+    plt.ylim(*SITE_YLIM)
 
-    plt.savefig(str(output_launch_site) + "/Santa_Margarida_launch_site.svg", format='svg', bbox_inches="tight")
-    with open(str(output_launch_site) + "/Santa_Margarida_launch_site.pickle", "wb") as f:
+    plt.savefig(f"{output_launch_site}/{SITE_OUTPUT}_launch_site.svg", format='svg', bbox_inches="tight")
+    with open(f"{output_launch_site}/{SITE_OUTPUT}_launch_site.pickle", "wb") as f:
         pickle.dump(s, f)
-    print("- Santa Margarida launch site graph saved successfully")
+    print(f"- {SITE_LABEL} launch site graph saved successfully")
 
     if show_dispersion_graph:
         plt.show()
@@ -397,6 +422,7 @@ def main():
     print(f"- Filename is: {colored(filename)}")
     print(f"- Number of simulations: {colored(number_of_simulations)}")
     print(f"- Output directory: {colored(output_dir_name)}")
+    print(f"- Launch site: {colored(SITE)}")
     print(f"- Geometry {colored(model.GEOMETRY)}, aerodynamics {colored(model.AERODYNAMICS)}, "
           f"motor {colored(model.MOTOR)}, recovery {colored(model.RECOVERY)}, airbrakes {colored(model.AIRBRAKES)}\n")
 
@@ -520,4 +546,4 @@ def main():
 if __name__ == "__main__":
     main()
     
-#-------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------
