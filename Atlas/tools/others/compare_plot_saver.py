@@ -62,7 +62,7 @@ def _worker_main(payload_file):
 
             if fmt == "pickle":
                 with open(output_path, "wb") as f:
-                    dill.dump(fig, f)                                                             #pickle before
+                    dill.dump(fig, f)                         #pickle before
             else:
                 fig.savefig(output_path)
 
