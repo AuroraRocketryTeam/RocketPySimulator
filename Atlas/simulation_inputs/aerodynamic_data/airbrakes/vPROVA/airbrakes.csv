@@ -1,0 +1,9 @@
+# Airbrake v1.0 - CD in funzione di apertura e Mach in cd_mach.csv,,,,
+name,value,std,unit,note
+reference_area,0.0176,0,m^2,superficie a cui si applica il CD degli airbrake
+deployment_level,1,0,-,apertura (0-1) dopo il burnout sopra deployment_altitude #da togliere?
+deployment_altitude,1500,0,m,AGL come da regolamento euroc (circa 1660m ASL a Santa Margarida)
+airbrake_sampling_rate,10,0,Hz,frequenza del controller
+target_apogee,3000,0,m,Target apogee above ground level
+servo_rise,1,0,1/s,Max opening rate of the servo (1.0 = 100% of the stroke per second)
+servo_fall,1,0,1/s,Max closing rate of the servo

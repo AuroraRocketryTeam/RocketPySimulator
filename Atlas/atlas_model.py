@@ -15,6 +15,7 @@ Typical use:
 """
 
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -23,11 +24,14 @@ import pandas as pd
 #-------------------------------------------------------------------------------------------------------- VERSIONS
 GEOMETRY = "v1.6"                                   # simulation_inputs/geometry_data/<version>/
 AERODYNAMICS = "v1.4/CD_Mach_Test_Atlas_v_1.2_SDRAD_cd_mach.csv"         # simulation_inputs/aerodynamic_data/rocket_body/<file>
-MOTOR = "SRAD/v1.0"             # simulation_inputs/propulsion_data/<motor>/
+MOTOR = "SRAD/vPROVA"             # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v1.0"                                   # simulation_inputs/recovery_data/<version>/
-AIRBRAKES = "v1.0"                                    # None = no airbrakes, or "v1.0"
+AIRBRAKES = "vPROVA"                                    # None = no airbrakes, or "v1.0"
 LAUNCH_SITE = "santa_margarida"                     # simulation_inputs/environment_data/<site>/
 LAUNCH_DATE = (2024, 10, 11, 12)                    # (Year, Month, Day, Hour UTC)
+
+# Airbrake controller: 1 = predictive scan of 13 openings, 2 = Simulink model (apogee predictor + PI + servo)
+funz_di_controllo = 1
 
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
 DRAG_FACTOR = (1.0, 0.001)
@@ -186,8 +190,8 @@ def build_motor(s):
 
     return SolidMotor(
         thrust_source=str(THRUST_FILE),
-        burn_time=s["burn_time"],
-        reshape_thrust_curve=(s["burn_time"], s["impulse"]),
+        #burn_time=s["burn_time"],                                       #
+        reshape_thrust_curve=False,#(s["burn_time"], s["impulse"]),      # anche se gli dai thrust file lo sovrascrive
         interpolation_method="linear",
         nozzle_radius=s["nozzle_radius"],
         throat_radius=s["throat_radius"],
@@ -204,17 +208,118 @@ def build_motor(s):
         center_of_dry_mass_position=s["motor_dry_mass_position"],
         coordinate_system_orientation="nozzle_to_combustion_chamber",
     )
+#--------------------------------------------------------------------------------------------------------
 
 
-def airbrake_controller(env, motor, s):
-    """Controller of the airbrakes: closed during the burn and below deployment_altitude (ASL),
-    open at deployment_level above it."""
+#-------------------------------------------------------------------------------------------------------- AIRBRAKE CONTROLLERS
+# Settings shared by the two controllers
+G = 9.80665
+MACH_MAX = 1.2      # upper limit of the precomputed Cd tables
+
+# ---- Servo dynamics (both controllers): rate limiter between the commanded and the actual opening ----
+# The speed limits are read from airbrakes.csv: servo_rise and servo_fall, in 1/s (1.0 = 100 % of the stroke per second)
+SERVO_IC = 0.0              # ? initial opening of the servo
+
+
+def servo_step(position, command, Ts, rise, fall):
+    """One step of the servo: moves from `position` towards `command`, with max opening rate `rise`
+    and max closing rate `fall` (both in 1/s)."""
+    change = min(max(command - position, -fall * Ts), rise * Ts)
+    return position + change
+
+
+# ---- Controller 1: predictive scan ----
+NSTEP = 13          # opening candidates: 0, 1/12, ..., 1
+DT = 0.1            # prediction step [s]
+NMAX = 600          # max prediction steps
+
+
+def airbrake_controller_1(env, motor, rocket, s):
+    """Predictive controller: every call it simulates the coast up to apogee for NSTEP openings (all
+    together, vectorized) and commands the opening that makes the apogee equal to target_apogee (AGL).
+    Closed below deployment_altitude (AGL) and during the burn. The cache lives in the closure, so every
+    flight (Monte Carlo included) has its own. The commanded opening goes through the servo dynamics."""
+    cache = {}
+    Ts = 1.0 / s["airbrake_sampling_rate"]
+    servo = {"position": SERVO_IC}
+
+    def build_tables(air_brakes):
+        h = np.arange(env.elevation, env.elevation + env.max_expected_height + 1, 50.0)
+        mach = np.linspace(0, MACH_MAX, round(MACH_MAX / 0.01) + 1)
+        levels = np.linspace(0, 1, NSTEP)
+        rocket_cda = np.array([rocket.power_off_drag(m) for m in mach]) * rocket.area
+        override = getattr(air_brakes, "override_rocket_drag", True)
+        cda = np.empty((NSTEP, mach.size))
+        for k, level in enumerate(levels):
+            if level == 0:                      # RocketPy applies the airbrakes only above level 0
+                cda[k] = rocket_cda
+            else:
+                ab = np.array([air_brakes.drag_coefficient(level, m) for m in mach]) * air_brakes.reference_area
+                cda[k] = ab if override else rocket_cda + ab
+        cache.update(
+            h=h, rho=np.array([env.density(x) for x in h]), a=np.array([env.speed_of_sound(x) for x in h]),
+            mach=mach, dmach=mach[1] - mach[0], cda=cda, levels=levels, rows=np.arange(NSTEP),
+        )
+
+    def predict_apogee(v0, h0, t0, mass):
+        """Vertical coast of the NSTEP candidates at once -> (apogee ASL, apogee time) arrays."""
+        c = cache
+        v = np.full(NSTEP, float(v0))
+        h = np.full(NSTEP, float(h0))
+        apo = np.empty(NSTEP)
+        t_apo = np.empty(NSTEP)
+        active = np.ones(NSTEP, bool)
+        t = t0
+        for _ in range(NMAX):
+            rho = np.interp(h, c["h"], c["rho"])
+            a_s = np.interp(h, c["h"], c["a"])
+            x = np.clip(v / a_s, 0, MACH_MAX) / c["dmach"]
+            i = np.minimum(x.astype(int), c["mach"].size - 2)
+            w = x - i
+            cda = c["cda"][c["rows"], i] * (1 - w) + c["cda"][c["rows"], i + 1] * w
+            v_new = v + (-0.5 * rho * cda * v * v / mass - G) * DT
+            h_new = h + v_new * DT
+            t += DT
+            done = active & (v_new < 0)
+            apo[done], t_apo[done] = h_new[done], t
+            active &= ~done
+            v = np.where(active, v_new, v)
+            h = np.where(active, h_new, h)
+            if not active.any():
+                break
+        apo[active], t_apo[active] = h[active], t     # horizon exceeded
+        return apo, t_apo
 
     def controller(time, sampling_rate, state, state_history, observed_variables, air_brakes):
         altitude_asl = state[2]
+        vz = state[5]
+
         if time < motor.burn_out_time:
             return None
-        air_brakes.deployment_level = s["deployment_level"] if altitude_asl >= s["deployment_altitude"] else 0
+
+        if not cache:
+            build_tables(air_brakes)
+
+        level, apogee_agl = 0.0, 0.0
+        if altitude_asl - env.elevation >= s["deployment_altitude"] and vz > 0:   # deployment altitude is AGL
+            target = s["target_apogee"] + env.elevation            # target is AGL
+            apo, _ = predict_apogee(vz, altitude_asl, time, float(rocket.total_mass(time)))
+            levels = cache["levels"]
+            below = np.nonzero(apo <= target)[0]
+            if below.size == 0:                 # even fully open it overshoots -> max opening
+                level, apogee_agl = levels[-1], apo[-1] - env.elevation
+            elif below[0] == 0:                 # even closed it undershoots -> stay closed
+                level, apogee_agl = levels[0], apo[0] - env.elevation
+            else:                               # interpolate between the last above and the first below
+                k = below[0]
+                w = (apo[k - 1] - target) / (apo[k - 1] - apo[k])
+                level = levels[k - 1] + w * (levels[k] - levels[k - 1])
+                apogee_agl = s["target_apogee"]
+
+        # Servo dynamics: the actual opening follows the command with a limited speed
+        servo["position"] = servo_step(servo["position"], float(level), Ts, s["servo_rise"], s["servo_fall"])
+        air_brakes.deployment_level = float(min(max(servo["position"], 0.0), 1.0))
+
         free_stream_speed = np.sqrt(
             (env.wind_velocity_x(altitude_asl) - state[3]) ** 2
             + (env.wind_velocity_y(altitude_asl) - state[4]) ** 2
@@ -222,11 +327,201 @@ def airbrake_controller(env, motor, s):
         )
         mach = free_stream_speed / env.speed_of_sound(altitude_asl)
         # Saved in observed_variables
-        return time, air_brakes.deployment_level, air_brakes.drag_coefficient(air_brakes.deployment_level, mach)
+        return time, air_brakes.deployment_level, air_brakes.drag_coefficient(air_brakes.deployment_level, mach), apogee_agl
 
     return controller
 
 
+# ---- Controller 2: Simulink model (Apogee Predictor + PI + servo) ----
+# All the openings are 0-1 (the x100 block of the Simulink model is not needed).
+PRED_DT = 0.05              # prediction step [s]
+PRED_NMAX = 1000            # max prediction steps
+PRED_UPDATE_RHO = True      # update rho and speed of sound with altitude inside the prediction
+
+# <-- CHECK these against the Simulink model (the ones marked ? are not visible in the picture)
+KP = 0.001                  # proportional gain
+KI = 0.004                  # gain before the discrete-time integrator
+INTEGRATOR_IC = 0.0         # ? integrator initial condition (value after reset)
+SAT_MIN, SAT_MAX = 0.0, 1.0 # ? Saturation limits (before x100, so 0-1)
+OPENING_MIN = 0.0           # ? openingMin as a fraction (a value of 5 % in Simulink -> 0.05)
+# (servo dynamics: servo_rise and servo_fall come from airbrakes.csv, SERVO_IC is defined above; shared with controller 1)
+DELAY_IC = 0.0              # ? Unit Delay (1/z) initial condition
+
+
+def _isa_atmosphere(h):
+    """Simplified ISA, troposphere (valid up to 11 km)."""
+    T0, p0, L = 288.15, 101325.0, 0.0065
+    g0, R, gam = 9.80665, 287.058, 1.4
+    h = min(max(h, 0.0), 11000.0)
+    T = T0 - L * h
+    p = p0 * (T / T0) ** (g0 / (R * L))
+    return p / (R * T), math.sqrt(gam * R * T)
+
+
+def _cd_at_mach(Cd_table, Mach_bp, mach):
+    """Linear interpolation along Mach -> vector Cd(opening) at this Mach."""
+    n = len(Mach_bp)
+    M = min(max(mach, Mach_bp[0]), Mach_bp[n - 1])
+    k = 0
+    while k < n - 2 and M > Mach_bp[k + 1]:
+        k += 1
+    w = (M - Mach_bp[k]) / (Mach_bp[k + 1] - Mach_bp[k])
+    return (1 - w) * Cd_table[:, k] + w * Cd_table[:, k + 1]
+
+
+def _opening_to_cd_row(Cd_table, Opening_bp, opening):
+    """Linear interpolation along opening -> row vector Cd(Mach) at this opening."""
+    n = len(Opening_bp)
+    op = min(max(opening, Opening_bp[0]), Opening_bp[n - 1])
+    k = 0
+    while k < n - 2 and op > Opening_bp[k + 1]:
+        k += 1
+    w = (op - Opening_bp[k]) / (Opening_bp[k + 1] - Opening_bp[k])
+    return (1 - w) * Cd_table[k, :] + w * Cd_table[k + 1, :]
+
+
+def _interp_cd(Mach_bp, CdRow, mach):
+    """Linear interpolation of the Cd row along Mach, clamped to the table range
+    (np.interp does exactly this, and it is much faster than the while loop inside the prediction)."""
+    return np.interp(mach, Mach_bp, CdRow)
+
+
+def _opening_to_cd(CdVec, Opening_bp, opening):
+    """Linear interpolation of the Cd(opening) vector at the current Mach."""
+    n = len(Opening_bp)
+    op = min(max(opening, Opening_bp[0]), Opening_bp[n - 1])
+    k = 0
+    while k < n - 2 and op > Opening_bp[k + 1]:
+        k += 1
+    w = (op - Opening_bp[k]) / (Opening_bp[k + 1] - Opening_bp[k])
+    return (1 - w) * CdVec[k] + w * CdVec[k + 1]
+
+
+def _predict_apogee(CdRow, Mach_bp, v0, h0, t0, m, Aref, dt, Nmax, update_rho, rho0, a0):
+    g = 9.80665
+    v, h, t, rho, a_s = v0, h0, t0, rho0, a0
+    for _ in range(Nmax):
+        if update_rho:
+            rho, a_s = _isa_atmosphere(h)
+        Cd = _interp_cd(Mach_bp, CdRow, v / a_s)
+        a = -0.5 * Cd * rho * Aref * v ** 2 / m - g
+        v = v + a * dt
+        h = h + v * dt
+        t = t + dt
+        if v < 0:
+            return h, t
+    return h, t                 # horizon exceeded (should not happen in a normal coast)
+
+
+def _apogee_predictor(opening, v_vert, alt, time, dry_mass, Aref, opening_alt, target_alt, Cd_table, Mach_bp, Opening_bp):
+    """MATLAB fcn: predicted apogee holding `opening` from now on.
+    Returns apogeeAlt, t_apogee, Cd_cmd, resetPID (1 = controller not active)."""
+    m = dry_mass
+    # 1) ISA at the current altitude -> Mach
+    rho0, a0 = _isa_atmosphere(alt)
+    mach = abs(v_vert) / a0
+    # 2) Cd of the tested opening at the current Mach (log only)
+    CdVec = _cd_at_mach(Cd_table, Mach_bp, mach)
+    Cd_cmd = _opening_to_cd(CdVec, Opening_bp, opening)
+    # default outputs (controller not active: zero error, PID reset)
+    apogee_alt, t_apogee, reset_pid = target_alt, 0.0, 1
+    if alt < opening_alt or v_vert <= 0:
+        return apogee_alt, t_apogee, Cd_cmd, reset_pid
+    # 3) predict the apogee with the current opening
+    reset_pid = 0
+    CdRow = _opening_to_cd_row(Cd_table, Opening_bp, opening)
+    apogee_alt, t_apogee = _predict_apogee(CdRow, Mach_bp, v_vert, alt, time, m, Aref,
+                                           PRED_DT, PRED_NMAX, PRED_UPDATE_RHO, rho0, a0)
+    return apogee_alt, t_apogee, Cd_cmd, reset_pid
+
+
+def airbrake_controller_2(env, motor, rocket, s):
+    """Simulink controller: Apogee Predictor -> error -> P + I (with reset) -> saturation -> + openingMin
+    -> Servo Dynamics (rate limiter) -> cmdOpening, fed back to the predictor through a unit delay (1/z).
+    Internally altitudes are ASL; deployment_altitude and target_apogee in the csv are AGL."""
+    Ts = 1.0 / s["airbrake_sampling_rate"]
+    dry_mass = s["rocket_dry_mass"] + s["motor_dry_mass"]
+    tables = {}
+    st = {"integrator": INTEGRATOR_IC, "servo": SERVO_IC, "delay": DELAY_IC}
+
+    def build_tables(air_brakes):
+        """Total Cd table [opening x Mach] referred to Aref, equivalent to what RocketPy applies."""
+        Aref = air_brakes.reference_area
+        Mach_bp = np.linspace(0, MACH_MAX, round(MACH_MAX / 0.01) + 1)
+        Opening_bp = np.linspace(0, 1, 21)
+        rocket_cda = np.array([rocket.power_off_drag(m) for m in Mach_bp]) * rocket.area
+        override = getattr(air_brakes, "override_rocket_drag", True)
+        Cd_table = np.empty((Opening_bp.size, Mach_bp.size))
+        for k, level in enumerate(Opening_bp):
+            if level == 0:                      # RocketPy applies the airbrakes only above level 0
+                cda = rocket_cda
+            else:
+                ab = np.array([air_brakes.drag_coefficient(level, m) for m in Mach_bp]) * Aref
+                cda = ab if override else rocket_cda + ab
+            Cd_table[k] = cda / Aref
+        tables.update(Aref=Aref, Mach_bp=Mach_bp, Opening_bp=Opening_bp, Cd_table=Cd_table)
+
+    def controller(time, sampling_rate, state, state_history, observed_variables, air_brakes):
+        altitude_asl = state[2]
+        vz = state[5]
+
+        if time < motor.burn_out_time:
+            return None
+
+        if not tables:
+            build_tables(air_brakes)
+
+        target_alt = s["target_apogee"] + env.elevation
+
+        # A) Apogee Predictor, tested with the opening of the previous step (unit delay)
+        apogee_alt, t_apogee, cd_cmd, reset_pid = _apogee_predictor(
+            st["delay"], vz, altitude_asl, time, dry_mass, tables["Aref"], s["deployment_altitude"] + env.elevation,
+            target_alt, tables["Cd_table"], tables["Mach_bp"], tables["Opening_bp"])
+
+        # B) error
+        err = apogee_alt - target_alt
+
+        # C) PI: proportional + discrete-time integrator (forward Euler K*Ts/(z-1), reset when not active)
+        p_term = KP * err
+        if reset_pid:
+            st["integrator"] = INTEGRATOR_IC
+            i_term = INTEGRATOR_IC
+        else:
+            i_term = st["integrator"]
+            st["integrator"] += Ts * KI * err
+
+        # D) saturation -> + openingMin -> servo dynamics (rate limiter)
+        u = min(max(p_term + i_term, SAT_MIN), SAT_MAX) + OPENING_MIN
+        st["servo"] = servo_step(st["servo"], u, Ts, s["servo_rise"], s["servo_fall"])
+        cmd_opening = st["servo"]
+        st["delay"] = cmd_opening               # 1/z
+
+        level = min(max(cmd_opening, 0.0), 1.0)  # RocketPy accepts 0-1 only
+        air_brakes.deployment_level = float(level)
+
+        free_stream_speed = np.sqrt(
+            (env.wind_velocity_x(altitude_asl) - state[3]) ** 2
+            + (env.wind_velocity_y(altitude_asl) - state[4]) ** 2
+            + state[5] ** 2
+        )
+        mach = free_stream_speed / env.speed_of_sound(altitude_asl)
+        apogee_agl = 0.0 if reset_pid else apogee_alt - env.elevation
+        # Saved in observed_variables (same 4 values as controller 1, so the graph works for both)
+        return time, air_brakes.deployment_level, air_brakes.drag_coefficient(level, mach), apogee_agl
+
+    return controller
+
+
+def airbrake_controller(env, motor, rocket, s):
+    """Controller chosen with funz_di_controllo (1 or 2)."""
+    controllers = {1: airbrake_controller_1, 2: airbrake_controller_2}
+    if funz_di_controllo not in controllers:
+        raise ValueError(f"funz_di_controllo must be 1 or 2, not {funz_di_controllo}")
+    return controllers[funz_di_controllo](env, motor, rocket, s)
+#--------------------------------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------------------------------- ROCKET AND FLIGHT
 def build_rocket(s, env=None, logic=None, drogue_lag=None, main_lag=None, recovery=True):
     """Atlas with motor, aerodynamic surfaces, parachutes and (optionally) airbrakes.
 
@@ -288,12 +583,12 @@ def build_rocket(s, env=None, logic=None, drogue_lag=None, main_lag=None, recove
             raise ValueError("The airbrake controller needs the environment: build_rocket(s, env=...)")
         atlas.add_air_brakes(
             drag_coefficient_curve=str(AIRBRAKES_DIR / "cd_mach.csv"),
-            controller_function=airbrake_controller(env, motor, s),
+            controller_function=airbrake_controller(env, motor, atlas, s),
             sampling_rate=s["airbrake_sampling_rate"],
             reference_area=s["reference_area"],
             clamp=False,
-            initial_observed_variables=[0, 0, 0],
-            override_rocket_drag=False,
+            initial_observed_variables=[0, 0, 0, 0],
+            override_rocket_drag=True,
             name="Air Brakes",
         )
     return atlas
