@@ -31,7 +31,7 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'Atlas_prova'
+output_dir_name = 'Atlas_save_prova_rovigo'
 number_of_simulations = 80
 weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast, i = ISA
 seed = None                 # integer to repeat exactly the same runs
@@ -39,9 +39,10 @@ multiple_core = True        # True = runs in parallel on all the cores, False = 
 
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
-show_dispersion_graph = False
-show_compare_graph = False
-save_compare_graph = False
+show_dispersion_plot = False
+save_dispersion_plot = False
+show_compare_plot = False
+save_compare_plot = False
 sensitivity_analysis = False
 #--------------------------------------------------------------------------------------------------------
 
@@ -252,14 +253,15 @@ def plot_graph(out_data, x_label, title, unit_of_measure, output_svg, output_pic
     plt.grid(False)
 
     # Print information
-    print(f'{colored(title)}\n\t- Mean Value: {colored(round(mu_out,3))} {unit_of_measure}')
-    print(f'\t- Standard Deviation: {colored(round(std_out,3))} {unit_of_measure}\n')
+    print(f'{colored(title)}\n\tMean Value: {colored(round(mu_out,3))} {unit_of_measure}')
+    print(f'\tStandard Deviation: {colored(round(std_out,3))} {unit_of_measure}\n')
 
-    plt.savefig(str(output_svg/title)+".svg", format='svg')
-    with open(str(output_pickle/title)+".pickle", "wb") as f:
-        pickle.dump(s, f)
+    if save_dispersion_plot:
+        plt.savefig(str(output_svg/title)+".svg", format='svg')
+        with open(str(output_pickle/title)+".pickle", "wb") as f:
+            pickle.dump(s, f)
 
-    if show_dispersion_graph:
+    if show_dispersion_plot:
         plt.show()
     plt.close(s)
 
@@ -349,7 +351,7 @@ def launch_site_graph(results, output_launch_site):
         pickle.dump(s, f)
     print(f"- {SITE_LABEL} launch site graph saved successfully")
 
-    if show_dispersion_graph:
+    if show_dispersion_plot:
         plt.show()
     plt.close('all')
 #--------------------------------------------------------------------------------------------------------
@@ -392,7 +394,7 @@ def sensitivity_graphs(filename, results, output_sensitivity):
         sens_fig = plt.figure(target+1)
         sens_fig.savefig(f"{str(output_sensitivity)}/sensitivity_{target_variables[target]}.svg", dpi=300)
 
-    if show_dispersion_graph:
+    if show_dispersion_plot:
         plt.pause(99999) # that's a lot of damag...time.
 
     plt.close("all")
@@ -447,7 +449,7 @@ def main():
         folder.mkdir(parents=True, exist_ok=True)
 
     # The comparison graphs need all the Flight objects: in that case the runs are made in this process
-    keep_flights = show_compare_graph or save_compare_graph
+    keep_flights = show_compare_plot or save_compare_plot
     parallel = multiple_core and not keep_flights
     run_seeds = np.random.SeedSequence(seed).generate_state(number_of_simulations)
     initial_time = time.time()
@@ -504,8 +506,8 @@ def main():
             if len(data) > 1:
                 mu_out, std_out = norm.fit(data)
                 f_res.write(f"{title}\n")
-                f_res.write(f"\t- Mean Value: {round(mu_out, 3)} {unit}\n")
-                f_res.write(f"\t- Standard Deviation: {round(std_out, 3)} {unit}\n\n")
+                f_res.write(f"\tMean Value: {round(mu_out, 3)} {unit}\n")
+                f_res.write(f"\tStandard Deviation: {round(std_out, 3)} {unit}\n\n")
 
     # COMPARISON GRAPHS
     if keep_flights:
@@ -513,7 +515,7 @@ def main():
         
         print(colored('\n\nComparison graphs:'))
         comparison = CompareFlights(flights)
-        if show_compare_graph:
+        if show_compare_plot:
             comparison.velocities()
             comparison.accelerations()
             comparison.attitude_angles()
@@ -525,7 +527,7 @@ def main():
             comparison.trajectories_3d()
             comparison.rail_buttons_forces()
             comparison.stability_margin()
-        if save_compare_graph:
+        if save_compare_plot:
             save_compare_plots(
                 comparison_object=comparison,
                 plots=[
