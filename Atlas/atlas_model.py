@@ -33,6 +33,14 @@ LAUNCH_DATE = (2024, 10, 11, 12)                    # (Year, Month, Day, Hour UT
 # Airbrake controller: 1 = predictive scan of 13 openings, 2 = Simulink model (apogee predictor + PI + servo)
 funz_di_controllo = 1
 
+# Forecast weather (weather_data = "f"): Open-Meteo forecast of this model at LAUNCH_DATE (UTC). 
+# icon_d2 (up to 48 h ahead) covers central Europe only (Rovigo yes, Santa Margarida no)
+# icon_eu (5 days ahead, covers Europe)
+# ecmwf_ifs025 (15 days, covers the entire world)
+# The download is saved in the site folder (<site>_forecast_<model>_<day>.json) and used again by every run:
+# delete the file to download a newer forecast.
+FORECAST_MODEL = "icon_eu"
+
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
 DRAG_FACTOR = (1.0, 0.001)
 #--------------------------------------------------------------------------------------------------------
@@ -130,11 +138,84 @@ class RecoveryLogic:
 
 
 #-------------------------------------------------------------------------------------------------------- MODEL
+def forecast_file(site, date):
+    """Open-Meteo forecast of FORECAST_MODEL for the day of `date` (UTC), downloaded once and kept in SITE_DIR."""
+    import urllib.error
+    import urllib.request
+    from datetime import datetime, timezone
+
+    day = f"{date[0]:04d}-{date[1]:02d}-{date[2]:02d}"
+    path = SITE_DIR / f"{LAUNCH_SITE}_forecast_{FORECAST_MODEL}_{day.replace('-', '')}.json"
+    if not path.is_file():
+        near = [f"{v}_{h}m" for h in FORECAST_NEAR_GROUND for v in ("wind_speed", "wind_direction")]
+        levels = [f"{v}_{p}hPa" for p in FORECAST_LEVELS
+                  for v in ("wind_speed", "wind_direction", "temperature", "geopotential_height")]
+        url = ("https://api.open-meteo.com/v1/forecast"
+               f"?latitude={site['latitude']}&longitude={site['longitude']}&models={FORECAST_MODEL}"
+               f"&hourly={','.join(['temperature_2m', 'surface_pressure'] + near + levels)}"
+               f"&wind_speed_unit=ms&timezone=GMT&start_date={day}&end_date={day}")
+        try:
+            with urllib.request.urlopen(url, timeout=60) as response:
+                data = json.load(response)
+        except urllib.error.HTTPError as error:
+            # Open-Meteo answers 400 with the reason, e.g. a site outside the domain of the model (icon_d2)
+            reason = json.loads(error.read() or b"{}").get("reason", error.reason)
+            raise ValueError(f"Open-Meteo refused the forecast {FORECAST_MODEL} for {LAUNCH_SITE} on {day}: {reason}") from None
+        data["downloaded"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        temporary = path.with_suffix(".tmp")         # the parallel workers may download at the same time
+        temporary.write_text(json.dumps(data))
+        temporary.replace(path)
+    return path
+
+
+# Open-Meteo heights (m above ground) and pressure levels (hPa) used by forecast_profile
+FORECAST_NEAR_GROUND = (10, 80, 120, 180)
+# Atlas flies to about 3000 m: levels up to 500 hPa (about 5500 m), above max_expected_height
+FORECAST_LEVELS = (1000, 975, 950, 925, 900, 850, 800, 700, 600, 500)
+
+
+def forecast_profile(site, date):
+    """Pressure, temperature and wind (lists of (height above sea level, value)) of the Open-Meteo forecast at
+    the hour of `date` (UTC). Wind near the ground from the 10-180 m values, higher from the pressure levels
+    more than 200 m above the ground; the 10 m wind is used down to the ground."""
+    import json
+
+    data = json.loads(forecast_file(site, date).read_text())
+    hourly = data["hourly"]
+    i = hourly["time"].index(f"{date[0]:04d}-{date[1]:02d}-{date[2]:02d}T{date[3]:02d}:00")
+    value = lambda name: hourly.get(name, [None] * (i + 1))[i]
+    ground = site["elevation"]
+
+    wind = [(ground, value("wind_speed_10m"), value("wind_direction_10m"))]
+    wind += [(ground + h, value(f"wind_speed_{h}m"), value(f"wind_direction_{h}m")) for h in FORECAST_NEAR_GROUND]
+    pressure = [(ground, value("surface_pressure") * 100)]
+    temperature = [(ground, value("temperature_2m") + 273.15)]
+    for p in FORECAST_LEVELS:
+        height = value(f"geopotential_height_{p}hPa")
+        if height is None or height < ground:
+            continue
+        pressure.append((height, p * 100))
+        if value(f"temperature_{p}hPa") is not None:
+            temperature.append((height, value(f"temperature_{p}hPa") + 273.15))
+        if height > ground + 200:
+            wind.append((height, value(f"wind_speed_{p}hPa"), value(f"wind_direction_{p}hPa")))
+    wind = sorted(w for w in wind if None not in w)
+    if len(wind) < 2:
+        raise ValueError(f"{FORECAST_MODEL}: no wind in the forecast for {date} (too far ahead for this model?)")
+    # Open-Meteo gives where the wind comes from; u, v are the components of where it goes
+    u = [(h, -speed * np.sin(np.radians(direction))) for h, speed, direction in wind]
+    v = [(h, -speed * np.cos(np.radians(direction))) for h, speed, direction in wind]
+    print(f"Forecast {FORECAST_MODEL} downloaded {data['downloaded']}: wind at 10 m {wind[0][1]:.1f} m/s "
+          f"from {wind[0][2]:.0f} deg")
+    return {"pressure": sorted(pressure), "temperature": sorted(temperature), "wind_u": u, "wind_v": v}
+
+
 def build_environment(weather_data="c", date=LAUNCH_DATE):
     """Launch site with the chosen weather data:
     c = custom atmosphere, mean of the EuRoC week (10-15 October, 2005-2024) at the chosen hour
     e = ensemble forecast of the EuRoC week (select the member with env.select_ensemble_member)
-    f = GFS forecast (date in the future)
+    f = Open-Meteo forecast of FORECAST_MODEL (forecast_profile); the GFS of RocketPy no longer works, NOAA
+        retired the OpenDAP service it used
     i = International Standard Atmosphere
     """
     from rocketpy import Environment
@@ -179,7 +260,7 @@ def build_environment(weather_data="c", date=LAUNCH_DATE):
             },
         )
     elif weather_data == "f":
-        env.set_atmospheric_model(type="Forecast", file="GFS")
+        env.set_atmospheric_model(type="custom_atmosphere", **forecast_profile(site, date))
     elif weather_data != "i":
         raise ValueError(f"Unknown weather data '{weather_data}' (use c, e, f or i)")
     return env

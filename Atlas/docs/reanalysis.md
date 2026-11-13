@@ -11,7 +11,7 @@ Le opzioni sono in testa al file:
 
 | Opzione | Significato |
 |---|---|
-| `weather_data` | atmosfera: `c` media della settimana di EuRoC, `e` ensemble, `f` previsione GFS, `i` ISA |
+| `weather_data` | atmosfera: `c` media della settimana di EuRoC, `e` ensemble, `f` previsione Open-Meteo (vedi [atlas_model.md](atlas_model.md), sezione 4), `i` ISA |
 | `ballistic` | `True` = volo senza paracadute |
 | `show_graph` | mostra i grafici di RocketPy |
 | `print_info` | stampa il riepilogo del volo di RocketPy |

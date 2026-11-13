@@ -4,8 +4,8 @@
 # Ugello e gola scalati dalla geometria nota di un Pro54 (quella del Pro75 non è pubblica).
 # Posizioni misurate dall'ugello verso la camera di combustione.
 name,value,std,unit,note
-impulse,9977,5,N*s,
-burn_time,4.3,0.1,s,
+impulse,9977,5,N*s,senza reshape_thrust_curve in atlas_model.py (oggi disattivato) valore e std non hanno effetto
+burn_time,4.3,0.1,s,senza reshape_thrust_curve in atlas_model.py (oggi disattivato) valore e std non hanno effetto
 nozzle_radius,0.029,0.0005,m,
 throat_radius,0.020,0.0005,m,
 nozzle_position,0,0.0001,m,

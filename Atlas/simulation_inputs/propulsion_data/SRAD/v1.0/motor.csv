@@ -5,8 +5,8 @@
 # La fine dell'ugello coincide con la fine del razzo
 # Posizioni misurate dall'ugello verso la camera di combustione.
 name,value,std,unit,note
-impulse,10281.03,5,N*s,integrale di thrust_curve.csv
-burn_time,2.706,0.1,s, 
+impulse,10281.03,5,N*s,integrale di thrust_curve.csv; senza reshape_thrust_curve in atlas_model.py valore e std non hanno effetto
+burn_time,2.706,0.1,s,senza reshape_thrust_curve in atlas_model.py valore e std non hanno effetto
 nozzle_radius,0.0375,0.0005,m, 
 throat_radius,0.016,0.0005,m, 
 nozzle_position,0,0.0001,m,

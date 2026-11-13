@@ -54,7 +54,7 @@ def airbrakes_graph(flight, env, target_agl, output_path):
     return fig
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
-weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast, i = ISA
+weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast (Open-Meteo, FORECAST_MODEL in atlas_model.py), i = ISA
 
 # OPTIONS:
 ballistic = False           # True = flight without parachutes

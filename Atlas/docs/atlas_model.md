@@ -24,6 +24,7 @@ flight = model.simulate(setting, env)            # oggetto Flight di RocketPy
 | `AIRBRAKES` | `None` senza airbrake, oppure la versione | `simulation_inputs/aerodynamic_data/airbrakes/<versione>/airbrakes.csv` e `cd_mach.csv` |
 | `LAUNCH_SITE` | sito di lancio | `simulation_inputs/environment_data/<sito>/` |
 | `LAUNCH_DATE` | data e ora (UTC) del lancio, `(anno, mese, giorno, ora)` | — |
+| `FORECAST_MODEL` | modello meteo della previsione (`weather_data = "f"`) | scarica `<sito>_forecast_<modello>_<giorno>.json` nella cartella del sito |
 | `DRAG_FACTOR` | moltiplicatore del CD, `(valore, std)` | — |
 
 I percorsi partono dalla cartella dello script, quindi il modello funziona da qualsiasi cartella venga lanciato.
@@ -53,15 +54,23 @@ Crea l'`Environment` di RocketPy con latitudine, longitudine e quota di `launch_
 |---|---|---|
 | `c` | media della settimana di EuRoC (10–15 ottobre, 2005–2024) all'ora della data | `mean_environment_values.json`, generato con `EnvironmentAnalysis` di RocketPy dai dati Copernicus |
 | `e` | ensemble della settimana di EuRoC | `SantaMargarida_Ensemble_09to16oct2010to2024.nc`; il membro si sceglie con `env.select_ensemble_member` |
-| `f` | previsione GFS | serve una data futura e la connessione |
+| `f` | previsione di `FORECAST_MODEL` scaricata da [Open-Meteo](https://open-meteo.com) (gratis, senza chiave) | serve una data entro l'orizzonte del modello e la connessione |
 | `i` | atmosfera standard (ISA) | — |
 
 Per l'ensemble il dizionario delle variabili è scritto a mano, perché quello di RocketPy non legge il nuovo formato NetCDF4 di Copernicus.
 
+**Previsione (`f`).** Il modello scarica da Open-Meteo la previsione di `FORECAST_MODEL` per il giorno e l'ora di `LAUNCH_DATE` e la trasforma in profili di pressione, temperatura e vento: vicino al suolo usa il vento a 10, 80, 120 e 180 m, più in alto i livelli di pressione da 1000 a 500 hPa (circa 5500 m).
+- **File salvato.** La prima simulazione del giorno scrive `<sito>_forecast_<modello>_<AAAAMMGG>.json` nella cartella del sito e tutte le successive lo riusano. Per avere una previsione più recente il file va cancellato; dentro, `downloaded` dice quando è stato scaricato.
+- **Quale modello.** `icon_d2` (2 km, fino a 48 ore) copre solo l'Europa centrale: va bene per Rovigo, non per Santa Margarida. `icon_eu` copre l'Europa fino a 5 giorni, `ecmwf_ifs025` tutto il mondo fino a 15 giorni (solo come tendenza). Se il sito è fuori dal dominio o la data è troppo lontana, il modello si ferma con un errore che lo dice.
+- **Ora.** `LAUNCH_DATE` è in UTC: l'Italia è a UTC+2 con l'ora legale e a UTC+1 dall'ultima domenica di ottobre; il Portogallo a UTC+1 e UTC.
+- Serve la connessione solo per il download.
+
+La previsione GFS di RocketPy non funziona più: NOAA ha chiuso il servizio OpenDAP che usava.
+
 ## 5. Motore: `build_motor(s)`
 Costruisce il `SolidMotor` con i valori di `motor.csv` e la curva `thrust_curve.csv`.
 - **Sistema di riferimento:** posizioni misurate dall'uscita dell'ugello verso la camera (`nozzle_to_combustion_chamber`).
-- **Curva di spinta:** `reshape_thrust_curve=(burn_time, impulse)` deforma la curva perché duri `burn_time` e abbia impulso `impulse`. Nella Monte Carlo quindi le std di questi due parametri cambiano durata e spinta di ogni run, lasciando la forma della curva.
+- **Curva di spinta:** oggi è usata così com'è (`reshape_thrust_curve=False`): `burn_time` e `impulse` di `motor.csv` non hanno effetto sul volo, e nella Monte Carlo la spinta è la stessa in ogni run. Con `reshape_thrust_curve=(burn_time, impulse)`, la riga commentata nel codice, la curva verrebbe deformata perché duri `burn_time` e abbia impulso `impulse`, e le std di questi due parametri cambierebbero durata e spinta di ogni run.
 - **Massa e inerzie a secco:** `motor_dry_mass` nella posizione `motor_dry_mass_position`, con le inerzie `motor_inertia_11` (perpendicolare all'asse, usata anche per $I_{22}$) e `motor_inertia_33` (attorno all'asse), rispetto al baricentro a secco.
 - **Grain:** numero, distanza, densità, raggi, altezza e posizione del baricentro della colonna. RocketPy li usa per calcolare come cambiano massa, baricentro e inerzie del propellente durante la combustione.
 
