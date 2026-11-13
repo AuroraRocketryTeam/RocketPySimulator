@@ -31,17 +31,17 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'Atlas_save_prova_rovigo'
-number_of_simulations = 80
+output_dir_name = 'Atlas_max_drag_test'
+number_of_simulations = 200
 weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast, i = ISA
 seed = None                 # integer to repeat exactly the same runs
 multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
 
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
-show_dispersion_plot = False
+show_dispersion_plot = True
 save_dispersion_plot = False
-show_compare_plot = False
+show_compare_plot = True
 save_compare_plot = False
 sensitivity_analysis = False
 #--------------------------------------------------------------------------------------------------------
