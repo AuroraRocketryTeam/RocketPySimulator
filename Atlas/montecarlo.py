@@ -27,23 +27,38 @@ import atlas_model as model
 
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR / "tools" / "others"))
-from compare_plot_saver import save_compare_plots  # noqa: E402
+from compare_plot_saver import make_compare_plots #save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
 output_dir_name = 'Atlas_max_drag_test'
-number_of_simulations = 200
+number_of_simulations = 5
 weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast (Open-Meteo, FORECAST_MODEL in atlas_model.py), i = ISA
 seed = None                 # integer to repeat exactly the same runs
 multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
 
 # OPTIONS:
 ballistic = False           # True = flight without parachutes
-show_dispersion_plot = True
+
+show_dispersion_plot = False
 save_dispersion_plot = False
-show_compare_plot = True
-save_compare_plot = False
+
 sensitivity_analysis = False
+
+show_compare_plot = True
+save_compare_plot = True
+compare_graphs = {
+    "velocities": True,
+    "accelerations": False,
+    "attitude_angles": False,
+    "euler_angles": False,
+    "aerodynamic_forces": False,
+    "aerodynamic_moments": False,
+    "angular_velocities": False,
+    "trajectories_3d": True,
+    "rail_buttons_forces": False,
+    "stability_margin": False,
+}
 #--------------------------------------------------------------------------------------------------------
 
 
@@ -506,38 +521,52 @@ def main():
     if keep_flights:
         from rocketpy import CompareFlights
         
+        compare_plots = [
+            (name, {} if name == "trajectories_3d" else {"legend": False})
+            for name, enabled in compare_graphs.items()
+            if enabled
+        ]
+
         print(colored('\n\nComparison graphs:'))
         comparison = CompareFlights(flights)
-        if show_compare_plot:
-            comparison.velocities()
-            comparison.accelerations()
-            comparison.attitude_angles()
-            comparison.euler_angles()
-            comparison.attitude_frequency()
-            comparison.aerodynamic_forces()
-            comparison.aerodynamic_moments()
-            comparison.angular_velocities()
-            comparison.trajectories_3d()
-            comparison.rail_buttons_forces()
-            comparison.stability_margin()
-        if save_compare_plot:
-            save_compare_plots(
-                comparison_object=comparison,
-                plots=[
-                    ("velocities", {"legend": False}),
-                    ("accelerations", {"legend": False}),
-                    ("attitude_angles", {"legend": False}),
-                    ("euler_angles", {"legend": False}),
-                    ("aerodynamic_forces", {"legend": False}),
-                    ("aerodynamic_moments", {"legend": False}),
-                    ("angular_velocities", {"legend": False}),
-                    ("trajectories_3d", {}),
-                    ("rail_buttons_forces", {"legend": False}),
-                    ("stability_margin", {"legend": False}),
-                ],
-                output_dir=output_comparison,
-                formats=["svg","pickle"], 
+
+        if show_compare_plot or save_compare_plot:
+            make_compare_plots(
+                comparison,
+                plots=compare_plots,
+                output_dir=output_comparison if save_compare_plot else None,
+                formats=["svg", "pickle"],
+                show=show_compare_plot,
             )
+
+        '''compare_plots = []
+                                for compare_graphs_name in compare_graphs.keys():
+                                    if compare_graphs[compare_graphs_name]:
+                                        if compare_graphs_name!="trajectories_3d":
+                                            compare_plots.append((compare_graphs_name, {"legend":False}))
+                                        else:
+                                            compare_plots.append(("trajectories_3d", {}))
+                        
+                                print(colored('\n\nComparison graphs:'))
+                                comparison = CompareFlights(flights)
+                        
+                                if show_compare_plot:
+                                    for name, enabled in compare_graphs.items():
+                                        if not enabled:
+                                            continue
+                                        plot_method = getattr(comparison, name, None)
+                                        if callable(plot_method):
+                                            plot_method()
+                                        else:
+                                            print(f"Attenzione: '{name}' non è un grafico valido di comparison")
+                                
+                                if save_compare_plot:
+                                    save_compare_plots(
+                                        comparison_object=comparison,
+                                        plots=compare_plots,
+                                        output_dir=output_comparison,
+                                        formats=["svg","pickle"], 
+                                    )'''
 
     # DISPERSION GRAPHS
     print(colored('\n\nDispersion graphs:\n'))

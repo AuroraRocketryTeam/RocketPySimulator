@@ -1,4 +1,102 @@
-import sys
+import pickle
+from contextlib import contextmanager
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+
+try:
+    import dill
+except ImportError:
+    dill = None
+
+
+@contextmanager
+def _suppress_show():
+    """Disattiva temporaneamente plt.show() (RocketPy lo chiama a fine plot)."""
+    original_show = plt.show
+    plt.show = lambda *args, **kwargs: None
+    try:
+        yield
+    finally:
+        plt.show = original_show
+
+
+def _dump_figure(fig, path):
+    try:
+        with open(path, "wb") as f:
+            pickle.dump(fig, f, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception:
+        if dill is None:
+            raise
+        with open(path, "wb") as f:
+            dill.dump(fig, f)
+
+
+def make_compare_plots(comparison, plots, output_dir=None, formats=("svg", "pickle"), show=False):
+    """
+    Genera i grafici di CompareFlights una sola volta, li salva (opzionale)
+    e li mostra (opzionale).
+
+    Parameters
+    ----------
+    comparison : CompareFlights
+    plots : list[tuple[str, dict]]
+        Es: [("velocities", {"legend": False}), ("trajectories_3d", {})]
+    output_dir : str | Path | None
+        Se None, non salva nulla.
+    formats : iterable[str]
+        Es: ("svg", "pickle", "png")
+    show : bool
+        Se True, mostra tutte le figure alla fine.
+    """
+    save = output_dir is not None and len(formats) > 0
+
+    format_dirs = {}
+    if save:
+        output_dir = Path(output_dir)
+        for fmt in formats:
+            fmt_dir = output_dir / fmt
+            fmt_dir.mkdir(parents=True, exist_ok=True)
+            format_dirs[fmt] = fmt_dir
+
+    for plot_name, plot_kwargs in plots:
+        plot_method = getattr(comparison, plot_name, None)
+        if not callable(plot_method):
+            print(f"  [WARNING] '{plot_name}' non è un grafico valido di comparison")
+            continue
+
+        figures_before = set(plt.get_fignums())
+
+        with _suppress_show():
+            plot_method(**plot_kwargs)
+
+        new_figures = sorted(set(plt.get_fignums()) - figures_before)
+        if not new_figures:
+            print(f"  [WARNING] '{plot_name}' non ha prodotto nessuna figura.")
+            continue
+
+        for i, num in enumerate(new_figures):
+            fig = plt.figure(num)
+            suffix = "" if len(new_figures) == 1 else f"_{i + 1}"
+
+            if save:
+                for fmt in formats:
+                    path = format_dirs[fmt] / f"{plot_name}{suffix}.{fmt}"
+                    if fmt == "pickle":
+                        _dump_figure(fig, path)
+                    else:
+                        fig.savefig(path)
+
+            if not show:
+                plt.close(fig)
+
+        print(f"  [OK] {plot_name}")
+
+    if show:
+        plt.show()
+
+
+'''import sys
 import pickle
 import shutil
 import subprocess
@@ -140,3 +238,4 @@ if __name__ == "__main__":
         _worker_main(sys.argv[2])
     else:
         raise SystemExit("Invalid arguments.")
+'''

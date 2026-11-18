@@ -1,4 +1,4 @@
-- Number of simulations: 200
+- Number of simulations: 5
 - Output directory: Atlas_max_drag_test
 - Launch site: santa_margarida
 - Geometry v1.8, aerodynamics v1.8_nonozzle/CD_no_nozzle_1.8_cd_mach.csv, motor SRAD/v1.0, recovery v1.0, airbrakes None
@@ -8,68 +8,68 @@ Out of Rail Time
 	Standard Deviation: 0.001 s
 
 Out of Rail Velocity
-	Mean Value: 42.985 m/s
-	Standard Deviation: 0.09 m/s
+	Mean Value: 42.928 m/s
+	Standard Deviation: 0.054 m/s
 
 Apogee Time
-	Mean Value: 27.098 s
-	Standard Deviation: 0.056 s
+	Mean Value: 27.086 s
+	Standard Deviation: 0.047 s
 
 Apogee Altitude
-	Mean Value: 3643.886 m
-	Standard Deviation: 18.495 m
+	Mean Value: 3636.849 m
+	Standard Deviation: 13.929 m
 
 Apogee X Position
-	Mean Value: 461.557 m
-	Standard Deviation: 35.486 m
+	Mean Value: 454.368 m
+	Standard Deviation: 19.236 m
 
 Apogee Y Position
-	Mean Value: -670.817 m
-	Standard Deviation: 49.88 m
+	Mean Value: -661.783 m
+	Standard Deviation: 38.801 m
 
 Impact Time
-	Mean Value: 213.189 s
-	Standard Deviation: 1.362 s
+	Mean Value: 212.751 s
+	Standard Deviation: 0.51 s
 
 Impact X Position
-	Mean Value: 771.118 m
-	Standard Deviation: 40.646 m
+	Mean Value: 774.069 m
+	Standard Deviation: 22.446 m
 
 Impact Y Position
-	Mean Value: -605.027 m
-	Standard Deviation: 57.817 m
+	Mean Value: -612.249 m
+	Standard Deviation: 44.732 m
 
 Impact Velocity
-	Mean Value: -5.564 m/s
-	Standard Deviation: 0.052 m/s
+	Mean Value: -5.593 m/s
+	Standard Deviation: 0.036 m/s
 
 Initial Static Margin
-	Mean Value: 2.004 c
-	Standard Deviation: 0.038 c
+	Mean Value: 2.005 c
+	Standard Deviation: 0.044 c
 
 Out of Rail Static Margin
-	Mean Value: 2.144 c
-	Standard Deviation: 0.038 c
+	Mean Value: 2.145 c
+	Standard Deviation: 0.044 c
 
 Final Static Margin
-	Mean Value: 3.16 c
-	Standard Deviation: 0.04 c
+	Mean Value: 3.165 c
+	Standard Deviation: 0.048 c
 
 Maximum Velocity
-	Mean Value: 308.395 m/s
-	Standard Deviation: 1.22 m/s
+	Mean Value: 307.57 m/s
+	Standard Deviation: 0.766 m/s
 
 Maximum Acceleration
-	Mean Value: 124.483 m/s^2
-	Standard Deviation: 0.484 m/s^2
+	Mean Value: 124.146 m/s^2
+	Standard Deviation: 0.304 m/s^2
 
 Maximum Aerodynamic Drag
-	Mean Value: 308.603 N
-	Standard Deviation: 3.283 N
+	Mean Value: 305.731 N
+	Standard Deviation: 1.337 N
 
 Maximum Aerodynamic Lift
-	Mean Value: 210.031 N
-	Standard Deviation: 27.657 N
+	Mean Value: 205.284 N
+	Standard Deviation: 18.753 N
 
 Maximum Aerodynamic Spin Moment
 	Mean Value: 0.0 N*m
@@ -77,17 +77,17 @@ Maximum Aerodynamic Spin Moment
 
 Maximum Aerodynamic Bending Moment
 	Mean Value: 3.712 N*m
-	Standard Deviation: 0.091 N*m
+	Standard Deviation: 0.07 N*m
 
 Drogue Parachute Trigger Time
-	Mean Value: 27.208 s
-	Standard Deviation: 0.056 s
+	Mean Value: 27.194 s
+	Standard Deviation: 0.049 s
 
 Drogue Parachute Fully Inflated Time
-	Mean Value: 28.984 s
+	Mean Value: 28.963 s
 	Standard Deviation: 0.111 s
 
 Drogue Parachute Fully Inflated Velocity
-	Mean Value: 32.936 m/s
-	Standard Deviation: 1.792 m/s
+	Mean Value: 32.596 m/s
+	Standard Deviation: 0.995 m/s
 

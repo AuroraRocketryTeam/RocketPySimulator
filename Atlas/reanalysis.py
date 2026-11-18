@@ -18,16 +18,26 @@ BASE_DIR = Path(__file__).resolve().parent
 import numpy as np
 import matplotlib.pyplot as plt
 
-def airbrakes_graph(flight, env, target_agl, output_path):
+#-------------------------------------------------------------------------------------------------------- PARAMETERS
+weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast (Open-Meteo, FORECAST_MODEL in atlas_model.py), i = ISA
+
+# OPTIONS:
+ballistic = False           # True = flight without parachutes
+show_graph = True
+print_info = True
+export_mass_and_cg = False  # mass and CG over time as .csv in tools/mass_analysis/
+#--------------------------------------------------------------------------------------------------------
+
+def airbrakes_graph(flight, env, target_agl, output_path=None):
     """Opening, predicted apogee and altitude over time, saved as .svg."""
     if not flight.rocket.air_brakes:
-        return
+        return 0
     rows = [r for r in flight.get_controller_observed_variables() if r is not None and len(r) == 4]
     # Drop the initial_observed_variables row (all zeros)
     rows = [r for r in rows if any(v != 0 for v in r)]
     if not rows:
         print("Airbrakes graph skipped: the controller recorded no data")
-        return
+        return 0
     t, level, cd, apogee = np.array(rows, dtype=float).T
     apogee = np.where(apogee > 0, apogee, np.nan)         # 0 = controller not predicting
 
@@ -50,18 +60,10 @@ def airbrakes_graph(flight, env, target_agl, output_path):
     for a in ax:
         a.grid(True, alpha=0.4)
     fig.suptitle("Airbrakes controller")
-    fig.savefig(output_path, bbox_inches="tight")
+    if output_path:
+        fig.savefig(output_path, bbox_inches="tight")
     return fig
 
-#-------------------------------------------------------------------------------------------------------- PARAMETERS
-weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast (Open-Meteo, FORECAST_MODEL in atlas_model.py), i = ISA
-
-# OPTIONS:
-ballistic = False           # True = flight without parachutes
-show_graph = False
-print_info = True
-export_mass_and_cg = False  # mass and CG over time as .csv in tools/mass_analysis/
-#--------------------------------------------------------------------------------------------------------
 
 env = model.build_environment(weather_data)
 setting = model.nominal(model.load_parameters())
@@ -90,6 +92,9 @@ if show_graph:
     rocket_flight.plots.aerodynamic_forces()
     rocket_flight.plots.rail_buttons_forces()
 
+    airbrakes_graph(rocket_flight, env, setting["target_apogee"])
+    plt.show()
+
     #plt.show = original_show
     #plt.show()   # mostra tutte le figure insieme
 
@@ -103,8 +108,8 @@ rocket_flight.export_kml(
     altitude_mode="relative_to_ground",
 )
 
-airbrakes_graph(rocket_flight, env, setting["target_apogee"], OUTPUT_DIR / "airbrakes.svg")
-plt.show()
+#airbrakes_graph(rocket_flight, env, setting["target_apogee"])
+#plt.show()
 
 if export_mass_and_cg:
     # The CG position is measured from the nose tip
