@@ -22,7 +22,7 @@ python Atlas/montecarlo.py
 | `save_compare_plot` | salva i grafici di confronto in `comparison/` |
 | `sensitivity_analysis` | analisi di sensibilità (sezione 5); servono almeno 50 run |
 
-Il sito di lancio è `LAUNCH_SITE` di `atlas_model.py`: `santa_margarida` o `rovigo` (anche scritto con spazi o maiuscole). Per ogni sito `montecarlo.py` ha, in testa, l'immagine della mappa e i suoi limiti: un sito nuovo va aggiunto anche lì.
+Il sito di lancio è `LAUNCH_SITE` di `atlas_model.py`: `santa_margarida` o `rovigo` (anche scritto con spazi o maiuscole). La mappa è `map.png` o `map.jpg` nella cartella del sito e le sue dimensioni sono le righe `map_*` di `launch_site.csv`: un sito nuovo non richiede modifiche a `montecarlo.py`.
 
 La cartella `prova` non va su git. Per salvare dei risultati si usa un `output_dir_name` nuovo e si fa il push di quella cartella.
 
@@ -95,7 +95,7 @@ Per esempio, per un'area che contenga il 95% degli atterraggi serve l'ellisse a 
 ## 6. Il codice blocco per blocco
 **Parametri e stile.** Le opzioni della sezione 1, lo stile dei grafici matplotlib e `loading_bar`, la barra di avanzamento a terminale con tempo medio per run e tempo rimanente.
 
-**Sito di lancio.** Normalizza il nome di `LAUNCH_SITE`, ricalcola `model.SITE_DIR` e `model.SITE_FILE` e sceglie etichetta, immagine e limiti della mappa del sito.
+**Sito di lancio.** Normalizza il nome di `LAUNCH_SITE`, ricalcola `model.SITE_DIR` e `model.SITE_FILE` ricava l'etichetta dal nome della cartella e trova l'immagine `map.*` del sito; dimensioni e spostamento della mappa vengono dalle righe `map_*` di `launch_site.csv`.
 
 **`init_worker(weather, keep_flights)`.** Gira una volta in ogni processo: costruisce l'atmosfera, così non va ricostruita a ogni run.
 

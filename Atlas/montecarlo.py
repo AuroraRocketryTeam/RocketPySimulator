@@ -105,19 +105,13 @@ if not model.SITE_DIR.is_dir():
 
 PARAMETERS = model.load_parameters()
 
-# Launch site dependent names and map geometry
-if SITE == "santa_margarida":
-    SITE_LABEL = "Santa Margarida"
-    SITE_IMAGE = "santa_margarida_military_shooting_range_launch_site.png"
-    SITE_HALF_X, SITE_HALF_Y = 2000, 2000
-    SITE_XLIM, SITE_YLIM = (-2000, 2000), (-1500, 1500)
-elif SITE == "rovigo":
-    SITE_LABEL = "Rovigo"
-    SITE_IMAGE = "rovigo_launch_site.png"
-    SITE_HALF_X, SITE_HALF_Y = 2000, 2000
-    SITE_XLIM, SITE_YLIM = (-2000, 2000), (-1500, 1500)
-else:
-    raise ValueError(f"Unknown LAUNCH_SITE: {SITE_RAW!r} (expected 'santa_margarida' or 'rovigo')")
+# Launch site map: the image is SITE_DIR/map.* and its size and offset are the map_* rows of launch_site.csv
+SITE_LABEL = SITE.replace("_", " ").title()   # santa_margarida -> Santa Margarida
+SITE_MAPS = sorted(model.SITE_DIR.glob("map.*"))
+if len(SITE_MAPS) != 1:
+    raise FileNotFoundError(f"Expected one map.* image in {model.SITE_DIR}, found {len(SITE_MAPS)}")
+SITE_IMAGE = SITE_MAPS[0]
+SITE_XLIM, SITE_YLIM = (-2000, 2000), (-1500, 1500)   # window of the graph (m east, m north)
 
 SITE_OUTPUT = SITE_LABEL.replace(" ", "_")   # Santa_Margarida / Rovigo (output)                            # santa_margarida / rovigo (input directory)
 
@@ -305,7 +299,7 @@ def eigsorted(cov):
 
 def launch_site_graph(results, output_launch_site):
     # Import background map
-    img = imread(str(model.SITE_DIR / SITE_IMAGE))
+    img = imread(str(SITE_IMAGE))
 
     apogee_x = np.array([r["apogee_x"] for r in results])
     apogee_y = np.array([r["apogee_y"] for r in results])
@@ -336,11 +330,10 @@ def launch_site_graph(results, output_launch_site):
     ax.set_title(r"1$\sigma$, 2$\sigma$ and 3$\sigma$ Dispersion Ellipses: Apogee and Landing Points")
     ax.set_ylabel("North (m)")
     ax.set_xlabel("East (m)")
-    # Add background image to plot
-    # You can translate the basemap by changing dx and dy (in meters)
-    dx = 0
-    dy = 0
-    plt.imshow(img, zorder=0, extent=[-SITE_HALF_X-dx, SITE_HALF_X-dx, -SITE_HALF_Y-dy, SITE_HALF_Y-dy])
+    # Background map: size and offset (m) from launch_site.csv
+    hx, hy = PARAMETERS["map_half_east"][0], PARAMETERS["map_half_north"][0]
+    dx, dy = PARAMETERS["map_offset_east"][0], PARAMETERS["map_offset_north"][0]
+    plt.imshow(img, zorder=0, extent=[-hx + dx, hx + dx, -hy + dy, hy + dy])
     plt.axhline(0, color="black", linewidth=0.5)
     plt.axvline(0, color="black", linewidth=0.5)
     plt.xlim(*SITE_XLIM)

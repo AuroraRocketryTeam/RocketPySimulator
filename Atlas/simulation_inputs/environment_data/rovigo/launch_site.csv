@@ -6,3 +6,7 @@ elevation,1.0,0,m,l'elevazione sta tra 0 e 2m ASLs
 rail_length,12,0.005,m,
 inclination,84,0.5,deg,rispetto all'orizzontale
 heading,315,1,deg,rispetto al nord
+map_half_east,2000,0,m,metà larghezza della mappa (map.*) centrata sulla rampa
+map_half_north,2000,0,m,metà altezza della mappa
+map_offset_east,0,0,m,spostamento della mappa verso est
+map_offset_north,0,0,m,spostamento della mappa verso nord
