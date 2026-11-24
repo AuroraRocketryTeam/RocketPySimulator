@@ -78,8 +78,10 @@ def read_parameters(path):
 
 def build_parts(p, rho_casing=RHO_CASING, rho_phenolic=RHO_PHENOLIC, rho_nozzle=RHO_NOZZLE):
     mm = lambda key: p[key] / 1000
+    mm_opt = lambda key, default=0.0: p.get(key, default) / 1000
+
     D_cc, D_cc_outer, th_casing, L_cc = mm("D_cc"), mm("D_cc_outer"), mm("th_casing"), mm("L_cc")
-    L_bulkhead, th_fillet = mm("L_bulkhead"), mm("th_bulkhead_fillet")
+    L_bulkhead, th_fillet = mm("L_bulkhead"), mm_opt("th_bulkhead_fillet")
     tp, L_tp = mm("tp_thickness"), mm("length_tp")
     D_throat, D_exit = mm("D_throat"), mm("D_exit")
     L_conv, L_div, L_total = mm("L_conv"), mm("L_div"), mm("L_total")
@@ -87,14 +89,21 @@ def build_parts(p, rho_casing=RHO_CASING, rho_phenolic=RHO_PHENOLIC, rho_nozzle=
     D_ext, D_int, L_grain = mm("D_ext"), mm("D_int"), mm("L_single_grain")
     gap, n_grains = mm("grains_distance"), int(p["n_grains"])
 
+    # Spacer parameters (0 if not present)
+    n_spacer = int(p.get("n_spacer", 0))
+    L_spacer, L_tot_spacer = mm_opt("L_spacer"), mm_opt("L_tot_spacer")
+    D_spacer, D_int_spacer = mm_opt("D_spacer"), mm_opt("D_internal_spacer")
+    th_spacer_bottom = mm_opt("th_spacer_bottom")
+
     # Axial stations from the nozzle exit (m)
     x_casing_aft = L_total - (L_ring + L_housing)
     x_grains = L_total
     x_tp_closure = x_grains + L_tp
-    x_bulkhead = x_tp_closure + tp
+    x_spacer = x_tp_closure + tp
+    x_bulkhead = x_spacer + L_tot_spacer
     x_casing_fwd = x_casing_aft + L_cc
     if abs(x_bulkhead + L_bulkhead - x_casing_fwd) > 1e-6:
-        raise ValueError("Nozzle, grains, thermal protection and bulkhead do not fill the casing: check the file")
+        raise ValueError("Nozzle, grains, thermal protection, spacers and bulkhead do not fill the casing: check the file")
 
     # Grain density from the propellant mass, as the notebook does
     grain_volume = n_grains * np.pi * ((D_ext / 2) ** 2 - (D_int / 2) ** 2) * L_grain
@@ -113,13 +122,19 @@ def build_parts(p, rho_casing=RHO_CASING, rho_phenolic=RHO_PHENOLIC, rho_nozzle=
              constant(D_cc_outer / 2), constant(D_cc / 2), "#86b6ef"),
         Part("thermal protection liner", "dry", rho_phenolic, x_grains, x_tp_closure,
              constant(D_cc / 2), constant(D_cc / 2 - tp), "#eda100"),
-        Part("thermal protection closure", "dry", rho_phenolic, x_tp_closure, x_bulkhead,
+        Part("thermal protection closure", "dry", rho_phenolic, x_tp_closure, x_spacer,
              constant(D_cc / 2), constant(0), "#eda100"),
         Part("bulkhead", "dry", rho_casing, x_bulkhead, x_bulkhead + L_bulkhead,
              constant(D_cc / 2), constant(D_cc / 2 - th_fillet), "#184f95"),
         Part("casing closure", "dry", rho_casing, x_bulkhead, x_bulkhead + 2 * th_casing,
              constant(D_cc / 2), constant(0), "#184f95"),
     ]
+    for k in range(n_spacer):
+        x0 = x_spacer + k * L_spacer
+        parts.append(Part(f"spacer {k + 1} wall", "dry", rho_casing, x0, x0 + L_spacer,
+                          constant(D_spacer / 2), constant(D_int_spacer / 2), "#7a8b99"))
+        parts.append(Part(f"spacer {k + 1} bottom", "dry", rho_casing, x0, x0 + th_spacer_bottom,
+                          constant(D_int_spacer / 2), constant(0), "#7a8b99"))
     for k in range(n_grains):
         x0 = x_grains + gap + k * (L_grain + gap)
         parts.append(Part(f"grain {k + 1}", "propellant", rho_grain, x0, x0 + L_grain,
@@ -143,12 +158,14 @@ def check_notebook(parts, p):
     """Masses of the script against the ones in the notebook file; warning above MASS_TOLERANCE."""
     mass = {part.name: mass_properties([part])[0] for part in parts}
     grains = sum(m for name, m in mass.items() if name.startswith("grain"))
+    spacers = sum(m for name, m in mass.items() if name.startswith("spacer"))
     dry = sum(m for name, m in mass.items() if not name.startswith("grain"))
     checks = [
         ("M_casing", mass["casing tube"] + mass["bulkhead"] + mass["casing closure"], "casing + bulkhead + closure"),
         ("M_tp", mass["thermal protection liner"] + mass["thermal protection closure"], "liner + closure"),
         ("M_nozzle", mass["nozzle"], "nozzle"),
         ("M_nozzle_ring", mass["nozzle ring"], "nozzle ring"),
+        ("M_spacer", spacers, "spacers"),
         ("M_motor_dry", dry, "dry motor"),
         ("M_pr", grains, "grains"),
     ]
