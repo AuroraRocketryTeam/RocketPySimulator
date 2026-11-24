@@ -16,15 +16,17 @@ Typical use:
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 #-------------------------------------------------------------------------------------------------------- VERSIONS
-GEOMETRY = "v0_lancio23maggio"                      # simulation_inputs/geometry_data/<version>/
-AERODYNAMICS = "v0_lancio23maggio"                  # simulation_inputs/aerodynamic_data/<version>/
-MOTOR = "SRAD/v0_lancio23maggio"                    # simulation_inputs/propulsion_data/<motor>/
+GEOMETRY = "v1.2_AMI_masscorrected_24ott"                      # simulation_inputs/geometry_data/<version>/
+AERODYNAMICS = "v1.0"                  # simulation_inputs/aerodynamic_data/<version>/
+MOTOR = "SRAD/8mm_ott23"                                  # simulation_inputs/propulsion_data/<motor>/
 RECOVERY = "v0_lancio23maggio"                      # simulation_inputs/recovery_data/<version>/
-LAUNCH_SITE = "v0_lancio23maggio"                   # simulation_inputs/environment_data/<version>/
-LAUNCH_DATE = (2026, 5, 23, 14)                     # (Year, Month, Day, Hour UTC); Italy in May is UTC + 2
+LAUNCH_SITE = "Villafranca"                         # simulation_inputs/environment_data/<site>/
+LAUNCH_DATE = (2026, 10, 25, 17)                    # (Year, Month, Day, Hour UTC); Italy is UTC + 2 in summer time,
+                                                    # UTC + 1 from the last Sunday of October (25/10/2026)
 
 # Multiplier of the drag curve, to add uncertainty to the aerodynamic data (mean, std)
 DRAG_FACTOR = (1.0, 0.001)
@@ -32,7 +34,42 @@ DRAG_FACTOR = (1.0, 0.001)
 # Manual wind (weather_data = "m"): speed on the ground (m/s) and heading (deg from north, where the
 # wind goes: a wind from north has heading 180). The speed grows of 5% every 50 m up to 300 m.
 MANUAL_WIND = (8.7, 315)
+
+# Manual wind (weather_data = "mbl"): boundary layer power-law profile, 0-200 m above ground.
+# Speed (m/s) at MANUAL_WIND_BL_REF_HEIGHT and heading (deg from north, where the wind GOES;
+# a wind from north has heading 180). The direction is the same at every height.
+MANUAL_BL_WIND = (5.0, 45)
+
+# Height above ground (m) at which the speed of MANUAL_BL_WIND is measured.
+MANUAL_WIND_BL_REF_HEIGHT = 10.0
+
+# Shear exponent ALPHA (no unit). Depends on the ground and on the stability of the air:
+#   0.10          sunny day, strong mixing, or flat smooth terrain (wind grows slowly)
+#   0.14          open grass or fields, neutral air (default)
+#   0.20 - 0.30   evening or night, stable air, or rough terrain (wind grows fast)
+MANUAL_WIND_BL_ALPHA = 0.14
+
+# Heights (m above ground) where the wind is defined. RocketPy interpolates linearly between them.
+MANUAL_WIND_BL_HEIGHTS = [0, 2, 5, 10, 20, 50, 100, 150, 200, 300, 500]
+
+# Constant manual wind (weather_data = "mc"): speed on the ground (m/s) and heading (deg from north, where the
+# wind goes: a wind from north has heading 180). The speed is CONSTANT with height.
+MANUAL_CONSTANT_WIND = (8, 315)
+
+# Climatological weather (weather_data = "c"): ERA5 near-ground weather of the launch site,
+# simulation_inputs/environment_data/<site>/<site>_surface_<CLIMATE>.csv, and the UTC hours to use
+CLIMATE = "20to30oct2010to2025"
+CLIMATE_HOURS = range(12, 19)
+
+# Forecast weather (weather_data = "f"): Open-Meteo forecast (https://open-meteo.com, free, no key) of this model
+# at LAUNCH_DATE: icon_d2 (DWD, 2 km, up to 48 h ahead), icon_eu, ecmwf_ifs025, gfs_seamless, meteofrance_seamless...
+# The download is saved in the site folder (<site>_forecast_<model>_<day>.json) and used again by every run:
+# delete the file to download a newer forecast.
+FORECAST_MODEL = "icon_d2"
 #--------------------------------------------------------------------------------------------------------
+
+# Longest integration step (s), shorter than any burn: see simulate()
+MAX_TIME_STEP = 0.1
 
 INPUTS = Path(__file__).resolve().parent / "simulation_inputs"
 
@@ -43,6 +80,7 @@ THRUST_FILE = INPUTS / "propulsion_data" / MOTOR / "thrust_curve.csv"
 RECOVERY_FILE = INPUTS / "recovery_data" / RECOVERY / "recovery.csv"
 SITE_DIR = INPUTS / "environment_data" / LAUNCH_SITE
 SITE_FILE = SITE_DIR / "launch_site.csv"
+CLIMATE_FILE = SITE_DIR / f"{LAUNCH_SITE}_surface_{CLIMATE}.csv"
 
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
@@ -118,13 +156,177 @@ class RecoveryLogic:
 
 
 #-------------------------------------------------------------------------------------------------------- MODEL
-def build_environment(weather_data="m", date=LAUNCH_DATE):
+def _nutation(e1, e2):
+    """RocketPy's quaternions_to_nutation with the argument of arcsin clipped to 1.
+
+    Under the parachute the rocket hangs upside down (nutation 180 deg): e1^2 + e2^2 is 1, and the
+    integration error on the quaternion (1e-6) makes it slightly larger, so arcsin gives NaN and the
+    spline of flight.theta fails (comparison.euler_angles()). Only the post-processed Euler angle is
+    affected, not the integrated state (position, velocity, attitude)."""
+    return (180 / np.pi) * 2 * np.arcsin(-np.clip((e1**2 + e2**2) ** 0.5, 0, 1))
+
+
+def _patch_rocketpy():
+    import rocketpy.simulation.flight as flight_module
+
+    flight_module.quaternions_to_nutation = _nutation
+
+
+# ERA5 netCDF files of the Copernicus CDS: the built-in ECMWF dictionary of RocketPy can't read the new format
+ERA5_DICTIONARY = {
+    "time": "valid_time",
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "level": "pressure_level",
+    "temperature": "t",
+    "surface_geopotential_height": None,
+    "geopotential_height": None,
+    "geopotential": "z",
+    "u_wind": "u",
+    "v_wind": "v",
+}
+
+
+def weather_file(product, date):
+    """The .nc of the launch site with `product` (ensemble or reanalysis) in its name that holds `date`.
+
+    RocketPy silently takes the nearest time in the file, so a date outside every file is an error."""
+    from datetime import datetime
+
+    import netCDF4
+
+    target = datetime(*date)
+    available = []
+    for path in sorted(SITE_DIR.glob(f"*{product}*.nc")):
+        with netCDF4.Dataset(path) as data:
+            times = data.variables["valid_time"]
+            dates = netCDF4.num2date(times[:], times.units, getattr(times, "calendar", "standard"),
+                                     only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+        if target in dates:
+            return path
+        available.append(f"{path.name} ({min(dates)} - {max(dates)})")
+    raise ValueError(f"No {product} file of {LAUNCH_SITE} holds {target} (hours in UTC): "
+                     + ("; ".join(available) or "no file"))
+
+
+def load_climate():
+    """Hourly ERA5 near-ground weather at the launch point (wind at 10 m and 100 m, temperature at 2 m,
+    surface pressure), only the CLIMATE_HOURS. Written by tools/environment/surface_wind/surface_wind.py."""
+    table = pd.read_csv(CLIMATE_FILE, parse_dates=["time"], index_col="time")
+    return table[table.index.hour.isin(list(CLIMATE_HOURS))]
+
+
+def typical_climate(hour):
+    """One row like the ones of load_climate() for a typical day at `hour` (UTC): mean speed at 10 m and
+    100 m with the direction of the mean wind vector (a plain mean of u and v would lower the speed,
+    because the directions of the different days cancel out), mean temperature and pressure."""
+    rows = load_climate()
+    rows = rows[rows.index.hour == hour]
+    if rows.empty:
+        raise ValueError(f"No climatological data at {hour} UTC in {CLIMATE_FILE.name} (hours {list(CLIMATE_HOURS)})")
+    typical = {"t2m": rows["t2m"].mean(), "sp": rows["sp"].mean()}
+    for h in ("10", "100"):
+        speed = np.hypot(rows[f"u{h}"], rows[f"v{h}"]).mean()
+        angle = np.arctan2(rows[f"u{h}"].mean(), rows[f"v{h}"].mean())
+        typical[f"u{h}"], typical[f"v{h}"] = speed * np.sin(angle), speed * np.cos(angle)
+    return pd.Series(typical)
+
+
+def surface_wind(row, heights):
+    """Wind (u, v) at `heights` (m above the ground) from the ERA5 wind at 10 m and 100 m of one row of
+    load_climate(). Speed: power law through the two values between 10 and 100 m; below 10 m (down to
+    1 m) and above 100 m (up to 200 m, constant higher) the same law with the exponent kept between 0 and
+    0.6. Direction: from the one at 10 m to the one at 100 m (on the log of the height), constant outside."""
+    h = np.clip(np.asarray(heights, dtype=float), 1, 200)
+    s10, s100 = max(np.hypot(row.u10, row.v10), 0.01), max(np.hypot(row.u100, row.v100), 0.01)
+    exponent = np.log(s100 / s10) / np.log(10)
+    outside = np.clip(exponent, 0, 0.6)
+    speed = np.where(h < 10, s10 * (h / 10) ** outside,
+                     np.where(h > 100, s100 * (h / 100) ** outside, s10 * (h / 10) ** exponent))
+    to10, to100 = np.arctan2(row.u10, row.v10), np.arctan2(row.u100, row.v100)   # where the wind goes
+    turn = (to100 - to10 + np.pi) % (2 * np.pi) - np.pi
+    angle = to10 + turn * np.clip(np.log10(h / 10), 0, 1)
+    return np.array([speed * np.sin(angle), speed * np.cos(angle)])
+
+
+def forecast_file(site, date):
+    """Open-Meteo forecast of FORECAST_MODEL for the day of `date` (UTC), downloaded once and kept in SITE_DIR."""
+    import json
+    import urllib.request
+    from datetime import datetime, timezone
+
+    day = f"{date[0]:04d}-{date[1]:02d}-{date[2]:02d}"
+    path = SITE_DIR / f"{LAUNCH_SITE}_forecast_{FORECAST_MODEL}_{day.replace('-', '')}.json"
+    if not path.is_file():
+        near = [f"{v}_{h}m" for h in FORECAST_NEAR_GROUND for v in ("wind_speed", "wind_direction")]
+        levels = [f"{v}_{p}hPa" for p in FORECAST_LEVELS
+                  for v in ("wind_speed", "wind_direction", "temperature", "geopotential_height")]
+        url = ("https://api.open-meteo.com/v1/forecast"
+               f"?latitude={site['latitude']}&longitude={site['longitude']}&models={FORECAST_MODEL}"
+               f"&hourly={','.join(['temperature_2m', 'surface_pressure'] + near + levels)}"
+               f"&wind_speed_unit=ms&timezone=GMT&start_date={day}&end_date={day}")
+        with urllib.request.urlopen(url, timeout=60) as response:
+            data = json.load(response)
+        data["downloaded"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        temporary = path.with_suffix(".tmp")         # the parallel workers may download at the same time
+        temporary.write_text(json.dumps(data))
+        temporary.replace(path)
+    return path
+
+
+# Open-Meteo heights (m above ground) and pressure levels (hPa) used by forecast_profile
+FORECAST_NEAR_GROUND = (10, 80, 120, 180)
+FORECAST_LEVELS = (1000, 975, 950, 925, 900, 850)
+
+
+def forecast_profile(site, date):
+    """Pressure, temperature and wind (lists of (height above sea level, value)) of the Open-Meteo forecast at
+    the hour of `date` (UTC). Wind near the ground from the 10-180 m values, higher from the pressure levels
+    more than 200 m above the ground; the 10 m wind is used down to the ground."""
+    import json
+
+    data = json.loads(forecast_file(site, date).read_text())
+    hourly = data["hourly"]
+    i = hourly["time"].index(f"{date[0]:04d}-{date[1]:02d}-{date[2]:02d}T{date[3]:02d}:00")
+    value = lambda name: hourly.get(name, [None] * (i + 1))[i]
+    ground = site["elevation"]
+
+    wind = [(ground, value("wind_speed_10m"), value("wind_direction_10m"))]
+    wind += [(ground + h, value(f"wind_speed_{h}m"), value(f"wind_direction_{h}m")) for h in FORECAST_NEAR_GROUND]
+    pressure = [(ground, value("surface_pressure") * 100)]
+    temperature = [(ground, value("temperature_2m") + 273.15)]
+    for p in FORECAST_LEVELS:
+        height = value(f"geopotential_height_{p}hPa")
+        if height is None or height < ground:
+            continue
+        pressure.append((height, p * 100))
+        if value(f"temperature_{p}hPa") is not None:
+            temperature.append((height, value(f"temperature_{p}hPa") + 273.15))
+        if height > ground + 200:
+            wind.append((height, value(f"wind_speed_{p}hPa"), value(f"wind_direction_{p}hPa")))
+    wind = sorted(w for w in wind if None not in w)
+    if len(wind) < 2:
+        raise ValueError(f"{FORECAST_MODEL}: no wind in the forecast for {date} (too far ahead for this model?)")
+    # Open-Meteo gives where the wind comes from; u, v are the components of where it goes
+    u = [(h, -speed * np.sin(np.radians(direction))) for h, speed, direction in wind]
+    v = [(h, -speed * np.cos(np.radians(direction))) for h, speed, direction in wind]
+    print(f"Forecast {FORECAST_MODEL} downloaded {data['downloaded']}: wind at 10 m {wind[0][1]:.1f} m/s "
+          f"from {wind[0][2]:.0f} deg")
+    return {"pressure": sorted(pressure), "temperature": sorted(temperature), "wind_u": u, "wind_v": v}
+
+
+def build_environment(weather_data="m", date=LAUNCH_DATE, climate=None):
     """Launch site with the chosen weather data:
-    e = ensemble of the .nc file in the site folder (select the member with env.select_ensemble_member);
-        the date must be inside the file (Villafranca: 5-11 May, 2020-2026)
-    f = GFS forecast (date in the future)
+    c = climatological near-ground weather (load_climate): the row `climate` (a random one for every
+        Monte Carlo run) or, if None, the typical day at the hour of `date` (typical_climate)
+    e = ERA5 ensemble (10 members, every 3 hours; select the member with env.select_ensemble_member)
+    r = ERA5 reanalysis (one member, every hour)
+    f = Open-Meteo forecast of FORECAST_MODEL (forecast_profile); the GFS of RocketPy no longer works, NOAA
+        retired the OpenDAP service it used
     i = International Standard Atmosphere
     m = ISA with the manual wind of MANUAL_WIND (worst case against houses and spectators)
+    mc = ISA with a manual constant wind of MANUAL_CONSTANT_WIND (same speed and heading at every height)
+    With e and r the date must be one of the times of a file in the site folder (see weather_file).
     """
     import math
 
@@ -139,37 +341,61 @@ def build_environment(weather_data="m", date=LAUNCH_DATE):
         max_expected_height=1500,
     )
     if weather_data == "e":
-        env.set_atmospheric_model(
-            type="Ensemble",
-            file=str(next(SITE_DIR.glob("*.nc"))),
-            # The built-in ECMWF dictionary of RocketPy can't read the new NetCDF4 format
-            dictionary={
-                "ensemble": "number",
-                "time": "valid_time",
-                "latitude": "latitude",
-                "longitude": "longitude",
-                "level": "pressure_level",
-                "temperature": "t",
-                "surface_geopotential_height": None,
-                "geopotential_height": None,
-                "geopotential": "z",
-                "u_wind": "u",
-                "v_wind": "v",
-            },
-        )
+        env.set_atmospheric_model(type="Ensemble", file=str(weather_file("ensemble", date)),
+                                  dictionary={"ensemble": "number", **ERA5_DICTIONARY})
+    elif weather_data == "r":
+        env.set_atmospheric_model(type="Reanalysis", file=str(weather_file("reanalysis", date)),
+                                  dictionary=ERA5_DICTIONARY)
     elif weather_data == "f":
-        env.set_atmospheric_model(type="Forecast", file="GFS")
+        profile = forecast_profile(site, date)
+        env.set_atmospheric_model(type="custom_atmosphere", **profile)
     elif weather_data == "m":
         speed, heading = MANUAL_WIND
-        heights = range(0, 301, 50)
+        heights = range(0, 301, 50)                     # above the ground; RocketPy wants them above sea level
         east, north = math.sin(math.radians(heading)), math.cos(math.radians(heading))
         env.set_atmospheric_model(
             type="custom_atmosphere",
-            wind_u=[(h, speed * (1 + h / 1000) * east) for h in heights],
-            wind_v=[(h, speed * (1 + h / 1000) * north) for h in heights],
+            wind_u=[(site["elevation"] + h, speed * (1 + h / 1000) * east) for h in heights],
+            wind_v=[(site["elevation"] + h, speed * (1 + h / 1000) * north) for h in heights],
+        )
+    elif weather_data == "mbl":
+        speed_ref, heading = MANUAL_BL_WIND
+        z = np.maximum(MANUAL_WIND_BL_HEIGHTS, 1.0)     # Never use z below 1 m: the formula goes to zero at the ground, but a real wind no
+        speed = speed_ref * (z / MANUAL_WIND_BL_REF_HEIGHT) ** MANUAL_WIND_BL_ALPHA     # Power law
+        east, north = np.sin(np.radians(heading)), np.cos(np.radians(heading))
+        asl = site["elevation"] + np.array(MANUAL_WIND_BL_HEIGHTS)
+        env.set_atmospheric_model(
+            type="custom_atmosphere",
+            wind_u=list(zip(asl, speed * east)),
+            wind_v=list(zip(asl, speed * north)))
+        
+    elif weather_data == "mc":
+        # keep in sync with "m" (heights, heading convention)
+        speed, heading = MANUAL_CONSTANT_WIND
+        heights = range(0, 301, 50)                     # above the ground; RocketPy wants them above sea level
+        east, north = math.sin(math.radians(heading)), math.cos(math.radians(heading))
+        env.set_atmospheric_model(
+            type="custom_atmosphere",
+            wind_u=[(site["elevation"] + h, speed * east) for h in heights],
+            wind_v=[(site["elevation"] + h, speed * north) for h in heights],
+        )
+    elif weather_data == "c":
+        row = typical_climate(date[3]) if climate is None else climate
+        heights = np.array([0, 2, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200, 300, 500, 1000, 1500])
+        u, v = surface_wind(row, heights)
+        asl = site["elevation"] + heights
+        # Temperature from the one at 2 m with the standard lapse rate, pressure from the surface one
+        temperature = row.t2m - 0.0065 * (heights - 2)
+        pressure = row.sp * (1 - 0.0065 * heights / row.t2m) ** 5.2559
+        env.set_atmospheric_model(
+            type="custom_atmosphere",
+            pressure=list(zip(asl, pressure)),
+            temperature=list(zip(asl, temperature)),
+            wind_u=list(zip(asl, u)),
+            wind_v=list(zip(asl, v)),
         )
     elif weather_data != "i":
-        raise ValueError(f"Unknown weather data '{weather_data}' (use e, f, i or m)")
+        raise ValueError(f"Unknown weather data '{weather_data}' (use c, e, r, f, i, m, mbl or mc)")
     return env
 
 
@@ -254,6 +480,7 @@ def simulate(s, env, recovery=True, **rocket_options):
     """Build FRED2.0 and fly it from the launch rail."""
     from rocketpy import Flight
 
+    _patch_rocketpy()
     return Flight(
         rocket=build_rocket(s, recovery=recovery, **rocket_options),
         environment=env,
@@ -261,6 +488,10 @@ def simulate(s, env, recovery=True, **rocket_options):
         inclination=s["inclination"],
         heading=s["heading"],
         max_time=1200,
+        # At ignition the thrust is below the weight: on the rail every derivative is zero and the
+        # integrator tries a first step of 1.2 s. With a burn shorter than that (8 mm nozzle, 0.68 s)
+        # the step lands after burnout, is accepted and the rocket never leaves the rail.
+        max_time_step=MAX_TIME_STEP,
     )
 
 

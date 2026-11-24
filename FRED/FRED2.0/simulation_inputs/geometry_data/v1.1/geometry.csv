@@ -1,12 +1,12 @@
-# FRED2.0 v1.1 - geometria del modello OpenRocket rocket.ork (FRED2.0-AMI-V1.0.ork con il componente AMI nell'e-bay) letta con ork_positions.py di Atlas
-# Mancano massa / baricentro / inerzie del razzo senza motore: vanno ricavati da OpenRocket con un motorino sul baricentro.
+# FRED2.0 v1.1 (senza AMI) - geometria del modello OpenRocket rocket.ork del 23/10/2026 letta con ork_positions.py di Atlas
+# Posizioni e forme uguali alla v1.0; cambiano le masse interne. Mancano massa / baricentro / inerzie del razzo senza motore (---).
 # Posizioni misurate dalla punta dell'ogiva verso la coda.
-# std = deviazione standard usata dalle Monte Carlo (0 = valore fisso; prese da v0_lancio23maggio); --- = da completare a mano
+# std = deviazione standard usata dalle Monte Carlo (0 = valore fisso; prese dalla v1.0); --- = da completare a mano
 name,value,std,unit,note
-rocket_dry_mass,---,---,kg,razzo senza motore (simulazione OpenRocket meno il motore)
-rocket_dry_inertia_11,---,---,kg*m^2,perpendicolare all'asse; razzo senza motore
-rocket_dry_inertia_33,---,---,kg*m^2,attorno all'asse; razzo senza motore
-center_of_mass_without_motor,---,---,m,razzo senza motore
+rocket_dry_mass,2.154,0.06,kg,razzo senza motore (OpenRocket configurazione senza motore)
+rocket_dry_inertia_11,0.129,0.00129,kg*m^2,perpendicolare all'asse; razzo senza motore (OpenRocket con il motorino / subito dopo il burnout)
+rocket_dry_inertia_33,0.002,0.00002,kg*m^2,attorno all'asse; razzo senza motore (OpenRocket con il motorino / subito dopo il burnout)
+center_of_mass_without_motor,0.434,0.008,m,razzo senza motore (OpenRocket configurazione senza motore)
 motor_position,0.9045,0,m,uscita dell'ugello = fine del razzo
 radius,0.0425,0.001,m,
 nose_length,0.14,0.001,m,ogiva elliptical

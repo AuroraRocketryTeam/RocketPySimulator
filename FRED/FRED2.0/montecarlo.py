@@ -31,9 +31,15 @@ from compare_plot_saver import save_compare_plots  # noqa: E402
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'prova'
+output_dir_name = 'v1.2_AMI_masscorrected_24ott_ballistic'
 number_of_simulations = 200
-weather_data = 'm'          # e = ensemble, f = forecast, i = ISA, m = manual wind (MANUAL_WIND in fred_model.py)
+weather_data = 'f'        # c = climatological (a random day and hour of the ERA5 data for every run), e = ensemble,
+                            # r = reanalysis, 
+                            # f = forecast (Open-Meteo, FORECAST_MODEL in fred_model.py),
+                            # i = ISA, 
+                            # m = manual wind (modify MANUAL_WIND in fred_model.py)
+                            # mbl = manual boundary layer wind following power law (modify MANUAL_BL in fred_model.py)
+                            # mc = manual constant wind (modify MANUAL_CONSTANT_WIND in fred_model.py)
 seed = None                 # integer to repeat exactly the same runs
 multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
 
@@ -91,15 +97,20 @@ def loading_bar(initial_time, number_of_iterations, iteration, bar_lenght=24):
 #-------------------------------------------------------------------------------------------------------- SIMULATION
 PARAMETERS = model.load_parameters()
 
-# Environment of the current process (one per worker)
+# Environment of the current process (one per worker); with the climatological weather one per run
 _ENV = None
+# Climatological weather (weather_data = 'c'): the hours to draw from
+_CLIMATE = None
 # Keep the Flight objects only when the comparison graphs need them
 _KEEP_FLIGHTS = False
 
 
 def init_worker(weather, keep_flights):
-    global _ENV, _KEEP_FLIGHTS
-    _ENV = model.build_environment(weather)
+    global _ENV, _KEEP_FLIGHTS, _CLIMATE
+    if weather == "c":
+        _CLIMATE = model.load_climate()
+    else:
+        _ENV = model.build_environment(weather)
     _KEEP_FLIGHTS = keep_flights
 
 
@@ -141,12 +152,18 @@ def run_one(run_seed):
     start = time.process_time()
     rng = np.random.default_rng(run_seed)
     setting = model.sample(PARAMETERS, rng)
-    if _ENV.atmospheric_model_type == "Ensemble":
-        setting["ensemble_member"] = int(rng.integers(getattr(_ENV, "num_ensemble_members", 10)))
-        _ENV.select_ensemble_member(setting["ensemble_member"])
+    if _CLIMATE is not None:
+        # A random day and hour of the climatological data (its row number is saved with the inputs)
+        setting["climate_row"] = int(rng.integers(len(_CLIMATE)))
+        env = model.build_environment("c", climate=_CLIMATE.iloc[setting["climate_row"]])
+    else:
+        env = _ENV
+    if env.atmospheric_model_type == "Ensemble":
+        setting["ensemble_member"] = int(rng.integers(getattr(env, "num_ensemble_members", 10)))
+        env.select_ensemble_member(setting["ensemble_member"])
     try:
-        flight = model.simulate(setting, _ENV, recovery=not ballistic)
-        results = flight_results(flight, _ENV, time.process_time() - start)
+        flight = model.simulate(setting, env, recovery=not ballistic)
+        results = flight_results(flight, env, time.process_time() - start)
         return setting, results, None, flight if _KEEP_FLIGHTS else None
     except Exception as error:
         return setting, None, repr(error), None
@@ -266,9 +283,13 @@ all_plots = {
 
 
 #-------------------------------------------------------------------------------------------------------- LAUNCH SITE
-# Background map: the image in the launch site folder and its extent in m (west, east, south, north),
-# with the launch point in (0, 0)
-MAP_EXTENT = (-1100, 600, -350, 650)
+# Background map: image in the launch site folder and its extent in m (west, east, south, north), with the
+# launch point in (0, 0). Villafranca: Esri World Imagery tiles (zoom 18, 0.43 m/px; Esri, Maxar, Earthstar
+# Geographics), georeferenced from the tile coordinates; OpenStreetMap buildings fall on the roofs within 2 m.
+# The old photo (Villafranca_airfield_launch_site.jpg, extent (-1043, 657, -407, 593)) was 2 % too tall:
+# 5 m too far south at the rail, 10 m at 250 m south.
+MAP_IMAGE = "Villafranca_satellite.jpg"
+MAP_EXTENT = (-1043.10, 657.12, -407.15, 593.24)
 
 
 def eigsorted(cov):
@@ -279,8 +300,7 @@ def eigsorted(cov):
 
 def launch_site_graph(results, output_launch_site):
     # Import background map
-    map_file = next(f for f in model.SITE_DIR.iterdir() if f.suffix.lower() in (".jpg", ".png"))
-    img = imread(str(map_file))
+    img = imread(str(model.SITE_DIR / MAP_IMAGE))
 
     apogee_x = np.array([r["apogee_x"] for r in results])
     apogee_y = np.array([r["apogee_y"] for r in results])
