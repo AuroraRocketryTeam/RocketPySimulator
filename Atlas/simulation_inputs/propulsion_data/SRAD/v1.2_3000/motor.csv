@@ -7,16 +7,16 @@
 name,value,std,unit,note
 impulse,9852.47,5,N*s,integrale di thrust_curve.csv; senza reshape_thrust_curve in atlas_model.py valore e std non hanno effetto
 burn_time,2.822,0.1,s,senza reshape_thrust_curve in atlas_model.py valore e std non hanno effetto
-nozzle_radius,0.034205,0.0005,m, 
-throat_radius,0.015,0.0005,m, 
-nozzle_position,0,0.0001,m,
+nozzle_radius,0.034205,0.00003,m, 
+throat_radius,0.015,0.00003,m, 
+nozzle_position,0,0,m,
 grain_number,5,0,-, 
-grain_separation,0.003,0.00001,m, 
+grain_separation,0.003,0.00003,m, 
 grain_density,1854.13,5,kg/m^3, 
-grain_outer_radius,0.044,0.0001,m, 
-grain_initial_inner_radius,0.0245,0.0001,m, 
-grain_initial_height,0.2098,0.0001,m, 
-grains_center_of_mass_position,0.6911,0.01,m,centro della colonna di grain (motore lungo 1.3154 m)
+grain_outer_radius,0.044,0.00003,m, 
+grain_initial_inner_radius,0.0245,0.00003,m, 
+grain_initial_height,0.2098,0.00003,m, 
+grains_center_of_mass_position,0.6911,0.00003,m,centro della colonna di grain (motore lungo 1.3154 m)
 motor_dry_mass,5.9728,0.050,kg,case + bulkhead + protezioni termiche + ugello + ring
 motor_dry_mass_position,0.5498,0.001,m,
 motor_inertia_11,0.9823,0,kg*m^2,perpendicolare all'asse attorno al baricentro a secco
