@@ -6,7 +6,7 @@ rocket_dry_mass,16.968,0.1,kg,razzo senza motore (simulazione OpenRocket meno il
 rocket_dry_inertia_11,9.25,0.05,kg*m^2,perpendicolare all'asse; razzo senza motore
 rocket_dry_inertia_33,0.063,0.0005,kg*m^2,attorno all'asse; razzo senza motore
 center_of_mass_without_motor,1.31,0.005,m,razzo senza motore
-motor_position,2.993,0,m,uscita dell'ugello = fine del razzo
+motor_position,3.013,0,m,uscita dell'ugello = fine del razzo + 2cm (0.02 m)
 radius,0.075,0.0001,m,
 nose_length,0.312,0.0005,m,ogiva von karman
 nose_position,0,0,m,
