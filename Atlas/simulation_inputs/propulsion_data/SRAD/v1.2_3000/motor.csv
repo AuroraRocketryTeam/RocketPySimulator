@@ -1,23 +1,23 @@
-# SRAD - curva di spinta in thrust_curve.csv: quella del notebook più una discesa a zero di 25 ms dopo l'ultimo punto, a forma di mezzo coseno (senza, o con una discesa dritta, RocketPy dà picchi numerici di accelerazione)
-# Notebook di propulsione "Atlas motor correct 1.0": motore pieno 14.3136 kg, a secco 5.9728 kg, propellente 8.3408 kg (KNSB + 1% Fe2O3).
-# Baricentro e inerzie a secco ricavati da ATLAS_PARAMETERS_1.0 GRAPHITE.txt con tools/propulsion/motor_geometry/motor_mass_properties.py (risultati in tools/propulsion/motor_geometry/v1.2_3000/).
-# L'hardware del motore è la motor_dry_mass, quindi è escluso dalla rocket_dry_mass (vedi geometry)
-# La fine dell'ugello sporge di 2 cm dalla fine del razzo
+# SRAD v1.2_3000 - curva di spinta in thrust_curve.csv, transitori dati da propulsione
+# motore pieno 14.8907 kg, a secco 6.7288 kg, propellente 8.1619 kg
+# Baricentro e inerzie a secco: pezzi con i volumi del notebook (masse uguali a quelle di propulsione)
+# L'hardware del motore è la motor_dry_mass, è escluso dalla rocket_dry_mass (vedi geometry)
+# L'ugello sporge di 2 cm dalla fine del razzo (gestito da motor_position in geometry v1.9).
 # Posizioni misurate dall'ugello verso la camera di combustione.
 name,value,std,unit,note
 impulse,9852.47,5,N*s,integrale di thrust_curve.csv; senza reshape_thrust_curve in atlas_model.py valore e std non hanno effetto
-burn_time,2.822,0.1,s,senza reshape_thrust_curve in atlas_model.py valore e std non hanno effetto
-nozzle_radius,0.034205,0.00003,m, 
-throat_radius,0.015,0.00003,m, 
-nozzle_position,0,0,m,
+burn_time,2.865,0.1,s,fine di thrust_curve.csv; senza reshape_thrust_curve in atlas_model.py valore e std non hanno effetto
+nozzle_radius,0.0342052,0.0005,m, 
+throat_radius,0.015,0.0005,m, 
+nozzle_position,0,0.0001,m,
 grain_number,5,0,-, 
-grain_separation,0.003,0.00003,m, 
+grain_separation,0.003,0.00001,m, 
 grain_density,1854.13,5,kg/m^3, 
-grain_outer_radius,0.044,0.00003,m, 
-grain_initial_inner_radius,0.0245,0.00003,m, 
-grain_initial_height,0.2098,0.00003,m, 
-grains_center_of_mass_position,0.6911,0.00003,m,centro della colonna di grain (motore lungo 1.3154 m)
-motor_dry_mass,5.9728,0.050,kg,case + bulkhead + protezioni termiche + ugello + ring
-motor_dry_mass_position,0.5498,0.001,m,
-motor_inertia_11,0.9823,0,kg*m^2,perpendicolare all'asse attorno al baricentro a secco
-motor_inertia_33,0.01219,0,kg*m^2,attorno all'asse
+grain_outer_radius,0.044,0.0001,m, 
+grain_initial_inner_radius,0.0245,0.0001,m, 
+grain_initial_height,0.2098,0.0001,m, 
+grains_center_of_mass_position,0.669553,0.01,m,centro della colonna di grain (motore lungo 1.2541 m)
+motor_dry_mass,6.72883,0.050,kg,case + bulkhead + protezioni termiche + ugello + ring
+motor_dry_mass_position,0.606120,0.001,m,
+motor_inertia_11,1.28224,0,kg*m^2,perpendicolare all'asse attorno al baricentro a secco
+motor_inertia_33,0.0129954,0,kg*m^2,attorno all'asse
