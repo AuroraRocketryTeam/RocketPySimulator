@@ -31,8 +31,8 @@ from compare_plot_saver import make_compare_plots #save_compare_plots  # noqa: E
 
 #-------------------------------------------------------------------------------------------------------- PARAMETERS
 # Name of the output folder (can be a new folder or an existing one to overwrite)
-output_dir_name = 'Atlas_max_drag_test'
-number_of_simulations = 5
+output_dir_name = 'prova'
+number_of_simulations = 50
 weather_data = 'c'          # c = custom (mean EuRoC week), e = ensemble, f = forecast (Open-Meteo, FORECAST_MODEL in atlas_model.py), i = ISA
 seed = None                 # integer to repeat exactly the same runs
 multiple_core = True        # True = runs in parallel on all the cores, False = on one core only
@@ -46,16 +46,16 @@ save_dispersion_plot = False
 sensitivity_analysis = False
 
 show_compare_plot = True
-save_compare_plot = True
+save_compare_plot = False
 compare_graphs = {
     "velocities": True,
-    "accelerations": False,
+    "accelerations": True,
     "attitude_angles": False,
     "euler_angles": False,
     "aerodynamic_forces": False,
     "aerodynamic_moments": False,
     "angular_velocities": False,
-    "trajectories_3d": True,
+    "trajectories_3d": False,
     "rail_buttons_forces": False,
     "stability_margin": False,
 }
@@ -147,9 +147,9 @@ def flight_results(flight, env, execution_time):
         "out_of_rail_time": flight.out_of_rail_time,
         "out_of_rail_velocity": flight.out_of_rail_velocity,
         "max_velocity": flight.max_speed,
-        # Maximum acceleration with the motor on (the maximum over the whole flight is the main opening
-        # shock), without the numerical spike of RocketPy at burnout
-        "max_acceleration": model.max_acceleration_power_on(flight),
+        "max_mach": flight.max_mach_number,
+        "max_acceleration": model.max_acceleration_power_on(flight), # motor
+        #"max_acceleration": flight.acceleration.max, # main opening
         "max_aerodynamic_drag": flight.aerodynamic_drag.max,
         "max_aerodynamic_lift": flight.aerodynamic_lift.max,
         "max_aerodynamic_spin_moment": flight.aerodynamic_spin_moment.max,
@@ -290,6 +290,7 @@ all_plots = {
     "Out of Rail Static Margin":["out_of_rail_static_margin","Static Margin", "c"],
     "Final Static Margin":["final_static_margin","Static Margin", "c"],
     "Maximum Velocity":["max_velocity","Velocity", "m/s"],
+    "Maximum Mach Number":["max_mach","Mach Number", "-"],
     "Maximum Acceleration":["max_acceleration","Acceleration", "m/s^2"],
     "Maximum Aerodynamic Drag":["max_aerodynamic_drag","Drag Force","N"],
     "Maximum Aerodynamic Lift":["max_aerodynamic_lift","Lift Force", "N"],
